@@ -5,6 +5,8 @@
 #include <utility>
 #include <iostream>
 
+#include "error_checker.cuh"
+
 template <typename T>
 struct CudaDeleter
 {
@@ -12,7 +14,7 @@ struct CudaDeleter
     {
         if (ptr)
         {
-            cudaFree(ptr);
+            CHECK_CUDA_ERROR(cudaFree(ptr));
         }
     }
 };
@@ -25,7 +27,7 @@ struct CudaDeleter<T[]>
     {
         if (ptr)
         {
-            cudaFree(ptr);
+        CHECK_CUDA_ERROR(cudaFree(ptr));
         }
     }
 };
@@ -38,13 +40,7 @@ cuda_unique_ptr<T> makeCudaUnique(size_t count = 1)
 {
     T *ptr = nullptr;
     size_t bytes = sizeof(T) * count;
-    cudaError_t err = cudaMalloc(&ptr, bytes);
-    if (err != cudaSuccess)
-    {
-        std::cerr << "[CUDA ERROR] makeCudaUnique failed to allocate " << bytes << " bytes: " << cudaGetErrorString(err) << "\n";
-        return nullptr;
-    }
-    std::cout << "[DEBUG] makeCudaUnique allocated " << bytes << " bytes at address: " << ptr << "\n";
+    CHECK_CUDA_ERROR(cudaMalloc(&ptr, bytes));
     return cuda_unique_ptr<T>(ptr);
 }
 
@@ -52,10 +48,6 @@ template <typename T>
 cuda_unique_ptr<T[]> makeCudaUniqueArray(size_t count)
 {
     T *ptr = nullptr;
-    cudaError_t err = cudaMalloc(&ptr, sizeof(T) * count);
-    if (err != cudaSuccess)
-    {
-        return nullptr;
-    }
+    CHECK_CUDA_ERROR(cudaMalloc(&ptr, sizeof(T) * count));
     return cuda_unique_ptr<T[]>(ptr);
 }

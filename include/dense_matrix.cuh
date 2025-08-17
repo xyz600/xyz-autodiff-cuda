@@ -3,8 +3,6 @@
 #include <cstddef>
 #include <span>
 #include <cuda_runtime.h>
-// #include "concept/variable.cuh"  // CUDA compiler concept limitations
-// #include "concept/matrix.cuh"   // CUDA compiler concept limitations
 
 namespace xyz_autodiff {
 
@@ -90,11 +88,5 @@ public:
         return true;  // 密行列なので全て有効
     }
 };
-
-// コンセプトチェック (CUDA compiler limitations)
-// static_assert(concept::Variable<DenseMatrix<float, 3, 4>>);
-// static_assert(concept::DifferentiableVariable<DenseMatrix<float, 3, 4>>);
-// static_assert(concept::MatrixView<DenseMatrix<float, 3, 4>>);
-// static_assert(concept::DifferentiableMatrixView<DenseMatrix<float, 3, 4>>);
 
 } // namespace xyz_autodiff

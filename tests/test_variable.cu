@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 #include <vector>
 #include "../include/variable.cuh"
+#include "../include/util/cuda_unique_ptr.cuh"
 // #include "../include/concept/variable.cuh"  // CUDA compiler concept limitations
 
 using namespace xyz_autodiff;
@@ -69,21 +70,21 @@ TEST_F(VariableTest, BasicConstruction) {
     std::vector<T> host_grad(N, 0);
     std::vector<T> host_output(2 * N, 0);
     
-    // デバイスメモリ確保
-    T* device_data;
-    T* device_grad;
-    T* device_output;
+    // デバイスメモリ確保 (cuda_unique_ptr使用)
+    auto device_data = makeCudaUniqueArray<T>(N);
+    auto device_grad = makeCudaUniqueArray<T>(N);
+    auto device_output = makeCudaUniqueArray<T>(2 * N);
     
-    ASSERT_EQ(cudaMalloc(&device_data, N * sizeof(T)), cudaSuccess);
-    ASSERT_EQ(cudaMalloc(&device_grad, N * sizeof(T)), cudaSuccess);
-    ASSERT_EQ(cudaMalloc(&device_output, 2 * N * sizeof(T)), cudaSuccess);
+    ASSERT_NE(device_data, nullptr);
+    ASSERT_NE(device_grad, nullptr);
+    ASSERT_NE(device_output, nullptr);
     
     // カーネル実行
-    test_variable_kernel<T, N><<<1, 1>>>(device_data, device_grad, device_output);
+    test_variable_kernel<T, N><<<1, 1>>>(device_data.get(), device_grad.get(), device_output.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output, 2 * N * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), 2 * N * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // 結果検証
     for (std::size_t i = 0; i < N; ++i) {
@@ -91,10 +92,7 @@ TEST_F(VariableTest, BasicConstruction) {
         EXPECT_FLOAT_EQ(host_output[N + i], static_cast<T>(i * 2));    // 勾配値
     }
     
-    // メモリ解放
-    cudaFree(device_data);
-    cudaFree(device_grad);
-    cudaFree(device_output);
+    // メモリは自動解放される
 }
 
 TEST_F(VariableTest, GradientOperations) {
@@ -107,38 +105,34 @@ TEST_F(VariableTest, GradientOperations) {
     std::vector<T> host_grad_values = {2.0f, 3.0f, 4.0f};
     std::vector<T> host_output(N, 0);
     
-    // デバイスメモリ確保
-    T* device_data;
-    T* device_grad;
-    T* device_grad_values;
-    T* device_output;
+    // デバイスメモリ確保 (cuda_unique_ptr使用)
+    auto device_data = makeCudaUniqueArray<T>(N);
+    auto device_grad = makeCudaUniqueArray<T>(N);
+    auto device_grad_values = makeCudaUniqueArray<T>(N);
+    auto device_output = makeCudaUniqueArray<T>(N);
     
-    ASSERT_EQ(cudaMalloc(&device_data, N * sizeof(T)), cudaSuccess);
-    ASSERT_EQ(cudaMalloc(&device_grad, N * sizeof(T)), cudaSuccess);
-    ASSERT_EQ(cudaMalloc(&device_grad_values, N * sizeof(T)), cudaSuccess);
-    ASSERT_EQ(cudaMalloc(&device_output, N * sizeof(T)), cudaSuccess);
+    ASSERT_NE(device_data, nullptr);
+    ASSERT_NE(device_grad, nullptr);
+    ASSERT_NE(device_grad_values, nullptr);
+    ASSERT_NE(device_output, nullptr);
     
     // データをデバイスにコピー
-    ASSERT_EQ(cudaMemcpy(device_grad, host_grad.data(), N * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_grad_values, host_grad_values.data(), N * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(device_grad.get(), host_grad.data(), N * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(device_grad_values.get(), host_grad_values.data(), N * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
     
     // カーネル実行
-    test_variable_operations_kernel<T, N><<<1, 1>>>(device_data, device_grad, device_grad_values, device_output);
+    test_variable_operations_kernel<T, N><<<1, 1>>>(device_data.get(), device_grad.get(), device_grad_values.get(), device_output.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output, N * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), N * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // zero_grad → accumulate_gradの結果を検証
     for (std::size_t i = 0; i < N; ++i) {
         EXPECT_FLOAT_EQ(host_output[i], host_grad_values[i]);
     }
     
-    // メモリ解放
-    cudaFree(device_data);
-    cudaFree(device_grad);
-    cudaFree(device_grad_values);
-    cudaFree(device_output);
+    // メモリは自動解放される
 }
 
 TEST_F(VariableTest, ConceptCheck) {

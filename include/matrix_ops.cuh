@@ -32,7 +32,7 @@ __device__ auto operator*(const A& a, const B& b) {
             result(i, j) = sum;
         }
     }
-    
+   
     return result;
 }
 
