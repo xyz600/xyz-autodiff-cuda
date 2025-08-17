@@ -1,0 +1,19 @@
+version: '3'
+
+tasks:
+  build:debug:
+    desc: "Build the project in debug mode"
+    cmds:
+      - cmake --preset debug
+      - cmake --build --preset debug
+
+  build:release:
+    desc: "Build the project in release mode"  
+    cmds:
+      - cmake --preset release
+      - cmake --build --preset release
+
+  clean:
+    desc: "Clean build directories"
+    cmds:
+      - rm -rf build/

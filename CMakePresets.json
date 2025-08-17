@@ -1,0 +1,45 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "debug",
+            "displayName": "Debug Configuration",
+            "description": "Debug build with debug symbols and no optimization",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "BUILD_TESTS": "ON",
+                "BUILD_EXAMPLES": "ON"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release Configuration", 
+            "description": "Release build with optimizations",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "BUILD_TESTS": "ON",
+                "BUILD_EXAMPLES": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "displayName": "Debug Build",
+            "configurePreset": "debug",
+            "jobs": 0
+        },
+        {
+            "name": "release", 
+            "displayName": "Release Build",
+            "configurePreset": "release",
+            "jobs": 0
+        }
+    ]
+}

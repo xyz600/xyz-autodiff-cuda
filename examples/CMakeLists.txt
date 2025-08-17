@@ -1,0 +1,2 @@
+add_executable(neural_network neural_network.cu)
+target_link_libraries(neural_network xyz_autodiff)

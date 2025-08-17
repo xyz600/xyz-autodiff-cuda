@@ -1,0 +1,2 @@
+add_executable(test_tensor test_tensor.cu)
+target_link_libraries(test_tensor xyz_autodiff)
