@@ -16,10 +16,9 @@ public:
     // デフォルトコンストラクタ
     __host__ __device__ AddOperation() = default;
     
-    // operator() - Expression Templateの核心
     template <typename Input1, typename Input2>
     __host__ __device__ auto operator()(const Input1& a, const Input2& b) const {
-        return Graph<AddOperation<T>, Input1, Input2>(*this, a, b);
+        return Node<AddOperation<T>, Input1, Input2>(*this, a, b);
     }
     
     // forward計算: result = a + b

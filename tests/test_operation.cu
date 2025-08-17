@@ -20,11 +20,11 @@ __global__ void test_operation_kernel(T* data1, T* grad1, T* data2, T* grad2, T*
     var1[0] = static_cast<T>(3.0);
     var2[0] = static_cast<T>(4.0);
     
-    // Operation適用: Expression Template
+    // Operation適用: Node-based計算グラフ（即時評価）
     auto add_op = AddOperation<T>{};
-    auto result = add_op(var1, var2);  // Graph<AddOperation<T>, Variable<T,1>, Variable<T,1>>
+    auto result = add_op(var1, var2);  // Node<AddOperation<T>, Variable<T,1>, Variable<T,1>>
     
-    // forward計算（遅延評価）
+    // 値取得（即座に利用可能）
     T computed_value = result.value();
     output[0] = computed_value;
     
@@ -36,7 +36,7 @@ __global__ void test_operation_kernel(T* data1, T* grad1, T* data2, T* grad2, T*
     output[2] = var2.grad(0);  // dL/dvar2
 }
 
-class ExpressionTemplateTest : public ::testing::Test {
+class OperationTest : public ::testing::Test {
 protected:
     void SetUp() override {
         cudaError_t err = cudaSetDevice(0);
@@ -46,7 +46,7 @@ protected:
     }
 };
 
-TEST_F(ExpressionTemplateTest, BasicAddition) {
+TEST_F(OperationTest, BasicAddition) {
     using T = float;
     
     // ホストメモリ
@@ -86,7 +86,7 @@ TEST_F(ExpressionTemplateTest, BasicAddition) {
     EXPECT_FLOAT_EQ(host_output[2], 1.0f);  // d(3+4)/d4 = 1
 }
 
-TEST_F(ExpressionTemplateTest, ConceptCheck) {
+TEST_F(OperationTest, ConceptCheck) {
     // 型要件のチェック（conceptの代わり）
     static_assert(std::is_default_constructible_v<AddOperation<float>>);
     static_assert(std::is_same_v<AddOperation<float>::value_type, float>);
