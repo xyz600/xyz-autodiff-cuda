@@ -5,6 +5,7 @@
 #include <cublas_v2.h>
 #include <iostream>
 #include <numeric>
+#include <functional>
 
 namespace xyz_autodiff {
 
@@ -61,7 +62,7 @@ Tensor& Tensor::operator=(const Tensor& other) {
 Tensor::Tensor(Tensor&& other) noexcept
     : shape_(std::move(other.shape_)), data_(other.data_), grad_(other.grad_),
       requires_grad_(other.requires_grad_), owns_data_(other.owns_data_),
-      backward_fn_(std::move(other.backward_fn_)), parents_(std::move(other.parents_)) {
+      parents_(std::move(other.parents_)) {
     other.data_ = nullptr;
     other.grad_ = nullptr;
     other.owns_data_ = false;
@@ -77,7 +78,6 @@ Tensor& Tensor::operator=(Tensor&& other) noexcept {
         grad_ = other.grad_;
         requires_grad_ = other.requires_grad_;
         owns_data_ = other.owns_data_;
-        backward_fn_ = std::move(other.backward_fn_);
         parents_ = std::move(other.parents_);
         
         other.data_ = nullptr;

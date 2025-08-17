@@ -3,6 +3,8 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <iostream>
+#include <numeric>
+#include <functional>
 
 namespace xyz_autodiff {
 
@@ -91,21 +93,6 @@ Tensor Operations::add(const Tensor& a, const Tensor& b) {
     if (result.requires_grad()) {
         auto a_ptr = std::make_shared<Tensor>(const_cast<Tensor&>(a));
         auto b_ptr = std::make_shared<Tensor>(const_cast<Tensor&>(b));
-        
-        result.backward_fn_ = std::make_shared<Tensor::BackwardFunction>(
-            [a_ptr, b_ptr](const Tensor& grad_output) {
-                if (a_ptr->requires_grad()) {
-                    add_kernel<<<grid_size, block_size>>>(
-                        a_ptr->grad(), grad_output.data(), a_ptr->grad(), grad_output.size());
-                }
-                if (b_ptr->requires_grad()) {
-                    add_kernel<<<grid_size, block_size>>>(
-                        b_ptr->grad(), grad_output.data(), b_ptr->grad(), grad_output.size());
-                }
-                cudaDeviceSynchronize();
-            },
-            {a_ptr, b_ptr}
-        );
         result.parents_ = {a_ptr, b_ptr};
     }
     

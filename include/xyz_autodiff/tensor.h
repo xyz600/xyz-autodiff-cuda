@@ -55,8 +55,6 @@ private:
     bool requires_grad_;
     bool owns_data_;
 
-    struct BackwardFunction;
-    std::shared_ptr<BackwardFunction> backward_fn_;
     std::vector<std::shared_ptr<Tensor>> parents_;
 
     void allocate_memory();
