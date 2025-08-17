@@ -4,7 +4,6 @@
 #include <type_traits>
 
 namespace xyz_autodiff {
-namespace concept {
 
 // Forward propagation のための Operation
 template <typename T, typename Output, typename... Inputs>
@@ -29,5 +28,4 @@ concept TestableOperation = DifferentiableOperation<T, Output, Inputs...> &&
     { op.numerical_backward(output, inputs...) } -> std::same_as<void>;
 };
 
-} // namespace concept
 } // namespace xyz_autodiff

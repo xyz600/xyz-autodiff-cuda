@@ -205,12 +205,7 @@ TEST_F(DenseMatrixTest, AccessorConsistency) {
 }
 
 TEST_F(DenseMatrixTest, ConceptCheck) {
-    // コンパイル時概念チェック (CUDA compiler limitations)
-    // static_assert(concept::Variable<DenseMatrix<float, 3, 4>>);
-    // static_assert(concept::DifferentiableVariable<DenseMatrix<float, 3, 4>>);
-    // static_assert(concept::MatrixView<DenseMatrix<float, 3, 4>>);
-    // static_assert(concept::DifferentiableMatrixView<DenseMatrix<float, 3, 4>>);
-    
+   
     // サイズチェック
     EXPECT_EQ((xyz_autodiff::DenseMatrix<float, 3, 4>::rows), 3);
     EXPECT_EQ((xyz_autodiff::DenseMatrix<float, 3, 4>::cols), 4);

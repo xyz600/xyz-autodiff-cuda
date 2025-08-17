@@ -29,7 +29,17 @@ set_target_properties(test_dense_matrix PROPERTIES
     CUDA_ARCHITECTURES "50;60;70;75;80;86"
 )
 
+# DiagonalMatrix テスト
+add_executable(test_diagonal_matrix test_diagonal_matrix.cu)
+target_link_libraries(test_diagonal_matrix xyz_autodiff gtest gtest_main)
+target_include_directories(test_diagonal_matrix PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_diagonal_matrix PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "50;60;70;75;80;86"
+)
+
 # CTest の有効化
 enable_testing()
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
+add_test(NAME DiagonalMatrixTest COMMAND test_diagonal_matrix)

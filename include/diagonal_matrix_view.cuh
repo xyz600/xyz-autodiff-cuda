@@ -1,0 +1,94 @@
+#pragma once
+
+#include <cstddef>
+#include <cuda_runtime.h>
+#include "variable.cuh"
+
+namespace xyz_autodiff {
+
+template <typename T, std::size_t N>
+class DiagonalMatrixView {
+public:
+    using value_type = T;
+    static constexpr std::size_t rows = N;
+    static constexpr std::size_t cols = N;
+    static constexpr std::size_t size = N;  // 対角要素のみ
+    
+private:
+    Variable<T, N> variable_;
+    
+public:
+    // Variableを受け取るコンストラクタ
+    __host__ __device__ DiagonalMatrixView(const Variable<T, N>& var)
+        : variable_(var) {}
+    
+    // === Variable concept の要件 ===
+    
+    // データアクセサ
+    __device__ T* data() const { return variable_.data(); }
+    
+    // 勾配アクセサ
+    __device__ T* grad() const { return variable_.grad(); }
+    
+    // インデックスアクセス (値) - 1次元アクセス（対角要素）
+    __device__ T& operator[](std::size_t i) const { 
+        return variable_[i]; 
+    }
+    
+    // インデックスアクセス (勾配) - 1次元アクセス（対角要素）
+    __device__ T& grad(std::size_t i) const { 
+        return variable_.grad(i); 
+    }
+    
+    // 勾配をゼロクリア
+    __device__ void zero_grad() const {
+        variable_.zero_grad();
+    }
+    
+    // 勾配を累積
+    __device__ void accumulate_grad(const T* grad_values) const {
+        variable_.accumulate_grad(grad_values);
+    }
+    
+    // === MatrixView concept の要件 ===
+    
+    // 2次元アクセス (値)
+    __device__ T operator()(std::size_t row, std::size_t col) const {
+        if (row == col) {
+            return variable_[row];  // 対角要素
+        } else {
+            return T{0};  // 非対角要素は0
+        }
+    }
+    
+    // 2次元アクセス (勾配) - 対角要素のみ変更可能
+    __device__ T& grad(std::size_t row, std::size_t col) const {
+        static T zero_grad = T{0};
+        if (row == col) {
+            return variable_.grad(row);  // 対角要素の勾配
+        } else {
+            zero_grad = T{0};
+            return zero_grad;  // 非対角要素の勾配は常に0
+        }
+    }
+    
+    // 疎行列サポート
+    __device__ bool is_active_in_col(std::size_t row, std::size_t col) const {
+        return (row == col);  // 対角要素のみアクティブ
+    }
+    
+    __device__ bool is_active_in_row(std::size_t row, std::size_t col) const {
+        return (row == col);  // 対角要素のみアクティブ
+    }
+    
+    // Variable参照を取得
+    __device__ const Variable<T, N>& variable() const { return variable_; }
+};
+
+// ヘルパー関数
+template <typename T, std::size_t N>
+__host__ __device__ auto make_diagonal_view(const Variable<T, N>& var) {
+    return DiagonalMatrixView<T, N>(var);
+}
+
+} // namespace xyz_autodiff

@@ -4,7 +4,6 @@
 #include <type_traits>
 
 namespace xyz_autodiff {
-namespace concept {
 
 // Forward propagation に必要な要件
 template <typename T>
@@ -40,6 +39,4 @@ concept DifferentiableVariable = Variable<T> && requires(T var) {
     { var.accumulate_grad(std::declval<const typename T::value_type*>()) } -> std::same_as<void>;
 };
 
-
-} // namespace concept
 } // namespace xyz_autodiff

@@ -136,10 +136,6 @@ TEST_F(VariableTest, GradientOperations) {
 }
 
 TEST_F(VariableTest, ConceptCheck) {
-    // コンパイル時概念チェック (CUDA compiler limitations)
-    // static_assert(concept::Variable<Variable<float, 4>>);
-    // static_assert(concept::DifferentiableVariable<Variable<float, 4>>);
-    
     // サイズチェック
     EXPECT_EQ((xyz_autodiff::Variable<float, 4>::size), 4);
     EXPECT_EQ((xyz_autodiff::Variable<double, 10>::size), 10);

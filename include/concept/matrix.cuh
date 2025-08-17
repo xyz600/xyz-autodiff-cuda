@@ -5,7 +5,6 @@
 #include <span>
 
 namespace xyz_autodiff {
-namespace concept {
 
 // Forward propagation に必要な MatrixView の要件
 template <typename T>
@@ -44,6 +43,4 @@ concept DifferentiableMatrixView = MatrixView<T> && requires(T view) {
     { view.grad(std::size_t{}, std::size_t{}) } -> std::convertible_to<const typename T::value_type&>;
 };
 
-
-} // namespace concept
 } // namespace xyz_autodiff
