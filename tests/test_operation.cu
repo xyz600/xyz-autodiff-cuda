@@ -3,7 +3,7 @@
 #include <vector>
 #include <type_traits>
 #include "../include/variable.cuh"
-#include "../include/operation.cuh"
+#include "../include/operations/operation.cuh"
 #include "../include/operations/add_logic.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
 
