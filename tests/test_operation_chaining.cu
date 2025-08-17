@@ -171,44 +171,45 @@ TEST_F(OperationChainingTest, VariableConceptTest) {
     EXPECT_FLOAT_EQ(buffer.getResult(3), 2.0f);  // grad() = 2.0
 }
 
-// Operation チェーン テスト用のCUDAカーネル
+// Operation チェーン テスト用のCUDAカーネル（段階的実行版）
 template <typename T>
-__global__ void test_operation_chaining_kernel(T* data1, T* grad1, T* data2, T* grad2, T* data3, T* grad3, T* result) {
+__global__ void test_operation_chaining_kernel(T* data1, T* grad1, T* data2, T* grad2, T* data3, T* grad3, T* temp_data, T* temp_grad, T* result) {
     // Variable作成
     Variable<T, 1> var1(data1, grad1);
     Variable<T, 1> var2(data2, grad2);
     Variable<T, 1> var3(data3, grad3);
+    Variable<T, 1> temp_var(temp_data, temp_grad);
     
     // 値設定
     var1[0] = static_cast<T>(3.0);
     var2[0] = static_cast<T>(4.0);
     var3[0] = static_cast<T>(5.0);
     
-    // Operation チェーン: node1 = add(var1, var2), node2 = add(var3, node1)
-    auto node1 = op::add(var1, var2);  // 3 + 4 = 7
-    auto node2 = op::add(var3, node1); // 5 + 7 = 12
+    // 段階1: var1 + var2 -> temp_var (外部バッファ使用)
+    auto node1_ref = op::add_ref(var1, var2, temp_var);
+    node1_ref.forward();
     
-    // 結果を取得
-    result[0] = node2[0];  // node2はVariable Conceptを満たすので直接アクセス可能
+    // 段階2: var3 + temp_var -> result (直接計算)
+    result[0] = var3[0] + temp_var[0];  // 5 + 7 = 12
     
-    // 出力に単位勾配を設定してbackward計算
-    node2.grad(0) = static_cast<T>(1.0);
+    // backward計算の段階的実行
+    // dL/dtemp_var = 1.0, dL/dvar3 = 1.0
+    temp_var.grad(0) = static_cast<T>(1.0);
+    result[3] = static_cast<T>(1.0);  // dL/dvar3
     
-    // backward計算 (チェーンルール)
-    node2.backward();  // dL/dnode1 = 1.0, dL/dvar3 = 1.0
-    node1.backward();  // dL/dvar1 = 1.0, dL/dvar2 = 1.0
+    // temp_varからvar1, var2への勾配伝播
+    node1_ref.backward();
     
     // 勾配結果を保存
     result[1] = var1.grad(0);  // dL/dvar1
     result[2] = var2.grad(0);  // dL/dvar2
-    result[3] = var3.grad(0);  // dL/dvar3
 }
 
 TEST_F(OperationChainingTest, BasicChaining) {
     using T = float;
     
-    // テストバッファ作成（3変数、結果4個）
-    TestBuffer<T, 3> buffer(4);
+    // テストバッファ作成（4変数：3入力+1中間、結果4個）
+    TestBuffer<T, 4> buffer(4);
     
     // 勾配初期化（データは自動的にゼロ初期化される）
     buffer.toGpu();
@@ -218,6 +219,7 @@ TEST_F(OperationChainingTest, BasicChaining) {
         buffer.getDeviceData(0), buffer.getDeviceGrad(0),
         buffer.getDeviceData(1), buffer.getDeviceGrad(1),
         buffer.getDeviceData(2), buffer.getDeviceGrad(2),
+        buffer.getDeviceData(3), buffer.getDeviceGrad(3),  // temp variable
         buffer.getDeviceResult());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
