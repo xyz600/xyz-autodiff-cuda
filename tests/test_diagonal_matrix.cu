@@ -4,6 +4,8 @@
 #include "../include/diagonal_matrix_view.cuh"
 #include "../include/dense_matrix.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
+#include "concept/variable.cuh"
+#include "concept/matrix.cuh"
 
 using namespace xyz_autodiff;
 
@@ -179,6 +181,12 @@ TEST_F(DiagonalMatrixTest, DenseDiagonalMultiply) {
 }
 
 TEST_F(DiagonalMatrixTest, ConceptCheck) {
+    // Concept チェック
+    static_assert(xyz_autodiff::VariableConcept<DiagonalMatrixView<float, 4>>);
+    static_assert(xyz_autodiff::DifferentiableVariableConcept<DiagonalMatrixView<float, 4>>);
+    static_assert(xyz_autodiff::MatrixViewConcept<DiagonalMatrixView<float, 4>>);
+    static_assert(xyz_autodiff::MatrixViewConcept<DiagonalMatrixView<double, 3>>);
+    
     // サイズチェック
     EXPECT_EQ((DiagonalMatrixView<float, 4>::rows), 4);
     EXPECT_EQ((DiagonalMatrixView<float, 4>::cols), 4);

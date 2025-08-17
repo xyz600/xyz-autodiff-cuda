@@ -3,6 +3,7 @@
 #include <vector>
 #include "../include/variable.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
+#include "concept/variable.cuh"
 
 using namespace xyz_autodiff;
 
@@ -135,6 +136,12 @@ TEST_F(VariableTest, GradientOperations) {
 }
 
 TEST_F(VariableTest, ConceptCheck) {
+    // Concept チェック
+    static_assert(xyz_autodiff::VariableConcept<Variable<float, 4>>);
+    static_assert(xyz_autodiff::DifferentiableVariableConcept<Variable<float, 4>>);
+    static_assert(xyz_autodiff::VariableConcept<Variable<double, 10>>);
+    static_assert(xyz_autodiff::DifferentiableVariableConcept<Variable<double, 10>>);
+    
     // サイズチェック
     EXPECT_EQ((xyz_autodiff::Variable<float, 4>::size), 4);
     EXPECT_EQ((xyz_autodiff::Variable<double, 10>::size), 10);
