@@ -14,7 +14,8 @@
       "Bash(task test:*)",
       "Bash(mv:*)",
       "Bash(nvcc:*)",
-      "Bash(/tmp/test_add_concept:*)"
+      "Bash(/tmp/test_add_concept:*)",
+      "Bash(./tests/test_operation_chaining_simple)"
     ],
     "deny": []
   }

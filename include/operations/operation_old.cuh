@@ -71,22 +71,6 @@ public:
     // 出力への参照を取得
     __host__ __device__ const output_type& output() const { return output_; }
     __host__ __device__ output_type& output() { return output_; }
-    
-    // Variable Concept 実装
-    __host__ __device__ value_type* data() { return output_.data(); }
-    __host__ __device__ const value_type* data() const { return output_.data(); }
-    
-    __host__ __device__ value_type& operator[](std::size_t idx) { return output_[idx]; }
-    __host__ __device__ const value_type& operator[](std::size_t idx) const { return output_[idx]; }
-    
-    __host__ __device__ value_type* grad() { return output_.grad(); }
-    __host__ __device__ const value_type* grad() const { return output_.grad(); }
-    
-    __host__ __device__ value_type& grad(std::size_t idx) { return output_.grad(idx); }
-    __host__ __device__ const value_type& grad(std::size_t idx) const { return output_.grad(idx); }
-    
-    __host__ __device__ void zero_grad() { output_.zero_grad(); }
-    __host__ __device__ void accumulate_grad(const value_type* grad_ptr) { output_.accumulate_grad(grad_ptr); }
 };
 
 // 2入力1出力のOperation
@@ -99,7 +83,6 @@ public:
     using output_type = Variable<typename Input1::value_type, OutputSize>;
     using value_type = typename Input1::value_type;
     static constexpr std::size_t output_size = OutputSize;
-    static constexpr std::size_t size = OutputSize;
 
 private:
     Logic logic_;
@@ -157,22 +140,6 @@ public:
     // 出力への参照を取得
     __host__ __device__ const output_type& output() const { return output_; }
     __host__ __device__ output_type& output() { return output_; }
-    
-    // Variable Concept 実装
-    __host__ __device__ value_type* data() { return output_.data(); }
-    __host__ __device__ const value_type* data() const { return output_.data(); }
-    
-    __host__ __device__ value_type& operator[](std::size_t idx) { return output_[idx]; }
-    __host__ __device__ const value_type& operator[](std::size_t idx) const { return output_[idx]; }
-    
-    __host__ __device__ value_type* grad() { return output_.grad(); }
-    __host__ __device__ const value_type* grad() const { return output_.grad(); }
-    
-    __host__ __device__ value_type& grad(std::size_t idx) { return output_.grad(idx); }
-    __host__ __device__ const value_type& grad(std::size_t idx) const { return output_.grad(idx); }
-    
-    __host__ __device__ void zero_grad() { output_.zero_grad(); }
-    __host__ __device__ void accumulate_grad(const value_type* grad_ptr) { output_.accumulate_grad(grad_ptr); }
 };
 
 // 3入力1出力のOperation
@@ -186,7 +153,6 @@ public:
     using output_type = Variable<typename Input1::value_type, OutputSize>;
     using value_type = typename Input1::value_type;
     static constexpr std::size_t output_size = OutputSize;
-    static constexpr std::size_t size = OutputSize;
 
 private:
     Logic logic_;
@@ -245,22 +211,6 @@ public:
     // 出力への参照を取得
     __host__ __device__ const output_type& output() const { return output_; }
     __host__ __device__ output_type& output() { return output_; }
-    
-    // Variable Concept 実装
-    __host__ __device__ value_type* data() { return output_.data(); }
-    __host__ __device__ const value_type* data() const { return output_.data(); }
-    
-    __host__ __device__ value_type& operator[](std::size_t idx) { return output_[idx]; }
-    __host__ __device__ const value_type& operator[](std::size_t idx) const { return output_[idx]; }
-    
-    __host__ __device__ value_type* grad() { return output_.grad(); }
-    __host__ __device__ const value_type* grad() const { return output_.grad(); }
-    
-    __host__ __device__ value_type& grad(std::size_t idx) { return output_.grad(idx); }
-    __host__ __device__ const value_type& grad(std::size_t idx) const { return output_.grad(idx); }
-    
-    __host__ __device__ void zero_grad() { output_.zero_grad(); }
-    __host__ __device__ void accumulate_grad(const value_type* grad_ptr) { output_.accumulate_grad(grad_ptr); }
 };
 
 // ファクトリメソッド
@@ -297,7 +247,6 @@ public:
     using output_type = Variable<typename Input::value_type, OutputSize>;
     using value_type = typename Input::value_type;
     static constexpr std::size_t output_size = OutputSize;
-    static constexpr std::size_t size = OutputSize;
 
 private:
     Logic logic_;
@@ -337,22 +286,6 @@ public:
     // 出力への参照を取得
     __host__ __device__ const output_type& output() const { return output_; }
     __host__ __device__ output_type& output() { return output_; }
-    
-    // Variable Concept 実装
-    __host__ __device__ value_type* data() { return output_.data(); }
-    __host__ __device__ const value_type* data() const { return output_.data(); }
-    
-    __host__ __device__ value_type& operator[](std::size_t idx) { return output_[idx]; }
-    __host__ __device__ const value_type& operator[](std::size_t idx) const { return output_[idx]; }
-    
-    __host__ __device__ value_type* grad() { return output_.grad(); }
-    __host__ __device__ const value_type* grad() const { return output_.grad(); }
-    
-    __host__ __device__ value_type& grad(std::size_t idx) { return output_.grad(idx); }
-    __host__ __device__ const value_type& grad(std::size_t idx) const { return output_.grad(idx); }
-    
-    __host__ __device__ void zero_grad() { output_.zero_grad(); }
-    __host__ __device__ void accumulate_grad(const value_type* grad_ptr) { output_.accumulate_grad(grad_ptr); }
 };
 
 // 2入力1出力のOperationRef
@@ -365,7 +298,6 @@ public:
     using output_type = Variable<typename Input1::value_type, OutputSize>;
     using value_type = typename Input1::value_type;
     static constexpr std::size_t output_size = OutputSize;
-    static constexpr std::size_t size = OutputSize;
 
 private:
     Logic logic_;
@@ -407,22 +339,6 @@ public:
     // 出力への参照を取得
     __host__ __device__ const output_type& output() const { return output_; }
     __host__ __device__ output_type& output() { return output_; }
-    
-    // Variable Concept 実装
-    __host__ __device__ value_type* data() { return output_.data(); }
-    __host__ __device__ const value_type* data() const { return output_.data(); }
-    
-    __host__ __device__ value_type& operator[](std::size_t idx) { return output_[idx]; }
-    __host__ __device__ const value_type& operator[](std::size_t idx) const { return output_[idx]; }
-    
-    __host__ __device__ value_type* grad() { return output_.grad(); }
-    __host__ __device__ const value_type* grad() const { return output_.grad(); }
-    
-    __host__ __device__ value_type& grad(std::size_t idx) { return output_.grad(idx); }
-    __host__ __device__ const value_type& grad(std::size_t idx) const { return output_.grad(idx); }
-    
-    __host__ __device__ void zero_grad() { output_.zero_grad(); }
-    __host__ __device__ void accumulate_grad(const value_type* grad_ptr) { output_.accumulate_grad(grad_ptr); }
 };
 
 // 3入力1出力のOperationRef
@@ -436,7 +352,6 @@ public:
     using output_type = Variable<typename Input1::value_type, OutputSize>;
     using value_type = typename Input1::value_type;
     static constexpr std::size_t output_size = OutputSize;
-    static constexpr std::size_t size = OutputSize;
 
 private:
     Logic logic_;
@@ -480,22 +395,6 @@ public:
     // 出力への参照を取得
     __host__ __device__ const output_type& output() const { return output_; }
     __host__ __device__ output_type& output() { return output_; }
-    
-    // Variable Concept 実装
-    __host__ __device__ value_type* data() { return output_.data(); }
-    __host__ __device__ const value_type* data() const { return output_.data(); }
-    
-    __host__ __device__ value_type& operator[](std::size_t idx) { return output_[idx]; }
-    __host__ __device__ const value_type& operator[](std::size_t idx) const { return output_[idx]; }
-    
-    __host__ __device__ value_type* grad() { return output_.grad(); }
-    __host__ __device__ const value_type* grad() const { return output_.grad(); }
-    
-    __host__ __device__ value_type& grad(std::size_t idx) { return output_.grad(idx); }
-    __host__ __device__ const value_type& grad(std::size_t idx) const { return output_.grad(idx); }
-    
-    __host__ __device__ void zero_grad() { output_.zero_grad(); }
-    __host__ __device__ void accumulate_grad(const value_type* grad_ptr) { output_.accumulate_grad(grad_ptr); }
 };
 
 // OperationRefファクトリメソッド

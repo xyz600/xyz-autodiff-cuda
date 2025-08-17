@@ -47,8 +47,28 @@ set_target_properties(test_operation PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# Operation Chaining テスト
+add_executable(test_operation_chaining test_operation_chaining.cu)
+target_link_libraries(test_operation_chaining xyz_autodiff gtest gtest_main)
+target_include_directories(test_operation_chaining PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_operation_chaining PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Operation Chaining Simple テスト
+add_executable(test_operation_chaining_simple test_operation_chaining_simple.cu)
+target_link_libraries(test_operation_chaining_simple xyz_autodiff gtest gtest_main)
+target_include_directories(test_operation_chaining_simple PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_operation_chaining_simple PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
 add_test(NAME DiagonalMatrixTest COMMAND test_diagonal_matrix)
 add_test(NAME OperationTest COMMAND test_operation)
+add_test(NAME OperationChainingTest COMMAND test_operation_chaining)
+add_test(NAME OperationChainingSimpleTest COMMAND test_operation_chaining_simple)

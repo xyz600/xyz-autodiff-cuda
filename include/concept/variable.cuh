@@ -21,7 +21,7 @@ concept VariableConcept = requires(T var) {
     
     // 型情報
     typename T::value_type;
-} && std::is_copy_constructible_v<T>;
+};
 
 // Backward propagation に必要な要件
 template <typename T>
