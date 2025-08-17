@@ -19,14 +19,23 @@ __global__ void test_operation_kernel(T* data1, T* grad1, T* data2, T* grad2, T*
     var1[0] = static_cast<T>(3.0);
     var2[0] = static_cast<T>(4.0);
     
-    // Operation適用: 型推論を使用（構築時に自動計算）
-    auto add_op = AddOperation(var1, var2);  // 型推論が効く！
+    // 出力Variable作成
+    T result_data = T{0};
+    T result_grad = T{0};
+    Variable<T, 1> result(&result_data, &result_grad);
     
-    // 結果の取得（内部に保存済み）
-    output[0] = add_op.value();
+    // Operation適用: 明示的な型指定
+    AddOperation<T, Variable<T, 1>, Variable<T, 1>, Variable<T, 1>> add_op;
     
-    // backward計算（デフォルトで単位勾配）
-    add_op.backward();
+    // forward計算
+    add_op.forward(var1, var2, result);
+    output[0] = result[0];
+    
+    // 出力に単位勾配を設定
+    result_grad = static_cast<T>(1.0);
+    
+    // backward計算
+    add_op.backward(result, var1, var2);
     
     // 勾配結果を保存
     output[1] = var1.grad(0);  // dL/dvar1
@@ -85,12 +94,13 @@ TEST_F(OperationTest, BasicAddition) {
 
 TEST_F(OperationTest, ConceptCheck) {
     using Var1 = Variable<float, 1>;
-    using AddOp = AddOperation<float, Var1, Var1>;
+    using AddOp = AddOperation<float, Var1, Var1, Var1>;  // Output型も追加
     
     // 型要件のチェック
     static_assert(std::is_same_v<AddOp::value_type, float>);
     static_assert(std::is_same_v<AddOp::input1_type, Var1>);
     static_assert(std::is_same_v<AddOp::input2_type, Var1>);
+    static_assert(std::is_same_v<AddOp::output_type, Var1>);
     
     // サイズチェック
     EXPECT_EQ(AddOp::output_size, 1);
