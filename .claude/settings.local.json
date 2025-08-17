@@ -11,7 +11,8 @@
       "Bash(./tests/test_variable)",
       "Bash(./tests/test_dense_matrix)",
       "Bash(ctest:*)",
-      "Bash(task test:*)"
+      "Bash(task test:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

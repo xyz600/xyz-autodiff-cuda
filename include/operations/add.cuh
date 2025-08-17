@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
-#include "../graph.cuh"
+#include "../node.cuh"
 #include "../concept/operation.cuh"
 
 namespace xyz_autodiff {
