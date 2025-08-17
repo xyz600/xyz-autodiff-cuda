@@ -6,7 +6,7 @@
 
 namespace xyz_autodiff {
 
-// 加算Operation
+// 加算Operation（可変長引数対応）
 template <typename T>
 class AddOperation {
 public:
@@ -16,41 +16,51 @@ public:
     // デフォルトコンストラクタ
     __host__ __device__ AddOperation() = default;
     
-    template <typename Input1, typename Input2>
-    __host__ __device__ auto operator()(const Input1& a, const Input2& b) const {
-        return Node<AddOperation<T>, Input1, Input2>(*this, a, b);
+    // 可変長引数版
+    template <typename... Inputs>
+    __host__ __device__ auto operator()(const Inputs&... inputs) const {
+        return Node<AddOperation<T>, Inputs...>(*this, inputs...);
     }
     
-    // forward計算: result = a + b
+    // forward計算: 2引数版（最適化）
     template <typename Input1, typename Input2>
-    __device__ void forward(const Input1& a, const Input2& b, T& result) const {
-        // 入力が値型かGraphかに応じて処理
-        auto a_val = get_value(a);
-        auto b_val = get_value(b);
-        result = a_val + b_val;
+    __device__ void forward(const Input1& input1, const Input2& input2, T& result) const {
+        result = get_value(input1) + get_value(input2);
+    }
+    
+    // forward計算: 可変長引数版
+    template <typename... Inputs>
+    requires (sizeof...(Inputs) > 2)
+    __device__ void forward(const Inputs&... inputs, T& result) const {
+        result = T{0};
+        sum_inputs(result, inputs...);
     }
     
     // vjp計算: Vector-Jacobian Product for each input
-    // vjp<0>: 第0引数(a)に対するvjp
-    template <std::size_t idx, typename Input1, typename Input2>
-    __device__ std::enable_if_t<idx == 0, T> vjp(const T& output_grad, const Input1& a, const Input2& b) const {
-        // d(a+b)/da = 1
-        return output_grad;
-    }
-    
-    // vjp<1>: 第1引数(b)に対するvjp  
-    template <std::size_t idx, typename Input1, typename Input2>
-    __device__ std::enable_if_t<idx == 1, T> vjp(const T& output_grad, const Input1& a, const Input2& b) const {
-        // d(a+b)/db = 1
+    template <std::size_t Idx, typename... Inputs>
+    __device__ T vjp(const T& output_grad, const Inputs&... inputs) const {
+        // d(sum)/d(input_i) = 1 for all inputs
         return output_grad;
     }
 
 private:
-    // 値の取得: Variable or Graph
+    // 再帰的にすべての入力を加算
+    template <typename Input>
+    __device__ void sum_inputs(T& result, const Input& input) const {
+        result += get_value(input);
+    }
+    
+    template <typename Input, typename... Rest>
+    __device__ void sum_inputs(T& result, const Input& input, const Rest&... rest) const {
+        result += get_value(input);
+        sum_inputs(result, rest...);
+    }
+    
+    // 値の取得: Variable or Node
     template <typename Input>
     __device__ auto get_value(const Input& input) const {
         if constexpr (requires { input.value(); }) {
-            return input.value();  // Graph
+            return input.value();  // Node
         } else {
             return input[0];  // Variable (assuming single element)
         }
