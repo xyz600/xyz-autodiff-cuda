@@ -2,12 +2,114 @@
 #include <cuda_runtime.h>
 #include <vector>
 #include <type_traits>
+#include <array>
 #include "../include/variable.cuh"
 #include "../include/operations/operation.cuh"
 #include "../include/operations/add_logic.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;
+
+// テスト用汎用バッファ構造体
+template <typename T, std::size_t NumVariables, std::size_t VarSize = 1>
+class TestBuffer {
+public:
+    // ホスト側データ
+    std::array<std::array<T, VarSize>, NumVariables> host_data;
+    std::array<std::array<T, VarSize>, NumVariables> host_grad;
+    std::vector<T> host_result;
+    
+    // デバイス側データ
+    std::array<cuda_unique_ptr<T[]>, NumVariables> device_data;
+    std::array<cuda_unique_ptr<T[]>, NumVariables> device_grad;
+    cuda_unique_ptr<T[]> device_result;
+    
+    // 結果格納用変数の数
+    std::size_t result_size;
+    
+    TestBuffer(std::size_t result_count = 0) : result_size(result_count) {
+        // ホストデータ初期化
+        for (auto& data : host_data) {
+            data.fill(T{});
+        }
+        for (auto& grad : host_grad) {
+            grad.fill(T{});
+        }
+        
+        if (result_size > 0) {
+            host_result.resize(result_size, T{});
+        }
+        
+        // デバイスメモリ確保
+        for (std::size_t i = 0; i < NumVariables; ++i) {
+            device_data[i] = makeCudaUniqueArray<T>(VarSize);
+            device_grad[i] = makeCudaUniqueArray<T>(VarSize);
+        }
+        
+        if (result_size > 0) {
+            device_result = makeCudaUniqueArray<T>(result_size);
+        }
+    }
+    
+    // ホストからデバイスへデータ転送
+    void toGpu() {
+        for (std::size_t i = 0; i < NumVariables; ++i) {
+            cudaMemcpy(device_data[i].get(), host_data[i].data(), VarSize * sizeof(T), cudaMemcpyHostToDevice);
+            cudaMemcpy(device_grad[i].get(), host_grad[i].data(), VarSize * sizeof(T), cudaMemcpyHostToDevice);
+        }
+        cudaDeviceSynchronize();
+    }
+    
+    // デバイスからホストへ結果転送
+    void toHost() {
+        if (result_size > 0) {
+            cudaMemcpy(host_result.data(), device_result.get(), result_size * sizeof(T), cudaMemcpyDeviceToHost);
+        }
+        
+        // 勾配も取得（テスト検証用）
+        for (std::size_t i = 0; i < NumVariables; ++i) {
+            cudaMemcpy(host_grad[i].data(), device_grad[i].get(), VarSize * sizeof(T), cudaMemcpyDeviceToHost);
+        }
+        cudaDeviceSynchronize();
+    }
+    
+    // 指定したインデックスの変数データを設定
+    void setData(std::size_t var_idx, std::size_t element_idx, T value) {
+        if (var_idx < NumVariables && element_idx < VarSize) {
+            host_data[var_idx][element_idx] = value;
+        }
+    }
+    
+    // 指定したインデックスの勾配データを設定
+    void setGrad(std::size_t var_idx, std::size_t element_idx, T value) {
+        if (var_idx < NumVariables && element_idx < VarSize) {
+            host_grad[var_idx][element_idx] = value;
+        }
+    }
+    
+    // デバイスポインタ取得
+    T* getDeviceData(std::size_t var_idx) {
+        return var_idx < NumVariables ? device_data[var_idx].get() : nullptr;
+    }
+    
+    T* getDeviceGrad(std::size_t var_idx) {
+        return var_idx < NumVariables ? device_grad[var_idx].get() : nullptr;
+    }
+    
+    T* getDeviceResult() {
+        return device_result.get();
+    }
+    
+    // 結果値取得
+    T getResult(std::size_t idx) const {
+        return idx < result_size ? host_result[idx] : T{};
+    }
+    
+    // 勾配値取得
+    T getGrad(std::size_t var_idx, std::size_t element_idx) const {
+        return (var_idx < NumVariables && element_idx < VarSize) ? host_grad[var_idx][element_idx] : T{};
+    }
+};
 
 // Operation テスト用のCUDAカーネル
 template <typename T>
@@ -50,41 +152,26 @@ protected:
 TEST_F(OperationTest, BasicAddition) {
     using T = float;
     
-    // ホストメモリ
-    std::vector<T> host_result(3, 0);
+    // テストバッファ作成（2変数、結果3個）
+    TestBuffer<T, 2> buffer(3);
     
-    // デバイスメモリ確保
-    auto device_data1 = makeCudaUniqueArray<T>(1);
-    auto device_grad1 = makeCudaUniqueArray<T>(1);
-    auto device_data2 = makeCudaUniqueArray<T>(1);
-    auto device_grad2 = makeCudaUniqueArray<T>(1);
-    auto device_result = makeCudaUniqueArray<T>(3);
-    
-    ASSERT_NE(device_data1, nullptr);
-    ASSERT_NE(device_grad1, nullptr);
-    ASSERT_NE(device_data2, nullptr);
-    ASSERT_NE(device_grad2, nullptr);
-    ASSERT_NE(device_result, nullptr);
-    
-    // 勾配初期化
-    T zero = 0.0f;
-    ASSERT_EQ(cudaMemcpy(device_grad1.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_grad2.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+    // 勾配初期化（データは自動的にゼロ初期化される）
+    buffer.toGpu();
     
     // カーネル実行
     test_operation_kernel<T><<<1, 1>>>(
-        device_data1.get(), device_grad1.get(),
-        device_data2.get(), device_grad2.get(),
-        device_result.get());
+        buffer.getDeviceData(0), buffer.getDeviceGrad(0),
+        buffer.getDeviceData(1), buffer.getDeviceGrad(1),
+        buffer.getDeviceResult());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_result.data(), device_result.get(), 3 * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    buffer.toHost();
     
     // 検証
-    EXPECT_FLOAT_EQ(host_result[0], 7.0f);  // 3 + 4 = 7
-    EXPECT_FLOAT_EQ(host_result[1], 1.0f);  // d(3+4)/d3 = 1
-    EXPECT_FLOAT_EQ(host_result[2], 1.0f);  // d(3+4)/d4 = 1
+    EXPECT_FLOAT_EQ(buffer.getResult(0), 7.0f);  // 3 + 4 = 7
+    EXPECT_FLOAT_EQ(buffer.getResult(1), 1.0f);  // d(3+4)/d3 = 1
+    EXPECT_FLOAT_EQ(buffer.getResult(2), 1.0f);  // d(3+4)/d4 = 1
 }
 
 // OperationRef テスト用のCUDAカーネル
@@ -120,47 +207,27 @@ __global__ void test_operation_ref_kernel(T* data1, T* grad1, T* data2, T* grad2
 TEST_F(OperationTest, BasicAdditionRef) {
     using T = float;
     
-    // ホストメモリ
-    std::vector<T> host_result(3, 0);
+    // テストバッファ作成（3変数：入力2個+出力1個、結果3個）
+    TestBuffer<T, 3> buffer(3);
     
-    // デバイスメモリ確保
-    auto device_data1 = makeCudaUniqueArray<T>(1);
-    auto device_grad1 = makeCudaUniqueArray<T>(1);
-    auto device_data2 = makeCudaUniqueArray<T>(1);
-    auto device_grad2 = makeCudaUniqueArray<T>(1);
-    auto device_output_data = makeCudaUniqueArray<T>(1);
-    auto device_output_grad = makeCudaUniqueArray<T>(1);
-    auto device_result = makeCudaUniqueArray<T>(3);
-    
-    ASSERT_NE(device_data1, nullptr);
-    ASSERT_NE(device_grad1, nullptr);
-    ASSERT_NE(device_data2, nullptr);
-    ASSERT_NE(device_grad2, nullptr);
-    ASSERT_NE(device_output_data, nullptr);
-    ASSERT_NE(device_output_grad, nullptr);
-    ASSERT_NE(device_result, nullptr);
-    
-    // 勾配初期化
-    T zero = 0.0f;
-    ASSERT_EQ(cudaMemcpy(device_grad1.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_grad2.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_output_grad.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+    // データとバッファ初期化
+    buffer.toGpu();
     
     // カーネル実行
     test_operation_ref_kernel<T><<<1, 1>>>(
-        device_data1.get(), device_grad1.get(),
-        device_data2.get(), device_grad2.get(),
-        device_output_data.get(), device_output_grad.get(),
-        device_result.get());
+        buffer.getDeviceData(0), buffer.getDeviceGrad(0),
+        buffer.getDeviceData(1), buffer.getDeviceGrad(1),
+        buffer.getDeviceData(2), buffer.getDeviceGrad(2),
+        buffer.getDeviceResult());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_result.data(), device_result.get(), 3 * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    buffer.toHost();
     
     // 検証
-    EXPECT_FLOAT_EQ(host_result[0], 7.0f);  // 3 + 4 = 7
-    EXPECT_FLOAT_EQ(host_result[1], 1.0f);  // d(3+4)/d3 = 1
-    EXPECT_FLOAT_EQ(host_result[2], 1.0f);  // d(3+4)/d4 = 1
+    EXPECT_FLOAT_EQ(buffer.getResult(0), 7.0f);  // 3 + 4 = 7
+    EXPECT_FLOAT_EQ(buffer.getResult(1), 1.0f);  // d(3+4)/d3 = 1
+    EXPECT_FLOAT_EQ(buffer.getResult(2), 1.0f);  // d(3+4)/d4 = 1
 }
 
 TEST_F(OperationTest, ConceptCheck) {
