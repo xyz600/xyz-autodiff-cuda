@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(task build:debug)",
+      "Bash(task build:release)"
+    ],
+    "deny": []
+  }
+}
