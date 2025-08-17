@@ -17,8 +17,6 @@ include(GNUInstallDirs)
 
 add_library(xyz_autodiff
     src/tensor.cu
-    src/operations.cu
-    src/backward.cu
 )
 
 target_include_directories(xyz_autodiff
@@ -30,7 +28,6 @@ target_include_directories(xyz_autodiff
 target_link_libraries(xyz_autodiff
     PUBLIC
         CUDA::cudart
-        CUDA::cublas
 )
 
 set_target_properties(xyz_autodiff PROPERTIES

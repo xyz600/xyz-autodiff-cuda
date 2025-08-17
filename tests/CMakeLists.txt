@@ -1,8 +1,2 @@
 add_executable(test_tensor test_tensor.cu)
 target_link_libraries(test_tensor xyz_autodiff)
-
-add_executable(test_operations test_operations.cu)
-target_link_libraries(test_operations xyz_autodiff)
-
-add_executable(test_backward test_backward.cu)
-target_link_libraries(test_backward xyz_autodiff)

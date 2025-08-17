@@ -1,5 +1,2 @@
-add_executable(basic_example basic_example.cu)
-target_link_libraries(basic_example xyz_autodiff)
-
 add_executable(neural_network neural_network.cu)
 target_link_libraries(neural_network xyz_autodiff)
