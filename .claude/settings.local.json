@@ -3,7 +3,15 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(task build:debug)",
-      "Bash(task build:release)"
+      "Bash(task build:release)",
+      "Bash(rm:*)",
+      "Bash(cmake:*)",
+      "Bash(task clean:*)",
+      "Bash(ninja tests:*)",
+      "Bash(./tests/test_variable)",
+      "Bash(./tests/test_dense_matrix)",
+      "Bash(ctest:*)",
+      "Bash(task test:*)"
     ],
     "deny": []
   }

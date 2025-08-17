@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.18)
 project(xyz_autodiff VERSION 1.0.0 LANGUAGES CXX CUDA)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 find_package(CUDAToolkit REQUIRED)
@@ -15,25 +15,20 @@ option(BUILD_EXAMPLES "Build examples" ON)
 
 include(GNUInstallDirs)
 
-add_library(xyz_autodiff
-    src/tensor.cu
-)
+add_library(xyz_autodiff INTERFACE)
 
 target_include_directories(xyz_autodiff
-    PUBLIC
+    INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 target_link_libraries(xyz_autodiff
-    PUBLIC
+    INTERFACE
         CUDA::cudart
 )
 
-set_target_properties(xyz_autodiff PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    POSITION_INDEPENDENT_CODE ON
-)
+# INTERFACEライブラリにはset_target_propertiesは不要
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
