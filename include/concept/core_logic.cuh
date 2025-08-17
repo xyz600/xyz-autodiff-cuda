@@ -11,6 +11,9 @@ template <typename T, typename Input, typename Output>
 concept UnaryLogicConcept = 
     VariableConcept<Input> && VariableConcept<Output> &&
     requires(T logic, Output& output, const Input& input) {
+    // constexpr outputDim を要求
+    { T::outputDim } -> std::convertible_to<std::size_t>;
+    
     // forward: 出力に結果を書き込む
     { logic.forward(output, input) } -> std::same_as<void>;
     
@@ -24,6 +27,9 @@ concept BinaryLogicConcept =
     VariableConcept<Input1> && VariableConcept<Input2> && VariableConcept<Output> &&
     requires(T logic, Output& output, const Input1& input1, const Input2& input2, 
              Input1& input1_ref, Input2& input2_ref) {
+    // constexpr outputDim を要求
+    { T::outputDim } -> std::convertible_to<std::size_t>;
+    
     // forward: 出力に結果を書き込む
     { logic.forward(output, input1, input2) } -> std::same_as<void>;
     
@@ -37,6 +43,9 @@ concept TernaryLogicConcept =
     VariableConcept<Input1> && VariableConcept<Input2> && VariableConcept<Input3> && VariableConcept<Output> &&
     requires(T logic, Output& output, const Input1& input1, const Input2& input2, const Input3& input3,
              Input1& input1_ref, Input2& input2_ref, Input3& input3_ref) {
+    // constexpr outputDim を要求
+    { T::outputDim } -> std::convertible_to<std::size_t>;
+    
     // forward: 出力に結果を書き込む
     { logic.forward(output, input1, input2, input3) } -> std::same_as<void>;
     
@@ -46,28 +55,23 @@ concept TernaryLogicConcept =
 
 // パラメータ制約用のconcept群
 
-// 1入力1出力のパラメータ制約
-template <typename Input, typename Output>
+// 1入力のパラメータ制約
+template <typename Input>
 concept UnaryLogicParameterConcept = 
-    DifferentiableVariableConcept<Input> && 
-    VariableConcept<Output> &&
-    std::is_same_v<typename Input::value_type, typename Output::value_type>;
+    DifferentiableVariableConcept<Input>;
 
-// 2入力1出力のパラメータ制約
-template <typename Input1, typename Input2, typename Output>
+// 2入力のパラメータ制約
+template <typename Input1, typename Input2>
 concept BinaryLogicParameterConcept = 
     DifferentiableVariableConcept<Input1> && DifferentiableVariableConcept<Input2> && 
-    VariableConcept<Output> &&
-    std::is_same_v<typename Input1::value_type, typename Input2::value_type> &&
-    std::is_same_v<typename Input1::value_type, typename Output::value_type>;
+    std::is_same_v<typename Input1::value_type, typename Input2::value_type>;
 
-// 3入力1出力のパラメータ制約
-template <typename Input1, typename Input2, typename Input3, typename Output>
+// 3入力のパラメータ制約
+template <typename Input1, typename Input2, typename Input3>
 concept TernaryLogicParameterConcept = 
     DifferentiableVariableConcept<Input1> && DifferentiableVariableConcept<Input2> && 
-    DifferentiableVariableConcept<Input3> && VariableConcept<Output> &&
+    DifferentiableVariableConcept<Input3> &&
     std::is_same_v<typename Input1::value_type, typename Input2::value_type> &&
-    std::is_same_v<typename Input1::value_type, typename Input3::value_type> &&
-    std::is_same_v<typename Input1::value_type, typename Output::value_type>;
+    std::is_same_v<typename Input1::value_type, typename Input3::value_type>;
 
 } // namespace xyz_autodiff

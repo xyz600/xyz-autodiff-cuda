@@ -8,7 +8,7 @@
 namespace xyz_autodiff {
 
 // 1入力1出力のOperation
-template <typename Logic, typename Input, std::size_t OutputSize>
+template <std::size_t OutputSize, typename Logic, typename Input>
 requires UnaryLogicConcept<Logic, Input, Variable<typename Input::value_type, OutputSize>>
 class UnaryOperation {
 public:
@@ -73,7 +73,7 @@ public:
 };
 
 // 2入力1出力のOperation
-template <typename Logic, typename Input1, typename Input2, std::size_t OutputSize>
+template <std::size_t OutputSize, typename Logic, typename Input1, typename Input2>
 requires BinaryLogicConcept<Logic, Input1, Input2, Variable<typename Input1::value_type, OutputSize>>
 class BinaryOperation {
 public:
@@ -120,6 +120,7 @@ public:
             output_data_[i] = value_type{};
             output_grad_[i] = value_type{};
         }
+        forward();
     }
     
     // forward計算
@@ -141,7 +142,7 @@ public:
 };
 
 // 3入力1出力のOperation
-template <typename Logic, typename Input1, typename Input2, typename Input3, std::size_t OutputSize>
+template <std::size_t OutputSize, typename Logic, typename Input1, typename Input2, typename Input3>
 requires TernaryLogicConcept<Logic, Input1, Input2, Input3, Variable<typename Input1::value_type, OutputSize>>
 class TernaryOperation {
 public:
@@ -214,24 +215,24 @@ public:
 // ファクトリメソッド
 
 // UnaryOperationのファクトリ
-template <typename Logic, typename Input, std::size_t OutputSize>
+template <std::size_t OutputSize, typename Logic, typename Input>
 requires UnaryLogicConcept<Logic, Input, Variable<typename Input::value_type, OutputSize>>
 __host__ __device__ auto make_unary_op(const Logic& logic, const Input& input) {
-    return UnaryOperation<Logic, Input, OutputSize>(logic, input);
+    return UnaryOperation<OutputSize, Logic, Input>(logic, input);
 }
 
 // BinaryOperationのファクトリ
-template <typename Logic, typename Input1, typename Input2, std::size_t OutputSize>
+template <std::size_t OutputSize, typename Logic, typename Input1, typename Input2>
 requires BinaryLogicConcept<Logic, Input1, Input2, Variable<typename Input1::value_type, OutputSize>>
 __host__ __device__ auto make_binary_op(const Logic& logic, const Input1& input1, const Input2& input2) {
-    return BinaryOperation<Logic, Input1, Input2, OutputSize>(logic, input1, input2);
+    return BinaryOperation<OutputSize, Logic, Input1, Input2>(logic, input1, input2);
 }
 
 // TernaryOperationのファクトリ
-template <typename Logic, typename Input1, typename Input2, typename Input3, std::size_t OutputSize>
+template <std::size_t OutputSize, typename Logic, typename Input1, typename Input2, typename Input3>
 requires TernaryLogicConcept<Logic, Input1, Input2, Input3, Variable<typename Input1::value_type, OutputSize>>
 __host__ __device__ auto make_ternary_op(const Logic& logic, const Input1& input1, const Input2& input2, const Input3& input3) {
-    return TernaryOperation<Logic, Input1, Input2, Input3, OutputSize>(logic, input1, input2, input3);
+    return TernaryOperation<OutputSize, Logic, Input1, Input2, Input3>(logic, input1, input2, input3);
 }
 
 } // namespace xyz_autodiff
