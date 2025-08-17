@@ -20,8 +20,8 @@ __global__ void test_operation_kernel(T* data1, T* grad1, T* data2, T* grad2, T*
     var1[0] = static_cast<T>(3.0);
     var2[0] = static_cast<T>(4.0);
     
-    // make_add関数を使用してBinaryOperationを作成（内部でbufferを保持、自動でforward実行）
-    auto op = make_add(var1, var2);
+    // add関数を使用してBinaryOperationを作成（内部でbufferを保持、自動でforward実行）
+    auto op = op::add(var1, var2);
     
     // 結果を取得（forward計算は自動実行済み）
     result[0] = op.output()[0];
@@ -88,6 +88,7 @@ TEST_F(OperationTest, BasicAddition) {
 }
 
 TEST_F(OperationTest, ConceptCheck) {
+    using namespace op;
     using Var1 = Variable<float, 1>;
     using AddLogicType = AddLogic<Var1, Var1>;
     using AddOp = BinaryOperation<AddLogicType::outputDim, AddLogicType, Var1, Var1>;
