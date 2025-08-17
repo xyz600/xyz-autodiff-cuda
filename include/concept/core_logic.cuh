@@ -47,30 +47,27 @@ concept TernaryLogicConcept =
 // パラメータ制約用のconcept群
 
 // 1入力1出力のパラメータ制約
-template <typename Input, typename Output, typename T>
+template <typename Input, typename Output>
 concept UnaryLogicParameterConcept = 
     DifferentiableVariableConcept<Input> && 
     VariableConcept<Output> &&
-    std::is_same_v<typename Input::value_type, T> &&
-    std::is_same_v<typename Output::value_type, T>;
+    std::is_same_v<typename Input::value_type, typename Output::value_type>;
 
 // 2入力1出力のパラメータ制約
-template <typename Input1, typename Input2, typename Output, typename T>
+template <typename Input1, typename Input2, typename Output>
 concept BinaryLogicParameterConcept = 
     DifferentiableVariableConcept<Input1> && DifferentiableVariableConcept<Input2> && 
     VariableConcept<Output> &&
-    std::is_same_v<typename Input1::value_type, T> &&
-    std::is_same_v<typename Input2::value_type, T> &&
-    std::is_same_v<typename Output::value_type, T>;
+    std::is_same_v<typename Input1::value_type, typename Input2::value_type> &&
+    std::is_same_v<typename Input1::value_type, typename Output::value_type>;
 
 // 3入力1出力のパラメータ制約
-template <typename Input1, typename Input2, typename Input3, typename Output, typename T>
+template <typename Input1, typename Input2, typename Input3, typename Output>
 concept TernaryLogicParameterConcept = 
     DifferentiableVariableConcept<Input1> && DifferentiableVariableConcept<Input2> && 
     DifferentiableVariableConcept<Input3> && VariableConcept<Output> &&
-    std::is_same_v<typename Input1::value_type, T> &&
-    std::is_same_v<typename Input2::value_type, T> &&
-    std::is_same_v<typename Input3::value_type, T> &&
-    std::is_same_v<typename Output::value_type, T>;
+    std::is_same_v<typename Input1::value_type, typename Input2::value_type> &&
+    std::is_same_v<typename Input1::value_type, typename Input3::value_type> &&
+    std::is_same_v<typename Input1::value_type, typename Output::value_type>;
 
 } // namespace xyz_autodiff

@@ -7,9 +7,12 @@
 namespace xyz_autodiff {
 
 // 加算ロジック（2入力1出力用）
-template <typename T, typename Input1, typename Input2, typename Output>
-requires BinaryLogicParameterConcept<Input1, Input2, Output, T>
+template <typename Input1, typename Input2, std::size_t OutputSize>
+requires BinaryLogicParameterConcept<Input1, Input2, Variable<typename Input1::value_type, OutputSize>>
 struct AddLogic {
+    using T = typename Input1::value_type;
+    using Output = Variable<T, OutputSize>;
+    
     // デフォルトコンストラクタ
     __host__ __device__ AddLogic() = default;
     
@@ -28,21 +31,12 @@ struct AddLogic {
     }
 };
 
-// 型推論のためのヘルパー関数
-template <typename T, typename Input1, typename Input2, typename Output>
-requires BinaryLogicParameterConcept<Input1, Input2, Output, T>
-__host__ __device__ auto make_add_logic() {
-    return AddLogic<T, Input1, Input2, Output>{};
-}
-
 // BinaryOperationを返すファクトリ関数
-template <typename Input1, typename Input2, std::size_t OutputSize>
-requires BinaryLogicParameterConcept<Input1, Input2, Variable<typename Input1::value_type, OutputSize>, typename Input1::value_type>
+template <std::size_t OutputSize, typename Input1, typename Input2>
+requires BinaryLogicParameterConcept<Input1, Input2, Variable<typename Input1::value_type, OutputSize>>
 __host__ __device__ auto make_add(const Input1& input1, const Input2& input2) {
-    using T = typename Input1::value_type;
-    using Output = Variable<T, OutputSize>;
-    AddLogic<T, Input1, Input2, Output> logic;
-    return make_binary_op<AddLogic<T, Input1, Input2, Output>, Input1, Input2, OutputSize>(
+    AddLogic<Input1, Input2, OutputSize> logic;
+    return make_binary_op<AddLogic<Input1, Input2, OutputSize>, Input1, Input2, OutputSize>(
         logic, input1, input2);
 }
 

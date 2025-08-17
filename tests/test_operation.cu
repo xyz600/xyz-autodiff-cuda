@@ -21,7 +21,7 @@ __global__ void test_operation_kernel(T* data1, T* grad1, T* data2, T* grad2, T*
     var2[0] = static_cast<T>(4.0);
     
     // make_add関数を使用してBinaryOperationを作成（内部でbufferを保持）
-    auto op = make_add<Variable<T, 1>, Variable<T, 1>, 1>(var1, var2);
+    auto op = make_add<1>(var1, var2);
     
     // forward計算
     op.forward();
@@ -90,7 +90,7 @@ TEST_F(OperationTest, BasicAddition) {
 
 TEST_F(OperationTest, ConceptCheck) {
     using Var1 = Variable<float, 1>;
-    using AddLogicType = AddLogic<float, Var1, Var1, Var1>;
+    using AddLogicType = AddLogic<Var1, Var1, 1>;
     using AddOp = BinaryOperation<AddLogicType, Var1, Var1, 1>;
     
     // 型要件のチェック
