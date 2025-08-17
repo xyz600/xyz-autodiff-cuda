@@ -25,7 +25,7 @@ concept VariableConcept = requires(T var) {
 
 // Backward propagation に必要な要件
 template <typename T>
-concept DifferentiableVariableConcept = Variable<T> && requires(T var) {
+concept DifferentiableVariableConcept = VariableConcept<T> && requires(T var) {
     // 勾配データへのアクセス
     { var.grad() } -> std::convertible_to<typename T::value_type*>;
     { var.grad() } -> std::convertible_to<const typename T::value_type*>;

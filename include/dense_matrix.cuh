@@ -82,12 +82,8 @@ public:
     }
     
     // 疎行列サポート (密行列なので全て有効)
-    __device__ bool is_active_in_col(std::size_t row, std::size_t col) const {
-        return true;  // 密行列なので全て有効
-    }
-    
-    __device__ bool is_active_in_row(std::size_t row, std::size_t col) const {
-        return true;  // 密行列なので全て有効
+    __device__ bool is_active_cell(std::size_t row, std::size_t col) const {
+        return true;
     }
 };
 
@@ -108,7 +104,7 @@ __device__ auto operator*(const A& a, const B& b) {
             
             for (std::size_t k = 0; k < A::cols; ++k) {
                 // 疎行列の最適化: 両方の要素がアクティブな場合のみ計算
-                if (a.is_active_in_row(i, k) && b.is_active_in_col(k, j)) {
+                if (a.is_active_cell(i, k) && b.is_active_cell(k, j)) {
                     sum += a(i, k) * b(k, j);
                 }
             }

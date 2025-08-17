@@ -3,6 +3,8 @@
 #include <vector>
 #include "../include/dense_matrix.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
+#include "concept/matrix.cuh"
+#include "concept/variable.cuh"
 
 using namespace xyz_autodiff;
 
@@ -47,8 +49,8 @@ __global__ void test_dense_matrix_operations_kernel(T* grad_values, T* output) {
     matrix.accumulate_grad(grad_values);
     
     // 疎行列サポートテスト
-    bool active_test1 = matrix.is_active_in_col(0, 0);
-    bool active_test2 = matrix.is_active_in_row(0, 0);
+    bool active_test1 = matrix.is_active_cell(0, 0);
+    bool active_test2 = matrix.is_active_cell(0, 1);
     
     // 結果保存
     for (std::size_t i = 0; i < matrix.size; ++i) {
@@ -203,7 +205,12 @@ TEST_F(DenseMatrixTest, AccessorConsistency) {
 }
 
 TEST_F(DenseMatrixTest, ConceptCheck) {
-   
+
+    static_assert(xyz_autodiff::VariableConcept<DenseMatrix<float, 3, 4>>);
+    static_assert(xyz_autodiff::DifferentiableVariableConcept<DenseMatrix<float, 3, 4>>);
+    static_assert(xyz_autodiff::MatrixViewConcept<DenseMatrix<float, 3, 4>>);
+    static_assert(xyz_autodiff::DifferentiableMatrixViewConcept<DenseMatrix<float, 3, 4>>);
+
     // サイズチェック
     EXPECT_EQ((xyz_autodiff::DenseMatrix<float, 3, 4>::rows), 3);
     EXPECT_EQ((xyz_autodiff::DenseMatrix<float, 3, 4>::cols), 4);

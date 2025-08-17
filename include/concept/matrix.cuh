@@ -14,18 +14,15 @@ concept MatrixViewConcept = requires(T view) {
     { T::cols } -> std::convertible_to<std::size_t>;
     
     // 要素へのアクセス (値)
-    { view(std::size_t{}, std::size_t{}) } -> std::convertible_to<typename T::value_type&>;
-    { view(std::size_t{}, std::size_t{}) } -> std::convertible_to<const typename T::value_type&>;
+    { operator()(std::size_t{}, std::size_t{}) } -> std::convertible_to<typename T::value_type&>;
+    { operator()(std::size_t{}, std::size_t{}) } -> std::convertible_to<const typename T::value_type&>;
     
     // データへの直接アクセス
     { view.data() } -> std::convertible_to<typename T::value_type*>;
     { view.data() } -> std::convertible_to<const typename T::value_type*>;
     
-    // 疎行列サポート: 指定列の有効行を取得 (bool配列)
-    { view.active_rows_in_col(std::size_t{}) } -> std::convertible_to<std::span<const bool>>;
-    
-    // 疎行列サポート: 指定行の有効列を取得 (bool配列)
-    { view.active_cols_in_row(std::size_t{}) } -> std::convertible_to<std::span<const bool>>;
+    // 疎行列サポート: 指定のセルの有効業を取得
+    { view.is_active_cell(std::size_t{}, std::size_t{}) } -> std::convertible_to<bool>;
     
     // 型情報
     typename T::value_type;
