@@ -87,18 +87,104 @@ TEST_F(OperationTest, BasicAddition) {
     EXPECT_FLOAT_EQ(host_result[2], 1.0f);  // d(3+4)/d4 = 1
 }
 
+// OperationRef テスト用のCUDAカーネル
+template <typename T>
+__global__ void test_operation_ref_kernel(T* data1, T* grad1, T* data2, T* grad2, T* output_data, T* output_grad, T* result) {
+    // Variable作成
+    Variable<T, 1> var1(data1, grad1);
+    Variable<T, 1> var2(data2, grad2);
+    Variable<T, 1> output_var(output_data, output_grad);
+    
+    // 値設定
+    var1[0] = static_cast<T>(3.0);
+    var2[0] = static_cast<T>(4.0);
+    
+    // add_ref関数を使用してBinaryOperationRefを作成（外部バッファを参照）
+    auto op_ref = op::add_ref(var1, var2, output_var);
+    
+    // forward計算
+    op_ref.forward();
+    result[0] = op_ref.output()[0];
+    
+    // 出力に単位勾配を設定してbackward計算
+    op_ref.output().grad(0) = static_cast<T>(1.0);
+    
+    // backward計算
+    op_ref.backward();
+    
+    // 勾配結果を保存
+    result[1] = var1.grad(0);  // dL/dvar1
+    result[2] = var2.grad(0);  // dL/dvar2
+}
+
+TEST_F(OperationTest, BasicAdditionRef) {
+    using T = float;
+    
+    // ホストメモリ
+    std::vector<T> host_result(3, 0);
+    
+    // デバイスメモリ確保
+    auto device_data1 = makeCudaUniqueArray<T>(1);
+    auto device_grad1 = makeCudaUniqueArray<T>(1);
+    auto device_data2 = makeCudaUniqueArray<T>(1);
+    auto device_grad2 = makeCudaUniqueArray<T>(1);
+    auto device_output_data = makeCudaUniqueArray<T>(1);
+    auto device_output_grad = makeCudaUniqueArray<T>(1);
+    auto device_result = makeCudaUniqueArray<T>(3);
+    
+    ASSERT_NE(device_data1, nullptr);
+    ASSERT_NE(device_grad1, nullptr);
+    ASSERT_NE(device_data2, nullptr);
+    ASSERT_NE(device_grad2, nullptr);
+    ASSERT_NE(device_output_data, nullptr);
+    ASSERT_NE(device_output_grad, nullptr);
+    ASSERT_NE(device_result, nullptr);
+    
+    // 勾配初期化
+    T zero = 0.0f;
+    ASSERT_EQ(cudaMemcpy(device_grad1.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(device_grad2.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(device_output_grad.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+    
+    // カーネル実行
+    test_operation_ref_kernel<T><<<1, 1>>>(
+        device_data1.get(), device_grad1.get(),
+        device_data2.get(), device_grad2.get(),
+        device_output_data.get(), device_output_grad.get(),
+        device_result.get());
+    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
+    
+    // 結果をホストにコピー
+    ASSERT_EQ(cudaMemcpy(host_result.data(), device_result.get(), 3 * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    
+    // 検証
+    EXPECT_FLOAT_EQ(host_result[0], 7.0f);  // 3 + 4 = 7
+    EXPECT_FLOAT_EQ(host_result[1], 1.0f);  // d(3+4)/d3 = 1
+    EXPECT_FLOAT_EQ(host_result[2], 1.0f);  // d(3+4)/d4 = 1
+}
+
 TEST_F(OperationTest, ConceptCheck) {
     using namespace op;
     using Var1 = Variable<float, 1>;
     using AddLogicType = AddLogic<Var1, Var1>;
     using AddOp = BinaryOperation<AddLogicType::outputDim, AddLogicType, Var1, Var1>;
+    using AddOpRef = BinaryOperationRef<AddLogicType::outputDim, AddLogicType, Var1, Var1>;
     
-    // 型要件のチェック
+    // BinaryOperation型要件のチェック
     static_assert(std::is_same_v<AddOp::input1_type, Var1>);
     static_assert(std::is_same_v<AddOp::input2_type, Var1>);
     static_assert(std::is_same_v<AddOp::value_type, float>);
     static_assert(AddOp::output_size == 1);
     static_assert(AddLogicType::outputDim == 1);
+    
+    // BinaryOperationRef型要件のチェック
+    static_assert(std::is_same_v<AddOpRef::input1_type, Var1>);
+    static_assert(std::is_same_v<AddOpRef::input2_type, Var1>);
+    static_assert(std::is_same_v<AddOpRef::value_type, float>);
+    static_assert(AddOpRef::output_size == 1);
+    
+    // 出力型の一致確認
+    static_assert(std::is_same_v<AddOp::output_type, AddOpRef::output_type>);
 }
 
 int main(int argc, char** argv) {
