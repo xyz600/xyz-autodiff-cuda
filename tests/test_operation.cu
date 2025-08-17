@@ -19,17 +19,14 @@ __global__ void test_operation_kernel(T* data1, T* grad1, T* data2, T* grad2, T*
     var1[0] = static_cast<T>(3.0);
     var2[0] = static_cast<T>(4.0);
     
-    // Operation適用: 直接計算
-    AddOperation<T, Variable<T, 1>, Variable<T, 1>> add_op;
+    // Operation適用: 型推論を使用（構築時に自動計算）
+    auto add_op = AddOperation(var1, var2);  // 型推論が効く！
     
-    // forward計算
-    T result;
-    add_op.forward(var1, var2, result);
-    output[0] = result;
+    // 結果の取得（内部に保存済み）
+    output[0] = add_op.value();
     
-    // backward計算
-    T output_grad = static_cast<T>(1.0);  // 出力に対する勾配（単位勾配）
-    add_op.backward(output_grad, var1, var2);
+    // backward計算（デフォルトで単位勾配）
+    add_op.backward();
     
     // 勾配結果を保存
     output[1] = var1.grad(0);  // dL/dvar1
