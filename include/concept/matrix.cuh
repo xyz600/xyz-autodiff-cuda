@@ -6,7 +6,7 @@
 
 namespace xyz_autodiff {
 
-// Forward propagation に必要な MatrixView の要件
+// 前方宣言
 template <typename T>
 concept MatrixViewConcept = requires(T view) {
     // コンパイル時に決定される行列サイズ
@@ -19,9 +19,12 @@ concept MatrixViewConcept = requires(T view) {
     // データへの直接アクセス
     { view.data() } -> std::convertible_to<typename T::value_type*>;
     { view.data() } -> std::convertible_to<const typename T::value_type*>;
+    
+    // transpose機能（型チェックは実装側で行う）
+    { view.transpose() };
         
     // 型情報
     typename T::value_type;
-} && std::is_copy_constructible_v<T>;
+};
 
 } // namespace xyz_autodiff

@@ -5,6 +5,7 @@
 #include <cuda_runtime.h>
 
 #include "concept/matrix.cuh"
+#include "matrix_view.cuh"
 
 namespace xyz_autodiff {
 
@@ -64,13 +65,25 @@ public:
     // === MatrixView concept の要件 ===
     
     // 2次元アクセス (値)
-    __device__ T operator()(std::size_t row, std::size_t col) {
+    __device__ T& operator()(std::size_t row, std::size_t col) {
         return data_[row * cols + col];
     }
     
-    __device__ T operator()(std::size_t row, std::size_t col) const {
+    __device__ const T& operator()(std::size_t row, std::size_t col) const {
         return data_[row * cols + col];
     }
+    
+    // transpose機能 - 新しいDenseMatrixを返す（データをコピー）
+    __host__ __device__ DenseMatrix<T, Cols, Rows> transpose() const {
+        DenseMatrix<T, Cols, Rows> result;
+        for (std::size_t i = 0; i < Rows; ++i) {
+            for (std::size_t j = 0; j < Cols; ++j) {
+                result(j, i) = (*this)(i, j);
+            }
+        }
+        return result;
+    }
+    
 };
 
 // 再帰テンプレートによるconstexprループ実装（疎行列サポート削除版）

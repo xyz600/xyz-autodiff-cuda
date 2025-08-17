@@ -15,7 +15,10 @@
       "Bash(mv:*)",
       "Bash(nvcc:*)",
       "Bash(/tmp/test_add_concept:*)",
-      "Bash(./tests/test_operation_chaining_simple)"
+      "Bash(./tests/test_operation_chaining_simple)",
+      "Bash(g++:*)",
+      "Bash(./debug_transpose)",
+      "Bash(./tests/test_matrix_transpose)"
     ],
     "deny": []
   }

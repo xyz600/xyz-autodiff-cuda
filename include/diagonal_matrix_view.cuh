@@ -77,6 +77,11 @@ public:
         }
     }
     
+    // transpose機能 - 対角行列は転置しても同じなので自分自身を返す
+    __host__ __device__ DiagonalMatrixView transpose() const {
+        return *this;
+    }
+    
     // Variable参照を取得
     __device__ const Variable<T, N>& variable() const { return variable_; }
 };
