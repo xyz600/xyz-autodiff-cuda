@@ -8,7 +8,7 @@ namespace xyz_autodiff {
 
 // Forward propagation に必要な MatrixView の要件
 template <typename T>
-concept MatrixView = requires(T view) {
+concept MatrixViewConcept = requires(T view) {
     // コンパイル時に決定される行列サイズ
     { T::rows } -> std::convertible_to<std::size_t>;
     { T::cols } -> std::convertible_to<std::size_t>;
@@ -33,7 +33,7 @@ concept MatrixView = requires(T view) {
 
 // Backward propagation に必要な MatrixView の要件
 template <typename T>
-concept DifferentiableMatrixView = MatrixView<T> && requires(T view) {
+concept DifferentiableMatrixViewConcept = MatrixViewConcept<T> && requires(T view) {
     // 勾配へのアクセス
     { view.grad() } -> std::convertible_to<typename T::value_type*>;
     { view.grad() } -> std::convertible_to<const typename T::value_type*>;

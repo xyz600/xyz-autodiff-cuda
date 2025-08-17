@@ -7,7 +7,7 @@ namespace xyz_autodiff {
 
 // Forward propagation に必要な要件
 template <typename T>
-concept Variable = requires(T var) {
+concept VariableConcept = requires(T var) {
     // コンパイル時に決定されるサイズ
     { T::size } -> std::convertible_to<std::size_t>;
     
@@ -25,7 +25,7 @@ concept Variable = requires(T var) {
 
 // Backward propagation に必要な要件
 template <typename T>
-concept DifferentiableVariable = Variable<T> && requires(T var) {
+concept DifferentiableVariableConcept = Variable<T> && requires(T var) {
     // 勾配データへのアクセス
     { var.grad() } -> std::convertible_to<typename T::value_type*>;
     { var.grad() } -> std::convertible_to<const typename T::value_type*>;

@@ -3,7 +3,6 @@
 #include <vector>
 #include "../include/variable.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
-// #include "../include/concept/variable.cuh"  // CUDA compiler concept limitations
 
 using namespace xyz_autodiff;
 

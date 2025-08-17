@@ -3,8 +3,6 @@
 #include <vector>
 #include "../include/dense_matrix.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
-// #include "../include/concept/variable.cuh"  // CUDA compiler concept limitations
-// #include "../include/concept/matrix.cuh"   // CUDA compiler concept limitations
 
 using namespace xyz_autodiff;
 

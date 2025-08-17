@@ -85,10 +85,4 @@ public:
     __device__ const Variable<T, N>& variable() const { return variable_; }
 };
 
-// ヘルパー関数
-template <typename T, std::size_t N>
-__host__ __device__ auto make_diagonal_view(const Variable<T, N>& var) {
-    return DiagonalMatrixView<T, N>(var);
-}
-
 } // namespace xyz_autodiff

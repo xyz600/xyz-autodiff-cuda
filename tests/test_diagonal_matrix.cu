@@ -3,7 +3,6 @@
 #include <vector>
 #include "../include/diagonal_matrix_view.cuh"
 #include "../include/dense_matrix.cuh"
-#include "../include/matrix_ops.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;
@@ -45,14 +44,14 @@ __global__ void test_diagonal_dense_multiply_kernel(T* diag_data, T* diag_grad, 
     dense_matrix(2, 0) = 5; dense_matrix(2, 1) = 6;
     
     // 行列積: diag * dense (3x3 * 3x2 = 3x2)
-    // auto result = diag_matrix * dense_matrix;
+    auto result = diag_matrix * dense_matrix;
     
     // // 結果を保存
-    // for (std::size_t i = 0; i < N; ++i) {
-    //     for (std::size_t j = 0; j < 2; ++j) {
-    //         result_output[i * 2 + j] = result(i, j);
-    //     }
-    // }
+    for (std::size_t i = 0; i < N; ++i) {
+        for (std::size_t j = 0; j < 2; ++j) {
+            result_output[i * 2 + j] = result(i, j);
+        }
+    }
 }
 
 // 密行列と対角行列の行列積テスト
@@ -72,14 +71,14 @@ __global__ void test_dense_diagonal_multiply_kernel(T* diag_data, T* diag_grad, 
     }
     
     // 行列積: dense * diag (2x3 * 3x3 = 2x3)
-    // auto result = dense_matrix * diag_matrix;
+    auto result = dense_matrix * diag_matrix;
     
     // // 結果を保存
-    // for (std::size_t i = 0; i < 2; ++i) {
-    //     for (std::size_t j = 0; j < N; ++j) {
-    //         result_output[i * N + j] = result(i, j);
-    //     }
-    // }
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < N; ++j) {
+            result_output[i * N + j] = result(i, j);
+        }
+    }
 }
 
 class DiagonalMatrixTest : public ::testing::Test {
