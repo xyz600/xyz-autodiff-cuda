@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(CUDAToolkit REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/xyz_autodiffTargets.cmake")
+
+check_required_components(xyz_autodiff)
+
+if(TARGET xyz_autodiff::xyz_autodiff)
+    set(xyz_autodiff_FOUND TRUE)
+    set(xyz_autodiff_LIBRARIES xyz_autodiff::xyz_autodiff)
+    get_target_property(xyz_autodiff_INCLUDE_DIRS xyz_autodiff::xyz_autodiff INTERFACE_INCLUDE_DIRECTORIES)
+else()
+    set(xyz_autodiff_FOUND FALSE)
+endif()

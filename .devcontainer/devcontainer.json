@@ -1,0 +1,35 @@
+{
+    "name": "Rust CUDA Development",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "runArgs": [
+        "--gpus=all",
+        "--privileged",
+        "--shm-size=256m"
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "rust-lang.rust-analyzer",
+                "vadimcn.vscode-lldb",
+                "ms-vscode.cmake-tools",
+                "ms-vscode.cpptools",
+                "nvidia.nsight-vscode-edition",
+                "tamasfe.even-better-toml",
+                "serayuzgur.crates"
+            ],
+            "settings": {
+                "rust-analyzer.cargo.buildScripts.enable": true,
+                "rust-analyzer.procMacro.enable": true,
+                "cmake.configureOnOpen": false
+            }
+        }
+    },
+    "forwardPorts": [],
+    "postCreateCommand": "rustc --version && nvcc --version",
+    "remoteUser": "root",
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+    ]
+}
