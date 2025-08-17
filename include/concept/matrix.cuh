@@ -13,10 +13,9 @@ concept MatrixViewConcept = requires(T view) {
     { T::rows } -> std::convertible_to<std::size_t>;
     { T::cols } -> std::convertible_to<std::size_t>;
     
-    // 要素へのアクセス (値)
-    { operator()(std::size_t{}, std::size_t{}) } -> std::convertible_to<typename T::value_type&>;
-    { operator()(std::size_t{}, std::size_t{}) } -> std::convertible_to<const typename T::value_type&>;
-    
+    { view(std::size_t{}, std::size_t{}) } -> std::convertible_to<typename T::value_type>;
+    { std::as_const(view)(std::size_t{}, std::size_t{}) } -> std::convertible_to<typename T::value_type>;
+
     // データへの直接アクセス
     { view.data() } -> std::convertible_to<typename T::value_type*>;
     { view.data() } -> std::convertible_to<const typename T::value_type*>;
@@ -27,17 +26,5 @@ concept MatrixViewConcept = requires(T view) {
     // 型情報
     typename T::value_type;
 } && std::is_copy_constructible_v<T>;
-
-// Backward propagation に必要な MatrixView の要件
-template <typename T>
-concept DifferentiableMatrixViewConcept = MatrixViewConcept<T> && requires(T view) {
-    // 勾配へのアクセス
-    { view.grad() } -> std::convertible_to<typename T::value_type*>;
-    { view.grad() } -> std::convertible_to<const typename T::value_type*>;
-    
-    // 2次元アクセス (勾配)
-    { view.grad(std::size_t{}, std::size_t{}) } -> std::convertible_to<typename T::value_type&>;
-    { view.grad(std::size_t{}, std::size_t{}) } -> std::convertible_to<const typename T::value_type&>;
-};
 
 } // namespace xyz_autodiff

@@ -39,9 +39,9 @@ __global__ void test_diagonal_dense_multiply_kernel(T* diag_data, T* diag_grad, 
     
     // 密行列作成: [[1, 2], [3, 4], [5, 6]] (3x2)
     DenseMatrix<T, N, 2> dense_matrix;
-    dense_matrix(0, 0) = 1; dense_matrix(0, 1) = 2;
-    dense_matrix(1, 0) = 3; dense_matrix(1, 1) = 4;
-    dense_matrix(2, 0) = 5; dense_matrix(2, 1) = 6;
+    dense_matrix[0] = 1; dense_matrix[1] = 2;  // 行0
+    dense_matrix[2] = 3; dense_matrix[3] = 4;  // 行1
+    dense_matrix[4] = 5; dense_matrix[5] = 6;  // 行2
     
     // 行列積: diag * dense (3x3 * 3x2 = 3x2)
     auto result = diag_matrix * dense_matrix;
@@ -59,8 +59,8 @@ template <typename T, std::size_t N>
 __global__ void test_dense_diagonal_multiply_kernel(T* diag_data, T* diag_grad, T* result_output) {
     // 密行列作成: [[1, 2, 3], [4, 5, 6]] (2x3)
     DenseMatrix<T, 2, N> dense_matrix;
-    dense_matrix(0, 0) = 1; dense_matrix(0, 1) = 2; dense_matrix(0, 2) = 3;
-    dense_matrix(1, 0) = 4; dense_matrix(1, 1) = 5; dense_matrix(1, 2) = 6;
+    dense_matrix[0] = 1; dense_matrix[1] = 2; dense_matrix[2] = 3;  // 行0
+    dense_matrix[3] = 4; dense_matrix[4] = 5; dense_matrix[5] = 6;  // 行1
     
     // 対角行列作成: diag([1, 2, 3])
     Variable<T, N> diag_var(diag_data, diag_grad);

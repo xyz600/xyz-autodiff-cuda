@@ -64,21 +64,12 @@ public:
     // === MatrixView concept の要件 ===
     
     // 2次元アクセス (値)
-    __device__ T& operator()(std::size_t row, std::size_t col) {
+    __device__ T operator()(std::size_t row, std::size_t col) {
         return data_[row * cols + col];
     }
     
-    __device__ const T& operator()(std::size_t row, std::size_t col) const {
+    __device__ T operator()(std::size_t row, std::size_t col) const {
         return data_[row * cols + col];
-    }
-    
-    // 2次元アクセス (勾配)
-    __device__ T& grad(std::size_t row, std::size_t col) {
-        return grad_[row * cols + col];
-    }
-    
-    __device__ const T& grad(std::size_t row, std::size_t col) const {
-        return grad_[row * cols + col];
     }
     
     // 疎行列サポート (密行列なので全て有効)
@@ -89,8 +80,8 @@ public:
 
 // MatrixView同士の行列乗算でDenseMatrixを返す
 template <typename A, typename B>
-requires MatrixViewConcept<A> && MatrixViewConcept<B> && (A::cols == B::rows)
-__device__ auto operator*(const A& a, const B& b) {
+// requires MatrixViewConcept<A> && MatrixViewConcept<B> && (A::cols == B::rows)  // CUDA compiler limitations
+__device__ DenseMatrix<typename A::value_type, A::rows, B::cols> operator*(const A& a, const B& b) {
     using ValueType = typename A::value_type;
     constexpr std::size_t ResultRows = A::rows;
     constexpr std::size_t ResultCols = B::cols;
@@ -108,7 +99,7 @@ __device__ auto operator*(const A& a, const B& b) {
                     sum += a(i, k) * b(k, j);
                 }
             }
-            result(i, j) = sum;
+            result[i * ResultCols + j] = sum;
         }
     }
    

@@ -52,26 +52,23 @@ public:
     
     // === MatrixView concept の要件 ===
     
-    // 2次元アクセス (値)
+    // 2次元アクセス (値)    
+    __device__ T operator()(std::size_t row, std::size_t col) {
+        if (row == col) {
+            return variable_[row];
+        } else {
+            return T{0};
+        }
+    }
+    
     __device__ T operator()(std::size_t row, std::size_t col) const {
         if (row == col) {
-            return variable_[row];  // 対角要素
+            return variable_[row];
         } else {
-            return T{0};  // 非対角要素は0
+            return T{0};
         }
     }
-    
-    // 2次元アクセス (勾配) - 対角要素のみ変更可能
-    __device__ T& grad(std::size_t row, std::size_t col) const {
-        static T zero_grad = T{0};
-        if (row == col) {
-            return variable_.grad(row);  // 対角要素の勾配
-        } else {
-            zero_grad = T{0};
-            return zero_grad;  // 非対角要素の勾配は常に0
-        }
-    }
-    
+
     // 疎行列サポート
     __device__ bool is_active_cell(std::size_t row, std::size_t col) const {
         return (row == col);  // 対角要素のみアクティブ
