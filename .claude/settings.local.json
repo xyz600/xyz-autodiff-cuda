@@ -18,7 +18,12 @@
       "Bash(./tests/test_operation_chaining_simple)",
       "Bash(g++:*)",
       "Bash(./debug_transpose)",
-      "Bash(./tests/test_matrix_transpose)"
+      "Bash(./tests/test_matrix_transpose)",
+      "Bash(make test_numerical_verification:*)",
+      "Bash(./tests/test_numerical_verification)",
+      "Bash(make test_complex_operations:*)",
+      "Bash(./tests/test_complex_operations)",
+      "Bash(make:*)"
     ],
     "deny": []
   }

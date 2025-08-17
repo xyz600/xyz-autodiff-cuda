@@ -68,6 +68,48 @@ public:
         Input& input_ref = const_cast<Input&>(input_);
         logic_.backward(output_, input_ref);
     }
+
+    __device__ void backward_numerical() {
+        constexpr auto delta = (std::is_same_v<input_type, float>) ? 1e-3 : 1e-6;
+
+        // forward の結果を退避
+        value_type original_output_data_[OutputSize];
+        for (std::size_t i = 0; i < OutputSize; i++) {
+            original_output_data_[i] = output_data_[i];
+        }
+
+        for (std::size_t i = 0; i < Input::size; i++) {
+            const auto orig = input_[i];
+
+            input_[i] = orig + delta;
+            forward();
+            value_type plus_out[OutputSize];
+            for (std::size_t j = 0; j < OutputSize; j++) {
+                plus_out[i] = output_data_[j];
+            }
+
+            input_[i] = orig - delta;
+            forward();
+            value_type minus_out[OutputSize];
+            for (std::size_t j = 0; j < OutputSize; j++) {
+                minus_out[i] = output_data_[j];
+            }
+
+            input_[i] = orig;
+
+            // 退避した forward の結果を戻す
+            for (std::size_t i = 0; i < OutputSize; i++) {
+                output_data_[i] = original_output_data_[i];
+            }
+
+            // 勾配の数値計算
+            input_.zero_grad();
+            for (std::size_t j = 0; j < OutputSize; j++) {
+                const do_di = (plus_out[j] - minus_out[j]) / (input_type(2.0) * delta);
+                input_.grad(i) += output_.grad(j) * dj_di;
+            }
+        }
+    }
     
     // 出力への参照を取得
     __host__ __device__ const output_type& output() const { return output_; }
@@ -154,7 +196,7 @@ public:
         Input2& input2_ref = const_cast<Input2&>(input2_);
         logic_.backward(output_, input1_ref, input2_ref);
     }
-    
+
     // 出力への参照を取得
     __host__ __device__ const output_type& output() const { return output_; }
     __host__ __device__ output_type& output() { return output_; }
@@ -240,6 +282,7 @@ public:
         Input1& input1_ref = const_cast<Input1&>(input1_);
         Input2& input2_ref = const_cast<Input2&>(input2_);
         Input3& input3_ref = const_cast<Input3&>(input3_);
+
         logic_.backward(output_, input1_ref, input2_ref, input3_ref);
     }
     

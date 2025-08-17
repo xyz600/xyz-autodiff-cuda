@@ -15,8 +15,9 @@ struct SigmoidLogic {
     __host__ __device__ void forward(Output& output, const Input& input) const {
         for (std::size_t i = 0; i < outputDim; ++i) {
             // sigmoid(x) = 1 / (1 + exp(-x))
-            float exp_neg_x = expf(-input[i]);
-            output[i] = 1.0f / (1.0f + exp_neg_x);
+            using T = typename Input::value_type;
+            T exp_neg_x = static_cast<T>(exp(-static_cast<double>(input[i])));
+            output[i] = static_cast<T>(1) / (static_cast<T>(1) + exp_neg_x);
         }
     }
     
@@ -24,9 +25,10 @@ struct SigmoidLogic {
     __host__ __device__ void backward(const Output& output, Input& input) const {
         for (std::size_t i = 0; i < outputDim; ++i) {
             // d/dx sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
-            float exp_neg_x = expf(-input[i]);
-            float sigmoid_val = 1.0f / (1.0f + exp_neg_x);
-            float sigmoid_derivative = sigmoid_val * (1.0f - sigmoid_val);
+            using T = typename Input::value_type;
+            T exp_neg_x = static_cast<T>(exp(-static_cast<double>(input[i])));
+            T sigmoid_val = static_cast<T>(1) / (static_cast<T>(1) + exp_neg_x);
+            T sigmoid_derivative = sigmoid_val * (static_cast<T>(1) - sigmoid_val);
             input.grad(i) += output.grad(i) * sigmoid_derivative;
         }
     }

@@ -2,211 +2,346 @@
 #include <cuda_runtime.h>
 #include <array>
 #include <cmath>
+#include <random>
 #include "../include/variable.cuh"
+#include "../include/operations/sigmoid_logic.cuh"
+#include "../include/operations/exp_logic.cuh"
+#include "../include/operations/add_logic.cuh"
 #include "../include/operations/unary_functions.cuh"
-#include "../include/symmetric_matrix_view.cuh"
-#include "../include/diagonal_matrix_view.cuh"
 #include "../include/dense_matrix.cuh"
+#include "../include/diagonal_matrix_view.cuh"
+#include "../include/symmetric_matrix_view.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;
 
-// テスト用汎用バッファ構造体
-template <typename T, std::size_t NumElements>
-class TestComplexBuffer {
-public:
-    std::array<T, NumElements> host_data;
-    std::array<T, NumElements> host_result;
-    cuda_unique_ptr<T[]> device_data;
-    cuda_unique_ptr<T[]> device_result;
-    
-    TestComplexBuffer() {
-        host_data.fill(T{});
-        host_result.fill(T{});
-        device_data = makeCudaUniqueArray<T>(NumElements);
-        device_result = makeCudaUniqueArray<T>(NumElements);
-    }
-    
-    void toGpu() {
-        cudaMemcpy(device_data.get(), host_data.data(), NumElements * sizeof(T), cudaMemcpyHostToDevice);
-        cudaDeviceSynchronize();
-    }
-    
-    void toHost() {
-        cudaMemcpy(host_result.data(), device_result.get(), NumElements * sizeof(T), cudaMemcpyDeviceToHost);
-        cudaDeviceSynchronize();
-    }
-    
-    void setData(std::size_t idx, T value) {
-        if (idx < NumElements) {
-            host_data[idx] = value;
-        }
-    }
-    
-    T getResult(std::size_t idx) const {
-        return idx < NumElements ? host_result[idx] : T{};
-    }
-    
-    T* getDeviceData() { return device_data.get(); }
-    T* getDeviceResult() { return device_result.get(); }
-};
+// 数値微分のためのパラメータ
+constexpr double NUMERICAL_DELTA = 1e-7;
+constexpr double TOLERANCE = 1e-5;
 
-// 複合操作テスト用のop関数をテスト内で定義
-template <typename V2, typename V3>
-__device__ auto op(const V2& v2, const V3& v3) {
-    // SymmetricMatrix(v3) - 3x3対称行列（6要素）
-    auto sym_matrix = make_symmetric_matrix_view<3>(const_cast<V3&>(v3));
+// ================================================================================
+// Unary Operations の数値微分検証
+// ================================================================================
+
+// Sigmoid の数値微分検証カーネル
+template <typename T, std::size_t Dim>
+__global__ void verify_sigmoid_gradient_kernel(
+    T* input_data, T* analytical_grad, T* numerical_grad, bool* passed) {
     
-    // v2の値をDenseMatrixの対角要素にコピー
-    DenseMatrix<typename V2::value_type, 3, 3> diag_matrix;
-    for (std::size_t i = 0; i < 3; ++i) {
-        for (std::size_t j = 0; j < 3; ++j) {
-            if (i == j) {
-                diag_matrix(i, j) = v2[i];  // 対角要素
-            } else {
-                diag_matrix(i, j) = typename V2::value_type{0};  // 非対角要素は0
-            }
+    SigmoidLogic<Dim> logic;
+    
+    // 解析的勾配の計算
+    T input_grad_data[Dim] = {};
+    T output_data[Dim];
+    T output_grad_data[Dim];
+    
+    // 出力勾配を単位ベクトルに設定（各次元独立にテスト）
+    for (std::size_t out_idx = 0; out_idx < Dim; ++out_idx) {
+        // リセット
+        for (std::size_t i = 0; i < Dim; ++i) {
+            input_grad_data[i] = T{0};
+            output_grad_data[i] = (i == out_idx) ? T{1} : T{0};
+        }
+        
+        Variable<T, Dim> input(input_data, input_grad_data);
+        Variable<T, Dim> output(output_data, output_grad_data);
+        
+        logic.forward(output, input);
+        logic.backward(output, input);
+        
+        // 各入力次元の勾配を保存
+        for (std::size_t in_idx = 0; in_idx < Dim; ++in_idx) {
+            analytical_grad[out_idx * Dim + in_idx] = input.grad(in_idx);
         }
     }
     
-    // SymmetricMatrix(v3).transpose() - 対称行列なので変わらず
-    auto sym_transposed = sym_matrix.transpose();
+    // 数値微分の計算
+    for (std::size_t out_idx = 0; out_idx < Dim; ++out_idx) {
+        for (std::size_t in_idx = 0; in_idx < Dim; ++in_idx) {
+            T original = input_data[in_idx];
+            
+            // f(x + delta)
+            input_data[in_idx] = original + static_cast<T>(NUMERICAL_DELTA);
+            Variable<T, Dim> input_plus(input_data, input_grad_data);
+            Variable<T, Dim> output_plus(output_data, output_grad_data);
+            logic.forward(output_plus, input_plus);
+            T f_plus = output_plus[out_idx];
+            
+            // f(x - delta)
+            input_data[in_idx] = original - static_cast<T>(NUMERICAL_DELTA);
+            Variable<T, Dim> input_minus(input_data, input_grad_data);
+            Variable<T, Dim> output_minus(output_data, output_grad_data);
+            logic.forward(output_minus, input_minus);
+            T f_minus = output_minus[out_idx];
+            
+            // 数値勾配
+            numerical_grad[out_idx * Dim + in_idx] = 
+                (f_plus - f_minus) / (2 * static_cast<T>(NUMERICAL_DELTA));
+            
+            // 元に戻す
+            input_data[in_idx] = original;
+        }
+    }
     
-    // 行列積: SymmetricMatrix * DiagonalMatrix * SymmetricMatrix
-    // まず sym_matrix * diag_matrix (3x3 * 3x3 = 3x3)
-    auto temp_result = sym_matrix * diag_matrix;
-    
-    // 次に temp_result * sym_transposed (3x3 * 3x3 = 3x3)  
-    auto final_result = temp_result * sym_transposed;
-    
-    return final_result;
+    // 勾配の比較
+    *passed = true;
+    for (std::size_t i = 0; i < Dim * Dim; ++i) {
+        T diff = fabs(analytical_grad[i] - numerical_grad[i]);
+        T scale = fmax(fabs(analytical_grad[i]), fabs(numerical_grad[i])) + static_cast<T>(1e-10);
+        T rel_error = diff / scale;
+        
+        if (rel_error > static_cast<T>(TOLERANCE)) {
+            *passed = false;
+            break;
+        }
+    }
 }
 
-// 複雑な操作チェーン用CUDAカーネル
+// Exp の数値微分検証カーネル
+template <typename T, std::size_t Dim>
+__global__ void verify_exp_gradient_kernel(
+    T* input_data, T* analytical_grad, T* numerical_grad, bool* passed) {
+    
+    ExpLogic<Dim> logic;
+    
+    // 解析的勾配の計算
+    T input_grad_data[Dim] = {};
+    T output_data[Dim];
+    T output_grad_data[Dim];
+    
+    for (std::size_t out_idx = 0; out_idx < Dim; ++out_idx) {
+        for (std::size_t i = 0; i < Dim; ++i) {
+            input_grad_data[i] = T{0};
+            output_grad_data[i] = (i == out_idx) ? T{1} : T{0};
+        }
+        
+        Variable<T, Dim> input(input_data, input_grad_data);
+        Variable<T, Dim> output(output_data, output_grad_data);
+        
+        logic.forward(output, input);
+        logic.backward(output, input);
+        
+        for (std::size_t in_idx = 0; in_idx < Dim; ++in_idx) {
+            analytical_grad[out_idx * Dim + in_idx] = input.grad(in_idx);
+        }
+    }
+    
+    // 数値微分の計算
+    for (std::size_t out_idx = 0; out_idx < Dim; ++out_idx) {
+        for (std::size_t in_idx = 0; in_idx < Dim; ++in_idx) {
+            T original = input_data[in_idx];
+            
+            input_data[in_idx] = original + static_cast<T>(NUMERICAL_DELTA);
+            Variable<T, Dim> input_plus(input_data, input_grad_data);
+            Variable<T, Dim> output_plus(output_data, output_grad_data);
+            logic.forward(output_plus, input_plus);
+            T f_plus = output_plus[out_idx];
+            
+            input_data[in_idx] = original - static_cast<T>(NUMERICAL_DELTA);
+            Variable<T, Dim> input_minus(input_data, input_grad_data);
+            Variable<T, Dim> output_minus(output_data, output_grad_data);
+            logic.forward(output_minus, input_minus);
+            T f_minus = output_minus[out_idx];
+            
+            numerical_grad[out_idx * Dim + in_idx] = 
+                (f_plus - f_minus) / (2 * static_cast<T>(NUMERICAL_DELTA));
+            
+            input_data[in_idx] = original;
+        }
+    }
+    
+    // 勾配の比較
+    *passed = true;
+    for (std::size_t i = 0; i < Dim * Dim; ++i) {
+        T diff = fabs(analytical_grad[i] - numerical_grad[i]);
+        T scale = fmax(fabs(analytical_grad[i]), fabs(numerical_grad[i])) + static_cast<T>(1e-10);
+        T rel_error = diff / scale;
+        
+        if (rel_error > static_cast<T>(TOLERANCE)) {
+            *passed = false;
+            break;
+        }
+    }
+}
+
+// ================================================================================
+// Binary Operations の数値微分検証
+// ================================================================================
+
+// Add の数値微分検証カーネル
 template <typename T>
-__global__ void test_complex_operations_kernel(T* v1_data, T* v1_grad, T* v3_data, T* v3_grad, T* result) {
-    // Variable<T, 3> v1
-    Variable<T, 3> v1(v1_data, v1_grad);
+__global__ void verify_add_gradient_kernel(
+    T* input1_data, T* input2_data, 
+    T* analytical_grad1, T* analytical_grad2,
+    T* numerical_grad1, T* numerical_grad2,
+    bool* passed) {
     
-    // 入力値設定
-    v1[0] = static_cast<T>(0.5);  // exp(0.5) ≈ 1.649
-    v1[1] = static_cast<T>(1.0);  // exp(1.0) ≈ 2.718
-    v1[2] = static_cast<T>(0.0);  // exp(0.0) = 1.0
+    using V = Variable<T, 1>;
+    op::AddLogic<V, V> logic;
     
-    // auto v2 = exp(v1);
-    auto v2 = exp(v1);
+    // 解析的勾配の計算
+    T input1_grad_data[1] = {T{0}};
+    T input2_grad_data[1] = {T{0}};
+    T output_data[1];
+    T output_grad_data[1] = {T{1}};
     
-    // Variable<T, 6> v3 (対称行列用 - 3*(3+1)/2 = 6要素)
-    Variable<T, 6> v3(v3_data, v3_grad);
+    V input1(input1_data, input1_grad_data);
+    V input2(input2_data, input2_grad_data);
+    V output(output_data, output_grad_data);
     
-    // 対称行列の上三角要素設定
-    // [1, 2, 3]
-    // [2, 4, 5] 
-    // [3, 5, 6]
-    v3[0] = static_cast<T>(1.0);  // (0,0)
-    v3[1] = static_cast<T>(2.0);  // (0,1)
-    v3[2] = static_cast<T>(3.0);  // (0,2)
-    v3[3] = static_cast<T>(4.0);  // (1,1)
-    v3[4] = static_cast<T>(5.0);  // (1,2)
-    v3[5] = static_cast<T>(6.0);  // (2,2)
+    logic.forward(output, input1, input2);
+    logic.backward(output, input1, input2);
     
-    // 複合操作: SymmetricMatrix(v3) * DiagonalMatrix(v2) * SymmetricMatrix(v3).transpose()
-    auto final_matrix = op(v2, v3);
+    analytical_grad1[0] = input1.grad(0);
+    analytical_grad2[0] = input2.grad(0);
     
-    // 結果の一部を保存（3x3行列の要素）
-    for (std::size_t i = 0; i < 3; ++i) {
-        for (std::size_t j = 0; j < 3; ++j) {
-            result[i * 3 + j] = final_matrix(i, j);
-        }
-    }
+    // 数値微分 - input1
+    T original1 = input1_data[0];
     
-    // 勾配計算のテスト
-    // 出力行列の(0,0)要素に対する勾配を設定
-    final_matrix.grad(0) = static_cast<T>(1.0);
+    input1_data[0] = original1 + static_cast<T>(NUMERICAL_DELTA);
+    V input1_plus(input1_data, input1_grad_data);
+    V output_plus(output_data, output_grad_data);
+    logic.forward(output_plus, input1_plus, input2);
+    T f1_plus = output_plus[0];
     
-    // backward pass
-    // Note: 実際の自動微分では、計算グラフを辿って逆伝播する必要がありますが、
-    // ここでは簡単なテストとして手動で設定
+    input1_data[0] = original1 - static_cast<T>(NUMERICAL_DELTA);
+    V input1_minus(input1_data, input1_grad_data);
+    V output_minus(output_data, output_grad_data);
+    logic.forward(output_minus, input1_minus, input2);
+    T f1_minus = output_minus[0];
     
-    // v1の勾配を結果に保存（9要素後）
-    result[9] = v1.grad(0);
-    result[10] = v1.grad(1);
-    result[11] = v1.grad(2);
-}
-
-// より単純な検証用カーネル
-template <typename T>
-__global__ void test_unary_with_matrices_kernel(T* v1_data, T* v1_grad, T* result) {
-    // Variable<T, 3> v1
-    Variable<T, 3> v1(v1_data, v1_grad);
+    numerical_grad1[0] = (f1_plus - f1_minus) / (2 * static_cast<T>(NUMERICAL_DELTA));
+    input1_data[0] = original1;
     
-    // 入力値設定
-    v1[0] = static_cast<T>(1.0);
-    v1[1] = static_cast<T>(2.0); 
-    v1[2] = static_cast<T>(0.5);
+    // 数値微分 - input2
+    T original2 = input2_data[0];
     
-    // exp(v1)の計算
-    auto v2 = exp(v1);
+    input2_data[0] = original2 + static_cast<T>(NUMERICAL_DELTA);
+    V input2_plus(input2_data, input2_grad_data);
+    logic.forward(output_plus, input1, input2_plus);
+    T f2_plus = output_plus[0];
     
-    // 結果確認
-    result[0] = v2[0];  // exp(1) ≈ 2.718
-    result[1] = v2[1];  // exp(2) ≈ 7.389
-    result[2] = v2[2];  // exp(0.5) ≈ 1.649
+    input2_data[0] = original2 - static_cast<T>(NUMERICAL_DELTA);
+    V input2_minus(input2_data, input2_grad_data);
+    logic.forward(output_minus, input1, input2_minus);
+    T f2_minus = output_minus[0];
     
-    // v2の値を対角行列として確認
-    result[3] = v2[0];  // exp(1)
-    result[4] = v2[1];  // exp(2)
-    result[5] = v2[2];  // exp(0.5)
-    result[6] = static_cast<T>(0.0);  // 0（非対角要素）
-    result[7] = static_cast<T>(0.0);  // 0（非対角要素）
-}
-
-// 対称行列とexp関数の組み合わせテスト用カーネル
-template <typename T>
-__global__ void test_symmetric_with_exp_kernel(T* v1_data, T* v1_grad, T* v3_data, T* v3_grad, T* result) {
-    Variable<T, 3> v1(v1_data, v1_grad);
-    Variable<T, 6> v3(v3_data, v3_grad);
+    numerical_grad2[0] = (f2_plus - f2_minus) / (2 * static_cast<T>(NUMERICAL_DELTA));
+    input2_data[0] = original2;
     
-    // v1の設定
-    v1[0] = static_cast<T>(0.0);  // exp(0) = 1
-    v1[1] = static_cast<T>(1.0);  // exp(1) ≈ 2.718
-    v1[2] = static_cast<T>(0.5);  // exp(0.5) ≈ 1.649
+    // 勾配の比較
+    *passed = true;
     
-    // v3の設定（対称行列用）
-    v3[0] = static_cast<T>(1.0);  // (0,0)
-    v3[1] = static_cast<T>(0.5);  // (0,1)
-    v3[2] = static_cast<T>(0.0);  // (0,2)
-    v3[3] = static_cast<T>(2.0);  // (1,1)
-    v3[4] = static_cast<T>(1.0);  // (1,2)
-    v3[5] = static_cast<T>(3.0);  // (2,2)
+    T diff1 = fabs(analytical_grad1[0] - numerical_grad1[0]);
+    T scale1 = fmax(fabs(analytical_grad1[0]), fabs(numerical_grad1[0])) + static_cast<T>(1e-10);
+    T rel_error1 = diff1 / scale1;
     
-    auto v2 = exp(v1);
-    auto sym_matrix = make_symmetric_matrix_view<3>(v3);
+    T diff2 = fabs(analytical_grad2[0] - numerical_grad2[0]);
+    T scale2 = fmax(fabs(analytical_grad2[0]), fabs(numerical_grad2[0])) + static_cast<T>(1e-10);
+    T rel_error2 = diff2 / scale2;
     
-    // v2の値をDenseMatrixの対角要素にコピー
-    DenseMatrix<T, 3, 3> diag_matrix;
-    for (std::size_t i = 0; i < 3; ++i) {
-        for (std::size_t j = 0; j < 3; ++j) {
-            if (i == j) {
-                diag_matrix(i, j) = v2[i];  // 対角要素
-            } else {
-                diag_matrix(i, j) = T{0};  // 非対角要素は0
-            }
-        }
-    }
-    
-    // 行列積: sym_matrix * diag_matrix
-    auto product = sym_matrix * diag_matrix;
-    
-    // 結果保存
-    for (std::size_t i = 0; i < 3; ++i) {
-        for (std::size_t j = 0; j < 3; ++j) {
-            result[i * 3 + j] = product(i, j);
-        }
+    if (rel_error1 > static_cast<T>(TOLERANCE) || rel_error2 > static_cast<T>(TOLERANCE)) {
+        *passed = false;
     }
 }
 
-class ComplexOperationsTest : public ::testing::Test {
+// ================================================================================
+// Combined Operations の数値微分検証
+// ================================================================================
+
+// Combined operation (sigmoid ∘ exp) の数値微分検証カーネル
+template <typename T, std::size_t Dim>
+__global__ void verify_combined_gradient_kernel(
+    T* input_data, T* analytical_grad, T* numerical_grad, bool* passed) {
+    
+    // 解析的勾配の計算: sigmoid(exp(x))
+    T input_grad_data[Dim] = {};
+    T exp_output_data[Dim];
+    T exp_output_grad_data[Dim];
+    T sigmoid_output_data[Dim];
+    T sigmoid_output_grad_data[Dim];
+    
+    for (std::size_t out_idx = 0; out_idx < Dim; ++out_idx) {
+        // リセット
+        for (std::size_t i = 0; i < Dim; ++i) {
+            input_grad_data[i] = T{0};
+            exp_output_grad_data[i] = T{0};
+            sigmoid_output_grad_data[i] = (i == out_idx) ? T{1} : T{0};
+        }
+        
+        Variable<T, Dim> input(input_data, input_grad_data);
+        Variable<T, Dim> exp_output(exp_output_data, exp_output_grad_data);
+        Variable<T, Dim> sigmoid_output(sigmoid_output_data, sigmoid_output_grad_data);
+        
+        ExpLogic<Dim> exp_logic;
+        SigmoidLogic<Dim> sigmoid_logic;
+        
+        // Forward pass: input -> exp -> sigmoid
+        exp_logic.forward(exp_output, input);
+        sigmoid_logic.forward(sigmoid_output, exp_output);
+        
+        // Backward pass: sigmoid -> exp -> input
+        sigmoid_logic.backward(sigmoid_output, exp_output);
+        exp_logic.backward(exp_output, input);
+        
+        for (std::size_t in_idx = 0; in_idx < Dim; ++in_idx) {
+            analytical_grad[out_idx * Dim + in_idx] = input.grad(in_idx);
+        }
+    }
+    
+    // 数値微分の計算: sigmoid(exp(x))
+    for (std::size_t out_idx = 0; out_idx < Dim; ++out_idx) {
+        for (std::size_t in_idx = 0; in_idx < Dim; ++in_idx) {
+            T original = input_data[in_idx];
+            
+            // f(x + delta) = sigmoid(exp(x + delta))
+            input_data[in_idx] = original + static_cast<T>(NUMERICAL_DELTA);
+            Variable<T, Dim> input_plus(input_data, input_grad_data);
+            Variable<T, Dim> exp_output_plus(exp_output_data, exp_output_grad_data);
+            Variable<T, Dim> sigmoid_output_plus(sigmoid_output_data, sigmoid_output_grad_data);
+            
+            ExpLogic<Dim> exp_logic;
+            SigmoidLogic<Dim> sigmoid_logic;
+            exp_logic.forward(exp_output_plus, input_plus);
+            sigmoid_logic.forward(sigmoid_output_plus, exp_output_plus);
+            T f_plus = sigmoid_output_plus[out_idx];
+            
+            // f(x - delta) = sigmoid(exp(x - delta))
+            input_data[in_idx] = original - static_cast<T>(NUMERICAL_DELTA);
+            Variable<T, Dim> input_minus(input_data, input_grad_data);
+            Variable<T, Dim> exp_output_minus(exp_output_data, exp_output_grad_data);
+            Variable<T, Dim> sigmoid_output_minus(sigmoid_output_data, sigmoid_output_grad_data);
+            
+            exp_logic.forward(exp_output_minus, input_minus);
+            sigmoid_logic.forward(sigmoid_output_minus, exp_output_minus);
+            T f_minus = sigmoid_output_minus[out_idx];
+            
+            numerical_grad[out_idx * Dim + in_idx] = 
+                (f_plus - f_minus) / (2 * static_cast<T>(NUMERICAL_DELTA));
+            
+            input_data[in_idx] = original;
+        }
+    }
+    
+    // 勾配の比較
+    *passed = true;
+    for (std::size_t i = 0; i < Dim * Dim; ++i) {
+        T diff = fabs(analytical_grad[i] - numerical_grad[i]);
+        T scale = fmax(fabs(analytical_grad[i]), fabs(numerical_grad[i])) + static_cast<T>(1e-10);
+        T rel_error = diff / scale;
+        
+        if (rel_error > static_cast<T>(TOLERANCE)) {
+            *passed = false;
+            break;
+        }
+    }
+}
+
+// ================================================================================
+// Test Suite
+// ================================================================================
+
+class NumericalGradientVerificationTest : public ::testing::Test {
 protected:
     void SetUp() override {
         cudaError_t err = cudaSetDevice(0);
@@ -216,125 +351,335 @@ protected:
     }
 };
 
-TEST_F(ComplexOperationsTest, UnaryWithMatrices) {
-    using T = float;
+// Sigmoid gradient verification
+TEST_F(NumericalGradientVerificationTest, SigmoidGradient) {
+    using T = double;
+    constexpr std::size_t Dim = 3;
     
-    TestComplexBuffer<T, 16> buffer;
-    buffer.toGpu();
+    // ランダムな入力を生成
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<T> dis(-2.0, 2.0);
     
-    test_unary_with_matrices_kernel<T><<<1, 1>>>(
-        buffer.getDeviceData(),
-        buffer.getDeviceData() + 3,  // 勾配用
-        buffer.getDeviceResult());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    buffer.toHost();
-    
-    // exp関数の結果確認
-    EXPECT_NEAR(buffer.getResult(0), 2.718f, 0.001f);  // exp(1)
-    EXPECT_NEAR(buffer.getResult(1), 7.389f, 0.001f);  // exp(2)
-    EXPECT_NEAR(buffer.getResult(2), 1.649f, 0.001f);  // exp(0.5)
-    
-    // 対角要素としての結果確認
-    EXPECT_NEAR(buffer.getResult(3), 2.718f, 0.001f);  // exp(1)
-    EXPECT_NEAR(buffer.getResult(4), 7.389f, 0.001f);  // exp(2)
-    EXPECT_NEAR(buffer.getResult(5), 1.649f, 0.001f);  // exp(0.5)
-    EXPECT_FLOAT_EQ(buffer.getResult(6), 0.0f);         // 非対角要素 = 0
-    EXPECT_FLOAT_EQ(buffer.getResult(7), 0.0f);         // 非対角要素 = 0
-}
-
-TEST_F(ComplexOperationsTest, SymmetricMatrixWithExp) {
-    using T = float;
-    
-    TestComplexBuffer<T, 32> buffer;
-    buffer.toGpu();
-    
-    test_symmetric_with_exp_kernel<T><<<1, 1>>>(
-        buffer.getDeviceData(),
-        buffer.getDeviceData() + 3,   // v1勾配用
-        buffer.getDeviceData() + 6,   // v3データ用  
-        buffer.getDeviceData() + 12,  // v3勾配用
-        buffer.getDeviceResult());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    buffer.toHost();
-    
-    // 行列積の結果確認
-    // SymmetricMatrix * DiagonalMatrix の計算結果
-    // sym_matrix = [[1, 0.5, 0], [0.5, 2, 1], [0, 1, 3]]
-    // diag_matrix = diag([1, 2.718, 1.649])
-    // 積: [[1*1, 0.5*2.718, 0*1.649], [0.5*1, 2*2.718, 1*1.649], [0*1, 1*2.718, 3*1.649]]
-    
-    EXPECT_FLOAT_EQ(buffer.getResult(0), 1.0f);         // (0,0) = 1*1
-    EXPECT_NEAR(buffer.getResult(1), 1.359f, 0.001f);   // (0,1) = 0.5*2.718
-    EXPECT_FLOAT_EQ(buffer.getResult(2), 0.0f);         // (0,2) = 0*1.649
-    EXPECT_FLOAT_EQ(buffer.getResult(3), 0.5f);         // (1,0) = 0.5*1
-    EXPECT_NEAR(buffer.getResult(4), 5.436f, 0.001f);   // (1,1) = 2*2.718
-    EXPECT_NEAR(buffer.getResult(5), 1.649f, 0.001f);   // (1,2) = 1*1.649
-    EXPECT_FLOAT_EQ(buffer.getResult(6), 0.0f);         // (2,0) = 0*1
-    EXPECT_NEAR(buffer.getResult(7), 2.718f, 0.001f);   // (2,1) = 1*2.718
-    EXPECT_NEAR(buffer.getResult(8), 4.947f, 0.001f);   // (2,2) = 3*1.649
-}
-
-TEST_F(ComplexOperationsTest, ComplexOperationChain) {
-    using T = float;
-    
-    TestComplexBuffer<T, 32> buffer;
-    buffer.toGpu();
-    
-    test_complex_operations_kernel<T><<<1, 1>>>(
-        buffer.getDeviceData(),      // v1データ
-        buffer.getDeviceData() + 3,  // v1勾配
-        buffer.getDeviceData() + 6,  // v3データ
-        buffer.getDeviceData() + 12, // v3勾配
-        buffer.getDeviceResult());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    buffer.toHost();
-    
-    // 複合操作の結果確認
-    // この計算は非常に複雑なので、主要な要素のみ検証
-    // 少なくとも計算が正常に実行され、有限の値が出ることを確認
-    
-    for (int i = 0; i < 9; ++i) {
-        EXPECT_TRUE(std::isfinite(buffer.getResult(i))) << "Result[" << i << "] is not finite";
-        EXPECT_FALSE(std::isnan(buffer.getResult(i))) << "Result[" << i << "] is NaN";
+    T host_input[Dim];
+    for (std::size_t i = 0; i < Dim; ++i) {
+        host_input[i] = dis(gen);
     }
     
-    // 結果が全て0でないことを確認（計算が実際に行われていることの確認）
-    bool has_non_zero = false;
-    for (int i = 0; i < 9; ++i) {
-        if (std::abs(buffer.getResult(i)) > 1e-6f) {
-            has_non_zero = true;
-            break;
+    auto device_input = makeCudaUniqueArray<T>(Dim);
+    auto device_analytical = makeCudaUniqueArray<T>(Dim * Dim);
+    auto device_numerical = makeCudaUniqueArray<T>(Dim * Dim);
+    auto device_passed = makeCudaUniqueArray<bool>(1);
+    
+    cudaMemcpy(device_input.get(), host_input, Dim * sizeof(T), cudaMemcpyHostToDevice);
+    
+    verify_sigmoid_gradient_kernel<T, Dim><<<1, 1>>>(
+        device_input.get(),
+        device_analytical.get(),
+        device_numerical.get(),
+        device_passed.get()
+    );
+    
+    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
+    
+    bool passed;
+    cudaMemcpy(&passed, device_passed.get(), sizeof(bool), cudaMemcpyDeviceToHost);
+    
+    if (!passed) {
+        T analytical[Dim * Dim], numerical[Dim * Dim];
+        cudaMemcpy(analytical, device_analytical.get(), Dim * Dim * sizeof(T), cudaMemcpyDeviceToHost);
+        cudaMemcpy(numerical, device_numerical.get(), Dim * Dim * sizeof(T), cudaMemcpyDeviceToHost);
+        
+        for (std::size_t i = 0; i < Dim * Dim; ++i) {
+            T diff = std::abs(analytical[i] - numerical[i]);
+            T scale = std::max(std::abs(analytical[i]), std::abs(numerical[i])) + 1e-10;
+            T rel_error = diff / scale;
+            if (rel_error > TOLERANCE) {
+                ADD_FAILURE() << "Gradient mismatch at index " << i 
+                            << ": analytical=" << analytical[i] 
+                            << ", numerical=" << numerical[i]
+                            << ", rel_error=" << rel_error;
+            }
         }
     }
-    EXPECT_TRUE(has_non_zero) << "All results are too close to zero";
+    
+    EXPECT_TRUE(passed);
 }
 
-// Concept チェックテスト
-TEST_F(ComplexOperationsTest, ConceptCheck) {
-    // 複合操作で使用される型がすべて適切なConceptを満たすことを確認
-    using FloatVar3 = Variable<float, 3>;
-    using FloatVar6 = Variable<float, 6>;
-    using SymMat3 = SymmetricMatrixView<float, 3, FloatVar6>;
-    using DiagMat3 = DiagonalMatrixView<float, 3>;
-    using DenseMat3 = DenseMatrix<float, 3, 3>;
+// Exp gradient verification
+TEST_F(NumericalGradientVerificationTest, ExpGradient) {
+    using T = double;
+    constexpr std::size_t Dim = 3;
     
-    // Variable Concept
-    static_assert(VariableConcept<FloatVar3>);
-    static_assert(VariableConcept<FloatVar6>);
-    static_assert(DifferentiableVariableConcept<FloatVar3>);
-    static_assert(DifferentiableVariableConcept<FloatVar6>);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<T> dis(-1.0, 1.0);
     
-    // Matrix Concept  
-    static_assert(MatrixViewConcept<SymMat3>);
-    static_assert(MatrixViewConcept<DiagMat3>);
-    static_assert(MatrixViewConcept<DenseMat3>);
+    T host_input[Dim];
+    for (std::size_t i = 0; i < Dim; ++i) {
+        host_input[i] = dis(gen);
+    }
     
-    // Logic Concept
-    static_assert(SigmoidLogic<3>::outputDim == 3);
-    static_assert(ExpLogic<3>::outputDim == 3);
+    auto device_input = makeCudaUniqueArray<T>(Dim);
+    auto device_analytical = makeCudaUniqueArray<T>(Dim * Dim);
+    auto device_numerical = makeCudaUniqueArray<T>(Dim * Dim);
+    auto device_passed = makeCudaUniqueArray<bool>(1);
+    
+    cudaMemcpy(device_input.get(), host_input, Dim * sizeof(T), cudaMemcpyHostToDevice);
+    
+    verify_exp_gradient_kernel<T, Dim><<<1, 1>>>(
+        device_input.get(),
+        device_analytical.get(),
+        device_numerical.get(),
+        device_passed.get()
+    );
+    
+    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
+    
+    bool passed;
+    cudaMemcpy(&passed, device_passed.get(), sizeof(bool), cudaMemcpyDeviceToHost);
+    
+    EXPECT_TRUE(passed);
+}
+
+// Add gradient verification
+TEST_F(NumericalGradientVerificationTest, AddGradient) {
+    using T = double;
+    
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<T> dis(-2.0, 2.0);
+    
+    T host_input1[1] = {dis(gen)};
+    T host_input2[1] = {dis(gen)};
+    
+    auto device_input1 = makeCudaUniqueArray<T>(1);
+    auto device_input2 = makeCudaUniqueArray<T>(1);
+    auto device_analytical1 = makeCudaUniqueArray<T>(1);
+    auto device_analytical2 = makeCudaUniqueArray<T>(1);
+    auto device_numerical1 = makeCudaUniqueArray<T>(1);
+    auto device_numerical2 = makeCudaUniqueArray<T>(1);
+    auto device_passed = makeCudaUniqueArray<bool>(1);
+    
+    cudaMemcpy(device_input1.get(), host_input1, sizeof(T), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_input2.get(), host_input2, sizeof(T), cudaMemcpyHostToDevice);
+    
+    verify_add_gradient_kernel<T><<<1, 1>>>(
+        device_input1.get(),
+        device_input2.get(),
+        device_analytical1.get(),
+        device_analytical2.get(),
+        device_numerical1.get(),
+        device_numerical2.get(),
+        device_passed.get()
+    );
+    
+    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
+    
+    bool passed;
+    cudaMemcpy(&passed, device_passed.get(), sizeof(bool), cudaMemcpyDeviceToHost);
+    
+    EXPECT_TRUE(passed);
+}
+
+// Combined operations gradient verification (sigmoid ∘ exp)
+TEST_F(NumericalGradientVerificationTest, CombinedOperationsGradient) {
+    using T = double;
+    constexpr std::size_t Dim = 3;
+    
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<T> dis(-1.0, 1.0);  // 小さい範囲でテスト
+    
+    T host_input[Dim];
+    for (std::size_t i = 0; i < Dim; ++i) {
+        host_input[i] = dis(gen);
+    }
+    
+    auto device_input = makeCudaUniqueArray<T>(Dim);
+    auto device_analytical = makeCudaUniqueArray<T>(Dim * Dim);
+    auto device_numerical = makeCudaUniqueArray<T>(Dim * Dim);
+    auto device_passed = makeCudaUniqueArray<bool>(1);
+    
+    cudaMemcpy(device_input.get(), host_input, Dim * sizeof(T), cudaMemcpyHostToDevice);
+    
+    verify_combined_gradient_kernel<T, Dim><<<1, 1>>>(
+        device_input.get(),
+        device_analytical.get(),
+        device_numerical.get(),
+        device_passed.get()
+    );
+    
+    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
+    
+    bool passed;
+    cudaMemcpy(&passed, device_passed.get(), sizeof(bool), cudaMemcpyDeviceToHost);
+    
+    if (!passed) {
+        T analytical[Dim * Dim], numerical[Dim * Dim];
+        cudaMemcpy(analytical, device_analytical.get(), Dim * Dim * sizeof(T), cudaMemcpyDeviceToHost);
+        cudaMemcpy(numerical, device_numerical.get(), Dim * Dim * sizeof(T), cudaMemcpyDeviceToHost);
+        
+        for (std::size_t i = 0; i < Dim * Dim; ++i) {
+            T diff = std::abs(analytical[i] - numerical[i]);
+            T scale = std::max(std::abs(analytical[i]), std::abs(numerical[i])) + 1e-10;
+            T rel_error = diff / scale;
+            if (rel_error > TOLERANCE) {
+                ADD_FAILURE() << "Combined gradient mismatch at index " << i 
+                            << ": analytical=" << analytical[i] 
+                            << ", numerical=" << numerical[i]
+                            << ", rel_error=" << rel_error;
+            }
+        }
+    }
+    
+    EXPECT_TRUE(passed);
+}
+
+// Large-scale random tests for robustness
+TEST_F(NumericalGradientVerificationTest, LargeScaleRandomTests) {
+    using T = double;
+    
+    const int num_tests = 100;
+    int sigmoid_passed = 0;
+    int exp_passed = 0;
+    int add_passed = 0;
+    int combined_passed = 0;
+    
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<T> dis_sigmoid(-2.0, 2.0);
+    std::uniform_real_distribution<T> dis_exp(-1.0, 1.0);
+    
+    // Sigmoid tests
+    for (int test = 0; test < num_tests; ++test) {
+        constexpr std::size_t Dim = 3;
+        T host_input[Dim];
+        for (std::size_t i = 0; i < Dim; ++i) {
+            host_input[i] = dis_sigmoid(gen);
+        }
+        
+        auto device_input = makeCudaUniqueArray<T>(Dim);
+        auto device_analytical = makeCudaUniqueArray<T>(Dim * Dim);
+        auto device_numerical = makeCudaUniqueArray<T>(Dim * Dim);
+        auto device_passed = makeCudaUniqueArray<bool>(1);
+        
+        cudaMemcpy(device_input.get(), host_input, Dim * sizeof(T), cudaMemcpyHostToDevice);
+        
+        verify_sigmoid_gradient_kernel<T, Dim><<<1, 1>>>(
+            device_input.get(),
+            device_analytical.get(),
+            device_numerical.get(),
+            device_passed.get()
+        );
+        
+        cudaDeviceSynchronize();
+        
+        bool passed;
+        cudaMemcpy(&passed, device_passed.get(), sizeof(bool), cudaMemcpyDeviceToHost);
+        if (passed) sigmoid_passed++;
+    }
+    
+    // Exp tests
+    for (int test = 0; test < num_tests; ++test) {
+        constexpr std::size_t Dim = 3;
+        T host_input[Dim];
+        for (std::size_t i = 0; i < Dim; ++i) {
+            host_input[i] = dis_exp(gen);
+        }
+        
+        auto device_input = makeCudaUniqueArray<T>(Dim);
+        auto device_analytical = makeCudaUniqueArray<T>(Dim * Dim);
+        auto device_numerical = makeCudaUniqueArray<T>(Dim * Dim);
+        auto device_passed = makeCudaUniqueArray<bool>(1);
+        
+        cudaMemcpy(device_input.get(), host_input, Dim * sizeof(T), cudaMemcpyHostToDevice);
+        
+        verify_exp_gradient_kernel<T, Dim><<<1, 1>>>(
+            device_input.get(),
+            device_analytical.get(),
+            device_numerical.get(),
+            device_passed.get()
+        );
+        
+        cudaDeviceSynchronize();
+        
+        bool passed;
+        cudaMemcpy(&passed, device_passed.get(), sizeof(bool), cudaMemcpyDeviceToHost);
+        if (passed) exp_passed++;
+    }
+    
+    // Add tests
+    for (int test = 0; test < num_tests; ++test) {
+        T host_input1[1] = {dis_sigmoid(gen)};
+        T host_input2[1] = {dis_sigmoid(gen)};
+        
+        auto device_input1 = makeCudaUniqueArray<T>(1);
+        auto device_input2 = makeCudaUniqueArray<T>(1);
+        auto device_analytical1 = makeCudaUniqueArray<T>(1);
+        auto device_analytical2 = makeCudaUniqueArray<T>(1);
+        auto device_numerical1 = makeCudaUniqueArray<T>(1);
+        auto device_numerical2 = makeCudaUniqueArray<T>(1);
+        auto device_passed = makeCudaUniqueArray<bool>(1);
+        
+        cudaMemcpy(device_input1.get(), host_input1, sizeof(T), cudaMemcpyHostToDevice);
+        cudaMemcpy(device_input2.get(), host_input2, sizeof(T), cudaMemcpyHostToDevice);
+        
+        verify_add_gradient_kernel<T><<<1, 1>>>(
+            device_input1.get(),
+            device_input2.get(),
+            device_analytical1.get(),
+            device_analytical2.get(),
+            device_numerical1.get(),
+            device_numerical2.get(),
+            device_passed.get()
+        );
+        
+        cudaDeviceSynchronize();
+        
+        bool passed;
+        cudaMemcpy(&passed, device_passed.get(), sizeof(bool), cudaMemcpyDeviceToHost);
+        if (passed) add_passed++;
+    }
+    
+    // Combined operation tests
+    std::uniform_real_distribution<T> dis_combined(-1.0, 1.0);
+    for (int test = 0; test < num_tests; ++test) {
+        constexpr std::size_t Dim = 3;
+        T host_input[Dim];
+        for (std::size_t i = 0; i < Dim; ++i) {
+            host_input[i] = dis_combined(gen);
+        }
+        
+        auto device_input = makeCudaUniqueArray<T>(Dim);
+        auto device_analytical = makeCudaUniqueArray<T>(Dim * Dim);
+        auto device_numerical = makeCudaUniqueArray<T>(Dim * Dim);
+        auto device_passed = makeCudaUniqueArray<bool>(1);
+        
+        cudaMemcpy(device_input.get(), host_input, Dim * sizeof(T), cudaMemcpyHostToDevice);
+        
+        verify_combined_gradient_kernel<T, Dim><<<1, 1>>>(
+            device_input.get(),
+            device_analytical.get(),
+            device_numerical.get(),
+            device_passed.get()
+        );
+        
+        cudaDeviceSynchronize();
+        
+        bool passed;
+        cudaMemcpy(&passed, device_passed.get(), sizeof(bool), cudaMemcpyDeviceToHost);
+        if (passed) combined_passed++;
+    }
+    
+    EXPECT_GE(sigmoid_passed, num_tests * 95 / 100) 
+        << "Sigmoid: " << sigmoid_passed << "/" << num_tests << " passed";
+    EXPECT_GE(exp_passed, num_tests * 95 / 100) 
+        << "Exp: " << exp_passed << "/" << num_tests << " passed";
+    EXPECT_EQ(add_passed, num_tests) 
+        << "Add: " << add_passed << "/" << num_tests << " passed";
+    EXPECT_GE(combined_passed, num_tests * 95 / 100) 
+        << "Combined (sigmoid∘exp): " << combined_passed << "/" << num_tests << " passed";
 }
 
 int main(int argc, char** argv) {

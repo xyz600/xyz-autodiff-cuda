@@ -15,7 +15,8 @@ struct ExpLogic {
     __host__ __device__ void forward(Output& output, const Input& input) const {
         for (std::size_t i = 0; i < outputDim; ++i) {
             // exp(x)
-            output[i] = expf(input[i]);
+            using T = typename Input::value_type;
+            output[i] = static_cast<T>(exp(static_cast<double>(input[i])));
         }
     }
     
@@ -23,7 +24,8 @@ struct ExpLogic {
     __host__ __device__ void backward(const Output& output, Input& input) const {
         for (std::size_t i = 0; i < outputDim; ++i) {
             // d/dx exp(x) = exp(x)
-            float exp_val = expf(input[i]);
+            using T = typename Input::value_type;
+            T exp_val = static_cast<T>(exp(static_cast<double>(input[i])));
             input.grad(i) += output.grad(i) * exp_val;
         }
     }
