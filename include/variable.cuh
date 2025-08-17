@@ -27,7 +27,7 @@ public:
     __device__ __forceinline__ T* grad() const noexcept { return grad_ptr_; }
     
     // インデックスアクセス (値)
-    __device__ __forceinline__ T& operator[](std::size_t i) const noexcept { 
+    __device__ __forceinline__ constexpr T& operator[](std::size_t i) const noexcept { 
         return data_ptr_[i]; 
     }
     

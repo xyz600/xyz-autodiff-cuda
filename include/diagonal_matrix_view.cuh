@@ -53,7 +53,7 @@ public:
     // === MatrixView concept の要件 ===
     
     // 2次元アクセス (値)    
-    __device__ T operator()(std::size_t row, std::size_t col) {
+    __device__ constexpr T operator()(std::size_t row, std::size_t col) {
         if (row == col) {
             return variable_[row];
         } else {
@@ -61,7 +61,7 @@ public:
         }
     }
     
-    __device__ T operator()(std::size_t row, std::size_t col) const {
+    __device__ constexpr T operator()(std::size_t row, std::size_t col) const {
         if (row == col) {
             return variable_[row];
         } else {
@@ -70,7 +70,7 @@ public:
     }
 
     // 疎行列サポート
-    __device__ bool is_active_cell(std::size_t row, std::size_t col) const {
+    __device__ constexpr bool is_active_cell(std::size_t row, std::size_t col) const {
         return (row == col);  // 対角要素のみアクティブ
     }
     
