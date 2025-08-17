@@ -12,7 +12,9 @@
       "Bash(./tests/test_dense_matrix)",
       "Bash(ctest:*)",
       "Bash(task test:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(nvcc:*)",
+      "Bash(/tmp/test_add_concept:*)"
     ],
     "deny": []
   }

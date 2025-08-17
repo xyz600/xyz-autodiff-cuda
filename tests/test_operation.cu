@@ -3,7 +3,6 @@
 #include <vector>
 #include <type_traits>
 #include "../include/variable.cuh"
-#include "../include/node.cuh"
 #include "../include/operations/add.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
 
@@ -20,16 +19,17 @@ __global__ void test_operation_kernel(T* data1, T* grad1, T* data2, T* grad2, T*
     var1[0] = static_cast<T>(3.0);
     var2[0] = static_cast<T>(4.0);
     
-    // Operation適用: Node-based計算グラフ（即時評価）
-    auto add_op = AddOperation<T>{};
-    auto result = add_op(var1, var2);  // Node<AddOperation<T>, Variable<T,1>, Variable<T,1>>
+    // Operation適用: 直接計算
+    AddOperation<T, Variable<T, 1>, Variable<T, 1>> add_op;
     
-    // 値取得（即座に利用可能）
-    T computed_value = result.value();
-    output[0] = computed_value;
+    // forward計算
+    T result;
+    add_op.forward(var1, var2, result);
+    output[0] = result;
     
     // backward計算
-    result.backward();
+    T output_grad = static_cast<T>(1.0);  // 出力に対する勾配（単位勾配）
+    add_op.backward(output_grad, var1, var2);
     
     // 勾配結果を保存
     output[1] = var1.grad(0);  // dL/dvar1
@@ -87,12 +87,16 @@ TEST_F(OperationTest, BasicAddition) {
 }
 
 TEST_F(OperationTest, ConceptCheck) {
-    // 型要件のチェック（conceptの代わり）
-    static_assert(std::is_default_constructible_v<AddOperation<float>>);
-    static_assert(std::is_same_v<AddOperation<float>::value_type, float>);
+    using Var1 = Variable<float, 1>;
+    using AddOp = AddOperation<float, Var1, Var1>;
+    
+    // 型要件のチェック
+    static_assert(std::is_same_v<AddOp::value_type, float>);
+    static_assert(std::is_same_v<AddOp::input1_type, Var1>);
+    static_assert(std::is_same_v<AddOp::input2_type, Var1>);
     
     // サイズチェック
-    EXPECT_EQ((AddOperation<float>::output_size), 1);
+    EXPECT_EQ(AddOp::output_size, 1);
 }
 
 int main(int argc, char** argv) {
