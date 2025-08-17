@@ -38,9 +38,8 @@ template <typename Input1, typename Input2>
 requires BinaryLogicParameterConcept<Input1, Input2>
 __host__ __device__ auto add(const Input1& input1, const Input2& input2) {
     using LogicType = AddLogic<Input1, Input2>;
-    constexpr std::size_t outputDim = LogicType::outputDim;
     LogicType logic;
-    return BinaryOperation<outputDim, LogicType, Input1, Input2>(logic, input1, input2);
+    return BinaryOperation<LogicType::outputDim, LogicType, Input1, Input2>(logic, input1, input2);
 }
 
 // BinaryOperationRefを返すファクトリ関数（外部バッファ版）
@@ -49,9 +48,8 @@ requires BinaryLogicParameterConcept<Input1, Input2>
 __host__ __device__ auto add_ref(const Input1& input1, const Input2& input2, 
                                       Variable<typename Input1::value_type, AddLogic<Input1, Input2>::outputDim>& output) {
     using LogicType = AddLogic<Input1, Input2>;
-    constexpr std::size_t outputDim = LogicType::outputDim;
     LogicType logic;
-    return BinaryOperationRef<outputDim, LogicType, Input1, Input2>(logic, input1, input2, output);
+    return BinaryOperationRef<LogicType::outputDim, LogicType, Input1, Input2>(logic, input1, input2, output);
 }
 
 } // namespace op
