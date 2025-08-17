@@ -80,7 +80,7 @@ public:
 
 // MatrixView同士の行列乗算でDenseMatrixを返す
 template <typename A, typename B>
-// requires MatrixViewConcept<A> && MatrixViewConcept<B> && (A::cols == B::rows)  // CUDA compiler limitations
+requires MatrixViewConcept<A> && MatrixViewConcept<B> && (A::cols == B::rows)
 __device__ DenseMatrix<typename A::value_type, A::rows, B::cols> operator*(const A& a, const B& b) {
     using ValueType = typename A::value_type;
     constexpr std::size_t ResultRows = A::rows;

@@ -8,7 +8,7 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 find_package(CUDAToolkit REQUIRED)
 
-set(CMAKE_CUDA_ARCHITECTURES "120")
+set(CMAKE_CUDA_ARCHITECTURES "89")
 
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_EXAMPLES "Build examples" ON)

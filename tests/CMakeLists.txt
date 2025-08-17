@@ -17,7 +17,7 @@ target_link_libraries(test_variable xyz_autodiff gtest gtest_main)
 target_include_directories(test_variable PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_variable PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "50;60;70;75;80;86"
+    CUDA_ARCHITECTURES "89"
 )
 
 # DenseMatrix テスト
@@ -26,7 +26,7 @@ target_link_libraries(test_dense_matrix xyz_autodiff gtest gtest_main)
 target_include_directories(test_dense_matrix PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_dense_matrix PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "50;60;70;75;80;86"
+    CUDA_ARCHITECTURES "89"
 )
 
 # DiagonalMatrix テスト
@@ -35,7 +35,7 @@ target_link_libraries(test_diagonal_matrix xyz_autodiff gtest gtest_main)
 target_include_directories(test_diagonal_matrix PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_diagonal_matrix PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "50;60;70;75;80;86"
+    CUDA_ARCHITECTURES "89"
 )
 
 # CTest の有効化
