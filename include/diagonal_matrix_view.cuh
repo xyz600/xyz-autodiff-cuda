@@ -15,12 +15,20 @@ public:
     static constexpr std::size_t size = N;  // 対角要素のみ
     
 private:
-    Variable<T, N> variable_;
+    const Variable<T, N>& variable_;
     
 public:
-    // Variableを受け取るコンストラクタ
+    // Variableの参照を受け取るコンストラクタ
     __host__ __device__ DiagonalMatrixView(const Variable<T, N>& var)
         : variable_(var) {}
+    
+    // コピーコンストラクタ
+    __host__ __device__ DiagonalMatrixView(const DiagonalMatrixView& other)
+        : variable_(other.variable_) {}
+    
+    // コピー代入演算子とムーブ代入演算子は禁止（参照は再束縛できないため）
+    DiagonalMatrixView& operator=(const DiagonalMatrixView&) = delete;
+    DiagonalMatrixView& operator=(DiagonalMatrixView&&) = delete;
     
     // === Variable concept の要件 ===
     
@@ -52,8 +60,8 @@ public:
     
     // === MatrixView concept の要件 ===
     
-    // 2次元アクセス (値)    
-    __device__ constexpr T operator()(std::size_t row, std::size_t col) {
+    // 2次元アクセス (値)
+    __device__ T operator()(std::size_t row, std::size_t col) {
         if (row == col) {
             return variable_[row];
         } else {
