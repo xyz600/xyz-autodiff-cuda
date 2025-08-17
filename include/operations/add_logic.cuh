@@ -26,10 +26,10 @@ struct AddLogic {
     }
     
     // backward: 入力の勾配に結果を書き込む
-    __device__ void backward(const Output& output, Input1& input1, Input2& input2) const {
-        const T& output_grad = output.grad(0);
-        input1.accumulate_grad(&output_grad);
-        input2.accumulate_grad(&output_grad);
+    __device__ void backward(T* input1_grad, T* input2_grad, const Input1& input1, const Input2& input2, const T* upstream_grad) const {
+        // 加算の微分は1なので、そのまま上流の勾配を伝播
+        input1_grad[0] += upstream_grad[0];
+        input2_grad[0] += upstream_grad[0];
     }
 };
 

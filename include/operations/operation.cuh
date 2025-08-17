@@ -4,6 +4,7 @@
 #include <type_traits>
 #include "../concept/core_logic.cuh"
 #include "../concept/variable.cuh"
+#include "../variable.cuh"
 
 namespace xyz_autodiff {
 
@@ -65,7 +66,7 @@ public:
     __device__ void backward() {
         // inputは非constの参照が必要なのでconst_castを使用
         Input& input_ref = const_cast<Input&>(input_);
-        logic_.backward(output_, input_ref);
+        logic_.backward(input_ref.grad(), input_ref, output_.grad());
     }
     
     // 出力への参照を取得
@@ -151,7 +152,7 @@ public:
         // inputsは非constの参照が必要なのでconst_castを使用
         Input1& input1_ref = const_cast<Input1&>(input1_);
         Input2& input2_ref = const_cast<Input2&>(input2_);
-        logic_.backward(output_, input1_ref, input2_ref);
+        logic_.backward(input1_ref.grad(), input2_ref.grad(), input1_ref, input2_ref, output_.grad());
     }
     
     // 出力への参照を取得
@@ -331,7 +332,7 @@ public:
     __device__ void backward() {
         // inputは非constの参照が必要なのでconst_castを使用
         Input& input_ref = const_cast<Input&>(input_);
-        logic_.backward(output_, input_ref);
+        logic_.backward(input_ref.grad(), input_ref, output_.grad());
     }
     
     // 出力への参照を取得
@@ -401,7 +402,7 @@ public:
         // inputsは非constの参照が必要なのでconst_castを使用
         Input1& input1_ref = const_cast<Input1&>(input1_);
         Input2& input2_ref = const_cast<Input2&>(input2_);
-        logic_.backward(output_, input1_ref, input2_ref);
+        logic_.backward(input1_ref.grad(), input2_ref.grad(), input1_ref, input2_ref, output_.grad());
     }
     
     // 出力への参照を取得

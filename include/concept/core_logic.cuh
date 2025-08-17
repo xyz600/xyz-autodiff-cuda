@@ -10,7 +10,8 @@ namespace xyz_autodiff {
 template <typename T, typename Input, typename Output>
 concept UnaryLogicConcept = 
     VariableConcept<Input> && VariableConcept<Output> &&
-    requires(T logic, Output& output, const Input& input) {
+    requires(T logic, Output& output, const Input& input,
+             typename Input::value_type* input_grad, const typename Output::value_type* upstream_grad) {
     // constexpr outputDim を要求
     { T::outputDim } -> std::convertible_to<std::size_t>;
     
@@ -18,15 +19,16 @@ concept UnaryLogicConcept =
     { logic.forward(output, input) } -> std::same_as<void>;
     
     // backward: 入力の勾配に結果を書き込む
-    { logic.backward(output, input) } -> std::same_as<void>;
+    { logic.backward(input_grad, input, upstream_grad) } -> std::same_as<void>;
 };
 
 // 2入力1出力のコアロジック用concept
 template <typename T, typename Input1, typename Input2, typename Output>
 concept BinaryLogicConcept = 
     VariableConcept<Input1> && VariableConcept<Input2> && VariableConcept<Output> &&
-    requires(T logic, Output& output, const Input1& input1, const Input2& input2, 
-             Input1& input1_ref, Input2& input2_ref) {
+    requires(T logic, Output& output, const Input1& input1, const Input2& input2,
+             typename Input1::value_type* input1_grad, typename Input2::value_type* input2_grad,
+             const typename Output::value_type* upstream_grad) {
     // constexpr outputDim を要求
     { T::outputDim } -> std::convertible_to<std::size_t>;
     
@@ -34,7 +36,7 @@ concept BinaryLogicConcept =
     { logic.forward(output, input1, input2) } -> std::same_as<void>;
     
     // backward: 入力の勾配に結果を書き込む
-    { logic.backward(output, input1_ref, input2_ref) } -> std::same_as<void>;
+    { logic.backward(input1_grad, input2_grad, input1, input2, upstream_grad) } -> std::same_as<void>;
 };
 
 // 3入力1出力のコアロジック用concept
@@ -42,7 +44,8 @@ template <typename T, typename Input1, typename Input2, typename Input3, typenam
 concept TernaryLogicConcept = 
     VariableConcept<Input1> && VariableConcept<Input2> && VariableConcept<Input3> && VariableConcept<Output> &&
     requires(T logic, Output& output, const Input1& input1, const Input2& input2, const Input3& input3,
-             Input1& input1_ref, Input2& input2_ref, Input3& input3_ref) {
+             typename Input1::value_type* input1_grad, typename Input2::value_type* input2_grad, 
+             typename Input3::value_type* input3_grad, const typename Output::value_type* upstream_grad) {
     // constexpr outputDim を要求
     { T::outputDim } -> std::convertible_to<std::size_t>;
     
@@ -50,7 +53,7 @@ concept TernaryLogicConcept =
     { logic.forward(output, input1, input2, input3) } -> std::same_as<void>;
     
     // backward: 入力の勾配に結果を書き込む
-    { logic.backward(output, input1_ref, input2_ref, input3_ref) } -> std::same_as<void>;
+    { logic.backward(input1_grad, input2_grad, input3_grad, input1, input2, input3, upstream_grad) } -> std::same_as<void>;
 };
 
 // パラメータ制約用のconcept群
