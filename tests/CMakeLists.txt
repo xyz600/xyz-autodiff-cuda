@@ -38,8 +38,18 @@ set_target_properties(test_diagonal_matrix PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# Operation テスト
+add_executable(test_operation test_operation.cu)
+target_link_libraries(test_operation xyz_autodiff gtest gtest_main)
+target_include_directories(test_operation PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_operation PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest の有効化
 enable_testing()
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
 add_test(NAME DiagonalMatrixTest COMMAND test_diagonal_matrix)
+add_test(NAME OperationTest COMMAND test_operation)

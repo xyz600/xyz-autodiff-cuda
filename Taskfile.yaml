@@ -28,3 +28,5 @@ tasks:
         desc: "Running DenseMatrix tests"
       - cmd: cd build/debug && ./tests/test_diagonal_matrix
         desc: "Running DiagonalMatrix tests"
+      - cmd: cd build/debug && ./tests/test_operation
+        desc: "Running Operation tests"

@@ -5,27 +5,55 @@
 
 namespace xyz_autodiff {
 
-// Forward propagation のための Operation
-template <typename T, typename Output, typename... Inputs>
-concept OperationConcept = requires(T op, Output output, Inputs... inputs) {
-    // オペレーションは複数の入力を受け取り、出力に結果を書き込む
-    { op.forward(inputs..., output) } -> std::same_as<void>;
+// 前方宣言
+template <typename Op, typename Input1, typename Input2>
+class Graph;
+
+// Expression Template パターンのための Operation concept (CUDA compiler limitations)
+/*
+template <typename T, typename... Inputs>
+concept OperationConcept = requires(T op, Inputs... inputs) {
+    // デフォルトコンストラクタ
+    T{};
+    
+    // 型情報
+    typename T::value_type;
+    
+    // operator() でGraphを返す (Expression Template)
+    { op(inputs...) } -> std::convertible_to<Graph<T, Inputs...>>;
+    
+    // forward計算: forward(inputs..., output)
+    { op.forward(inputs..., std::declval<typename T::value_type&>()) } -> std::same_as<void>;
+    
+    // vjp計算: 各入力に対するVector-Jacobian Product
+    // vjp<idx>(output_grad, inputs...) で idx番目の入力に対するvjpを計算
 } && std::is_default_constructible_v<T>;
+*/
 
-// ForwardとBackward両方をサポートする微分可能Operation
-template <typename T, typename Output, typename... Inputs>
-concept DifferentiableOperationConcept = OperationConcept<T, Output, Inputs...> && 
-    requires(T op, Output output, Inputs... inputs) {
-    // VJP (Vector-Jacobian Product) による逆伝播
-    // outputのgradientを受け取って、inputsのgradientに累積
-    { op.backward(output, inputs...) } -> std::same_as<void>;
-};
+// Operation要件:
+// 1. デフォルトコンストラクタ
+// 2. value_type型定義
+// 3. operator()(inputs...) -> Graph<Op, Inputs...>
+// 4. forward(inputs..., output&) -> void
+// 5. vjp<idx>(output_grad, inputs...) -> value_type
 
-// 数値微分をサポートするOperation (テスト用)
-template <typename T, typename Output, typename... Inputs>
-concept TestableOperationConcept = DifferentiableOperationConcept<T, Output, Inputs...> && 
-    requires(T op, Output output, Inputs... inputs) {
-    { op.numerical_backward(output, inputs...) } -> std::same_as<void>;
-};
+// Graphが持つべき機能 (CUDA compiler limitations)
+/*
+template <typename T>
+concept GraphConcept = requires(T graph) {
+    // backward計算
+    { graph.backward() } -> std::same_as<void>;
+    
+    // 値アクセス
+    typename T::value_type;
+    
+    // Variable concept の要件も満たす
+} && std::is_copy_constructible_v<T>;
+*/
+
+// Graph要件:
+// 1. backward() -> void
+// 2. value() -> const value_type&
+// 3. Variable concept の要件
 
 } // namespace xyz_autodiff
