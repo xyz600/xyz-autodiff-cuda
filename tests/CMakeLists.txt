@@ -74,6 +74,15 @@ set_target_properties(test_matrix_transpose PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# SymmetricMatrix テスト
+add_executable(test_symmetric_matrix test_symmetric_matrix.cu)
+target_link_libraries(test_symmetric_matrix xyz_autodiff gtest gtest_main)
+target_include_directories(test_symmetric_matrix PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_symmetric_matrix PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
@@ -82,3 +91,4 @@ add_test(NAME OperationTest COMMAND test_operation)
 add_test(NAME OperationChainingTest COMMAND test_operation_chaining)
 add_test(NAME OperationChainingSimpleTest COMMAND test_operation_chaining_simple)
 add_test(NAME MatrixTransposeTest COMMAND test_matrix_transpose)
+add_test(NAME SymmetricMatrixTest COMMAND test_symmetric_matrix)

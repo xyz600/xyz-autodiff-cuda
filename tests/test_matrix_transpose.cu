@@ -3,7 +3,6 @@
 #include <array>
 #include "../include/dense_matrix.cuh"
 #include "../include/diagonal_matrix_view.cuh"
-#include "../include/matrix_view.cuh"
 #include "../include/variable.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
 
@@ -49,22 +48,22 @@ public:
     T* getDeviceResult() { return device_result.get(); }
 };
 
-// MatrixView transpose テスト用CUDAカーネル
+// DenseMatrix transpose テスト用CUDAカーネル
 template <typename T>
 __global__ void test_matrix_view_transpose_kernel(T* data, T* result) {
     // 2x3行列を作成
-    auto matrix_view = make_matrix_view<T, 2, 3>(data);
+    DenseMatrix<T, 2, 3> matrix;
     
     // データ設定
-    matrix_view(0, 0) = static_cast<T>(1.0);  // [1, 2, 3]
-    matrix_view(0, 1) = static_cast<T>(2.0);  // [4, 5, 6]
-    matrix_view(0, 2) = static_cast<T>(3.0);
-    matrix_view(1, 0) = static_cast<T>(4.0);
-    matrix_view(1, 1) = static_cast<T>(5.0);
-    matrix_view(1, 2) = static_cast<T>(6.0);
+    matrix(0, 0) = static_cast<T>(1.0);  // [1, 2, 3]
+    matrix(0, 1) = static_cast<T>(2.0);  // [4, 5, 6]
+    matrix(0, 2) = static_cast<T>(3.0);
+    matrix(1, 0) = static_cast<T>(4.0);
+    matrix(1, 1) = static_cast<T>(5.0);
+    matrix(1, 2) = static_cast<T>(6.0);
     
     // transpose操作
-    auto transposed = matrix_view.transpose();
+    auto transposed = matrix.transpose();
     
     // transposed は 3x2 行列
     // [1, 4]
@@ -144,7 +143,7 @@ protected:
 TEST_F(MatrixTransposeTest, MatrixViewTranspose) {
     using T = float;
     
-    TestMatrixBuffer<T, 8> buffer;  // 6要素データ + 結果8個
+    TestMatrixBuffer<T, 8> buffer;  // 結果8個
     buffer.toGpu();
     
     test_matrix_view_transpose_kernel<T><<<1, 1>>>(
@@ -211,21 +210,18 @@ TEST_F(MatrixTransposeTest, DiagonalMatrixTranspose) {
 
 // Concept チェックテスト
 TEST_F(MatrixTransposeTest, ConceptCheck) {
-    using MatView23 = MatrixView<float, 2, 3, false>;
-    using MatView32 = MatrixView<float, 2, 3, true>;
     using DenseMat23 = DenseMatrix<float, 2, 3>;
+    using DenseMat32 = DenseMatrix<float, 3, 2>;
     using DiagView3 = DiagonalMatrixView<float, 3>;
     
     // MatrixViewConcept の要件チェック
-    static_assert(MatrixViewConcept<MatView23>);
-    static_assert(MatrixViewConcept<MatView32>);
     static_assert(MatrixViewConcept<DenseMat23>);
+    static_assert(MatrixViewConcept<DenseMat32>);
     static_assert(MatrixViewConcept<DiagView3>);
     
     // サイズ情報のチェック
-    static_assert(MatView23::rows == 2 && MatView23::cols == 3);
-    static_assert(MatView32::rows == 3 && MatView32::cols == 2);  // transposed
     static_assert(DenseMat23::rows == 2 && DenseMat23::cols == 3);
+    static_assert(DenseMat32::rows == 3 && DenseMat32::cols == 2);
     static_assert(DiagView3::rows == 3 && DiagView3::cols == 3);
 }
 

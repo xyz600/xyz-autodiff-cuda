@@ -5,7 +5,6 @@
 #include <cuda_runtime.h>
 
 #include "concept/matrix.cuh"
-#include "matrix_view.cuh"
 
 namespace xyz_autodiff {
 
