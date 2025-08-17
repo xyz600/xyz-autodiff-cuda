@@ -47,8 +47,7 @@ set_target_properties(test_operation PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-# CTest の有効化
-enable_testing()
+# CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
 add_test(NAME DiagonalMatrixTest COMMAND test_diagonal_matrix)

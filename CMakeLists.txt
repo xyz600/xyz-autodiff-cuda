@@ -13,6 +13,11 @@ set(CMAKE_CUDA_ARCHITECTURES "89")
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 
+# CTest を有効化（テストを実行するため）
+if(BUILD_TESTS)
+    enable_testing()
+endif()
+
 include(GNUInstallDirs)
 
 add_library(xyz_autodiff INTERFACE)

@@ -22,11 +22,4 @@ tasks:
     desc: "Build and run all tests"
     cmds:
       - task: build:debug
-      - cmd: cd build/debug && ./tests/test_variable
-        desc: "Running Variable tests"
-      - cmd: cd build/debug && ./tests/test_dense_matrix
-        desc: "Running DenseMatrix tests"
-      - cmd: cd build/debug && ./tests/test_diagonal_matrix
-        desc: "Running DiagonalMatrix tests"
-      - cmd: cd build/debug && ./tests/test_operation
-        desc: "Running Operation tests"
+      - cd build/debug && ctest --output-on-failure -j4
