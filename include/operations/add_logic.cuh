@@ -36,8 +36,9 @@ template <std::size_t OutputSize, typename Input1, typename Input2>
 requires BinaryLogicParameterConcept<Input1, Input2, Variable<typename Input1::value_type, OutputSize>>
 __host__ __device__ auto make_add(const Input1& input1, const Input2& input2) {
     AddLogic<Input1, Input2, OutputSize> logic;
-    return make_binary_op<AddLogic<Input1, Input2, OutputSize>, Input1, Input2, OutputSize>(
-        logic, input1, input2);
+    auto op = BinaryOperation<AddLogic<Input1, Input2, OutputSize>, Input1, Input2, OutputSize>(logic, input1, input2);
+    op.forward();  // 自動的にforward計算を実行
+    return op;
 }
 
 } // namespace xyz_autodiff

@@ -20,11 +20,10 @@ __global__ void test_operation_kernel(T* data1, T* grad1, T* data2, T* grad2, T*
     var1[0] = static_cast<T>(3.0);
     var2[0] = static_cast<T>(4.0);
     
-    // make_add関数を使用してBinaryOperationを作成（内部でbufferを保持）
+    // make_add関数を使用してBinaryOperationを作成（内部でbufferを保持、自動でforward実行）
     auto op = make_add<1>(var1, var2);
     
-    // forward計算
-    op.forward();
+    // 結果を取得（forward計算は自動実行済み）
     result[0] = op.output()[0];
     
     // 出力に単位勾配を設定してbackward計算

@@ -31,8 +31,15 @@ public:
     // コピーコンストラクタを禁止
     UnaryOperation(const UnaryOperation&) = delete;
     
-    // ムーブコンストラクタを禁止
-    UnaryOperation(UnaryOperation&&) = delete;
+    // ムーブコンストラクタ
+    __host__ __device__ UnaryOperation(UnaryOperation&& other) noexcept
+        : logic_(other.logic_), input_(other.input_), output_(output_data_, output_grad_) {
+        // バッファをコピー
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            output_data_[i] = other.output_data_[i];
+            output_grad_[i] = other.output_grad_[i];
+        }
+    }
     
     // 代入演算子を禁止
     UnaryOperation& operator=(const UnaryOperation&) = delete;
@@ -91,8 +98,15 @@ public:
     // コピーコンストラクタを禁止
     BinaryOperation(const BinaryOperation&) = delete;
     
-    // ムーブコンストラクタを禁止
-    BinaryOperation(BinaryOperation&&) = delete;
+    // ムーブコンストラクタ
+    __host__ __device__ BinaryOperation(BinaryOperation&& other) noexcept
+        : logic_(other.logic_), input1_(other.input1_), input2_(other.input2_), output_(output_data_, output_grad_) {
+        // バッファをコピー
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            output_data_[i] = other.output_data_[i];
+            output_grad_[i] = other.output_grad_[i];
+        }
+    }
     
     // 代入演算子を禁止
     BinaryOperation& operator=(const BinaryOperation&) = delete;
@@ -154,8 +168,15 @@ public:
     // コピーコンストラクタを禁止
     TernaryOperation(const TernaryOperation&) = delete;
     
-    // ムーブコンストラクタを禁止
-    TernaryOperation(TernaryOperation&&) = delete;
+    // ムーブコンストラクタ
+    __host__ __device__ TernaryOperation(TernaryOperation&& other) noexcept
+        : logic_(other.logic_), input1_(other.input1_), input2_(other.input2_), input3_(other.input3_), output_(output_data_, output_grad_) {
+        // バッファをコピー
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            output_data_[i] = other.output_data_[i];
+            output_grad_[i] = other.output_grad_[i];
+        }
+    }
     
     // 代入演算子を禁止
     TernaryOperation& operator=(const TernaryOperation&) = delete;
