@@ -71,14 +71,9 @@ public:
     __device__ T operator()(std::size_t row, std::size_t col) const {
         return data_[row * cols + col];
     }
-    
-    // 疎行列サポート (密行列なので全て有効)
-    __device__ constexpr bool is_active_cell(std::size_t row, std::size_t col) const {
-        return true;
-    }
 };
 
-// 再帰テンプレートによるconstexprループ実装
+// 再帰テンプレートによるconstexprループ実装（疎行列サポート削除版）
 template <typename A, typename B, std::size_t K, std::size_t MaxK>
 __device__ constexpr typename A::value_type matrix_multiply_inner_impl(const A& a, const B& b, std::size_t i, std::size_t j) {
     using ValueType = typename A::value_type;
@@ -86,11 +81,7 @@ __device__ constexpr typename A::value_type matrix_multiply_inner_impl(const A& 
     if constexpr (K >= MaxK) {
         return ValueType{0};
     } else {
-        ValueType current = ValueType{0};
-        // 実行時にアクティブかチェック
-        if (a.is_active_cell(i, K) && b.is_active_cell(K, j)) {
-            current = a(i, K) * b(K, j);
-        }
+        ValueType current = a(i, K) * b(K, j);
         return current + matrix_multiply_inner_impl<A, B, K + 1, MaxK>(a, b, i, j);
     }
 }

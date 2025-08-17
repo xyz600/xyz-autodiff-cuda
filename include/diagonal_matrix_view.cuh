@@ -68,11 +68,6 @@ public:
             return T{0};
         }
     }
-
-    // 疎行列サポート
-    __device__ constexpr bool is_active_cell(std::size_t row, std::size_t col) const {
-        return (row == col);  // 対角要素のみアクティブ
-    }
     
     // Variable参照を取得
     __device__ const Variable<T, N>& variable() const { return variable_; }

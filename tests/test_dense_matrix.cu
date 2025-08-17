@@ -45,19 +45,11 @@ __global__ void test_dense_matrix_operations_kernel(T* grad_values, T* output) {
     matrix.zero_grad();
     matrix.accumulate_grad(grad_values);
     
-    // 疎行列サポートテスト
-    bool active_test1 = matrix.is_active_cell(0, 0);
-    bool active_test2 = matrix.is_active_cell(0, 1);
-    
     // 結果保存
     for (std::size_t i = 0; i < matrix.size; ++i) {
         output[i] = matrix[i];                    // データ値
         output[matrix.size + i] = matrix.grad(i); // 勾配値
     }
-    
-    // アクティブ行・列の検証（密行列なので全てtrue）
-    output[2 * matrix.size] = active_test1 ? 1.0f : 0.0f;
-    output[2 * matrix.size + 1] = active_test2 ? 1.0f : 0.0f;
 }
 
 template <typename T, std::size_t Rows, std::size_t Cols>
@@ -137,11 +129,11 @@ TEST_F(DenseMatrixTest, MatrixOperations) {
     
     // ホストメモリ
     std::vector<T> host_grad_values = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
-    std::vector<T> host_output(2 * Size + 2, 0);
+    std::vector<T> host_output(2 * Size, 0);
     
     // デバイスメモリ確保 (cuda_unique_ptr使用)
     auto device_grad_values = makeCudaUniqueArray<T>(Size);
-    auto device_output = makeCudaUniqueArray<T>(2 * Size + 2);
+    auto device_output = makeCudaUniqueArray<T>(2 * Size);
     
     ASSERT_NE(device_grad_values, nullptr);
     ASSERT_NE(device_output, nullptr);
@@ -154,7 +146,7 @@ TEST_F(DenseMatrixTest, MatrixOperations) {
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), (2 * Size + 2) * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), 2 * Size * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // データ値の検証 ((i+1) * (j+1))
     std::vector<T> expected_data = {1.0f, 2.0f, 2.0f, 4.0f, 3.0f, 6.0f};
@@ -166,10 +158,6 @@ TEST_F(DenseMatrixTest, MatrixOperations) {
     for (std::size_t i = 0; i < Size; ++i) {
         EXPECT_FLOAT_EQ(host_output[Size + i], host_grad_values[i]);
     }
-    
-    // アクティブ行・列の検証
-    EXPECT_FLOAT_EQ(host_output[2 * Size], 1.0f);     // active_rows check
-    EXPECT_FLOAT_EQ(host_output[2 * Size + 1], 1.0f); // active_cols check
     
     // メモリは自動解放される
 }

@@ -19,13 +19,7 @@ concept MatrixViewConcept = requires(T view) {
     // データへの直接アクセス
     { view.data() } -> std::convertible_to<typename T::value_type*>;
     { view.data() } -> std::convertible_to<const typename T::value_type*>;
-    
-    // 疎行列サポート: 指定のセルの有効性を取得（constexpr必須）
-    { view.is_active_cell(std::size_t{}, std::size_t{}) } -> std::convertible_to<bool>;
-    requires requires { 
-        requires std::is_same_v<decltype(view.is_active_cell(std::size_t{}, std::size_t{})), bool>;
-    };
-    
+        
     // 型情報
     typename T::value_type;
 } && std::is_copy_constructible_v<T>;
