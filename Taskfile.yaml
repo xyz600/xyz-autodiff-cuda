@@ -17,3 +17,9 @@ tasks:
     desc: "Clean build directories"
     cmds:
       - rm -rf build/
+
+  test:
+    desc: "Build and run all tests"
+    cmds:
+      - task: build:debug
+      - cd build/debug && ctest --output-on-failure -j4
