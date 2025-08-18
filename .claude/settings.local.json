@@ -28,7 +28,10 @@
       "Bash(cp:*)",
       "Bash(sed:*)",
       "Bash(./tests/test_gradient_verification:*)",
-      "Bash(./tests/test_operation_chaining)"
+      "Bash(./tests/test_operation_chaining)",
+      "Bash(./tests/test_operation_concepts)",
+      "Bash(./tests/test_quaternion_to_rotation_matrix:*)",
+      "Bash(./debug_quaternion)"
     ],
     "deny": []
   }

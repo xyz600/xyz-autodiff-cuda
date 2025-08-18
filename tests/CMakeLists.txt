@@ -99,6 +99,15 @@ set_target_properties(test_operation_concepts PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# QuaternionToRotationMatrix テスト
+add_executable(test_quaternion_to_rotation_matrix test_quaternion_to_rotation_matrix.cu)
+target_link_libraries(test_quaternion_to_rotation_matrix xyz_autodiff gtest gtest_main)
+target_include_directories(test_quaternion_to_rotation_matrix PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_quaternion_to_rotation_matrix PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
@@ -110,3 +119,4 @@ add_test(NAME MathDispatcherTest COMMAND test_math_dispatcher)
 add_test(NAME GradientVerificationTest COMMAND test_gradient_verification)
 add_test(NAME OperationChainingTest COMMAND test_operation_chaining)
 add_test(NAME OperationConceptsTest COMMAND test_operation_concepts)
+add_test(NAME QuaternionToRotationMatrixTest COMMAND test_quaternion_to_rotation_matrix)
