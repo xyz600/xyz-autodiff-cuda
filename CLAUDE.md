@@ -77,3 +77,25 @@ final_result.backward();  // Automatically propagates to inputs
 - **test_parallel_gradient_accumulation**: Tests 10,000 concurrent threads accumulating gradients
 - **test_shared_memory_atomic**: Tests shared memory atomicAdd functionality
 - **All tests pass**: 100% success rate with 13 test suites
+
+## Examples
+
+### Linear Regression SGD Optimization
+A comprehensive stochastic gradient descent example for parameter estimation:
+
+```bash
+# Build and run linear regression example
+task build:debug && cd build/debug && ./examples/linear_regression_sgd
+```
+
+**Features:**
+- Fits parameters (a,b,c,d) for function: `y = (x1-a)² + b(x2-c)² + d`
+- 100,000 noisy training samples
+- 1,000 epochs with 10,000 random samples per batch
+- Exponential learning rate decay (0.01 → 0.0001)
+- Real-time parameter error tracking
+
+**Current Status:**
+- Successfully demonstrates automatic differentiation in CUDA
+- Shows gradient accumulation across batches
+- Partial convergence achieved (needs optimization tuning for full convergence)

@@ -42,7 +42,7 @@ struct MulLogic {
 // BinaryOperationを返すファクトリ関数
 template <typename Input1, typename Input2>
 requires BinaryLogicParameterConcept<Input1, Input2>
-__host__ __device__ auto mul(Input1& input1, Input2& input2) {
+__device__ auto mul(Input1& input1, Input2& input2) {
     using LogicType = MulLogic<Input1, Input2>;
     LogicType logic;
     auto op = BinaryOperation<LogicType::outputDim, LogicType, Input1, Input2>(logic, input1, input2);
