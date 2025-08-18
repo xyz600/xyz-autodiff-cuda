@@ -13,6 +13,16 @@
 namespace xyz_autodiff {
 namespace test {
 
+// ユナリ操作テスト用統合バッファ構造体
+template <typename T, std::size_t InputDim, std::size_t OutputDim>
+struct UnaryGradientTestBuffers {
+    T input_data[InputDim];
+    T input_grad[InputDim];
+    T output_grad[OutputDim];
+    T analytical_grad[InputDim];
+    T numerical_grad[InputDim];
+};
+
 // 相対誤差と絶対誤差の最小値を計算するヘルパー関数
 template <typename T>
 __host__ T compute_error_min(T analytical, T numerical) {
@@ -24,13 +34,12 @@ __host__ T compute_error_min(T analytical, T numerical) {
 // UnaryOperation用カーネル関数
 template <typename LogicType, std::size_t InDim, std::size_t OutDim>
 __global__ void test_unary_gradient_kernel(
-    double* input_data, double* input_grad, double* output_grad,
-    double* analytical_grad, double* numerical_grad, double delta) {
+    UnaryGradientTestBuffers<double, InDim, OutDim>* buffers, double delta) {
     
     using T = double;
     
     // Variable作成
-    VariableRef<T, InDim> input_var(input_data, input_grad);
+    VariableRef<T, InDim> input_var(buffers->input_data, buffers->input_grad);
     
     LogicType logic;
     
@@ -42,14 +51,14 @@ __global__ void test_unary_gradient_kernel(
         // 上流勾配設定
         op.zero_grad();
         for (std::size_t i = 0; i < OutDim; ++i) {
-            op.add_grad(i, output_grad[i]);
+            op.add_grad(i, buffers->output_grad[i]);
         }
         
         op.backward();
         
         // 結果保存
         for (std::size_t i = 0; i < InDim; ++i) {
-            analytical_grad[i] = input_var.grad(i);
+            buffers->analytical_grad[i] = input_var.grad(i);
         }
     }
     
@@ -61,14 +70,14 @@ __global__ void test_unary_gradient_kernel(
         // 上流勾配設定
         op.zero_grad();
         for (std::size_t i = 0; i < OutDim; ++i) {
-            op.add_grad(i, output_grad[i]);
+            op.add_grad(i, buffers->output_grad[i]);
         }
         
         op.backward_numerical(delta);
         
         // 結果保存
         for (std::size_t i = 0; i < InDim; ++i) {
-            numerical_grad[i] = input_var.grad(i);
+            buffers->numerical_grad[i] = input_var.grad(i);
         }
     }
 }
@@ -89,66 +98,46 @@ public:
         std::mt19937 gen(rd());
         std::uniform_real_distribution<T> dist(-2.0, 2.0);
         
-        // ホストメモリ
-        std::vector<T> host_input_data(InputDim);
-        std::vector<T> host_input_grad(InputDim);
-        std::vector<T> host_output_grad(OutputDim);
-        std::vector<T> host_analytical_grad(InputDim);
-        std::vector<T> host_numerical_grad(InputDim);
-        
-        // デバイスメモリ確保
-        auto device_input_data = makeCudaUniqueArray<T>(InputDim);
-        auto device_input_grad = makeCudaUniqueArray<T>(InputDim);
-        auto device_output_grad = makeCudaUniqueArray<T>(OutputDim);
-        auto device_analytical_grad = makeCudaUniqueArray<T>(InputDim);
-        auto device_numerical_grad = makeCudaUniqueArray<T>(InputDim);
-        
-        ASSERT_NE(device_input_data, nullptr);
-        ASSERT_NE(device_input_grad, nullptr);
-        ASSERT_NE(device_output_grad, nullptr);
-        ASSERT_NE(device_analytical_grad, nullptr);
-        ASSERT_NE(device_numerical_grad, nullptr);
+        // デバイスメモリ確保（単一確保）
+        auto device_buffers = makeCudaUnique<UnaryGradientTestBuffers<T, InputDim, OutputDim>>();
+        ASSERT_NE(device_buffers, nullptr);
         
         // NUM_TESTSのランダムテストケース
         for (int test_case = 0; test_case < NUM_TESTS; ++test_case) {
+            UnaryGradientTestBuffers<T, InputDim, OutputDim> host_buffers = {};
+            
             // ランダム入力生成
             for (std::size_t i = 0; i < InputDim; ++i) {
-                host_input_data[i] = dist(gen);
+                host_buffers.input_data[i] = dist(gen);
             }
             
             // ランダム上流勾配生成
             for (std::size_t i = 0; i < OutputDim; ++i) {
-                host_output_grad[i] = dist(gen);
+                host_buffers.output_grad[i] = dist(gen);
             }
             
             // デバイスにコピー
-            ASSERT_EQ(cudaMemcpy(device_input_data.get(), host_input_data.data(), 
-                               InputDim * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-            ASSERT_EQ(cudaMemcpy(device_output_grad.get(), host_output_grad.data(), 
-                               OutputDim * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+            ASSERT_EQ(cudaMemcpy(device_buffers.get(), &host_buffers, 
+                               sizeof(UnaryGradientTestBuffers<T, InputDim, OutputDim>), cudaMemcpyHostToDevice), cudaSuccess);
             
             // テストカーネル実行
             test_unary_gradient_kernel<Logic, InputDim, OutputDim><<<1, 1>>>(
-                device_input_data.get(), device_input_grad.get(),
-                device_output_grad.get(), device_analytical_grad.get(),
-                device_numerical_grad.get(), static_cast<T>(DELTA));
+                device_buffers.get(), static_cast<T>(DELTA));
             
             ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
             
             // 結果をホストにコピー
-            ASSERT_EQ(cudaMemcpy(host_analytical_grad.data(), device_analytical_grad.get(), 
-                               InputDim * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-            ASSERT_EQ(cudaMemcpy(host_numerical_grad.data(), device_numerical_grad.get(), 
-                               InputDim * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+            ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), 
+                               sizeof(UnaryGradientTestBuffers<T, InputDim, OutputDim>), cudaMemcpyDeviceToHost), cudaSuccess);
             
             // 誤差チェック
             for (std::size_t i = 0; i < InputDim; ++i) {
-                T error_min = compute_error_min(host_analytical_grad[i], host_numerical_grad[i]);
+                T error_min = compute_error_min(host_buffers.analytical_grad[i], host_buffers.numerical_grad[i]);
                 
                 EXPECT_LE(error_min, TOLERANCE) 
                     << operation_name << " test case " << test_case 
-                    << ", input[" << i << "]: analytical=" << host_analytical_grad[i]
-                    << ", numerical=" << host_numerical_grad[i]
+                    << ", input[" << i << "]: analytical=" << host_buffers.analytical_grad[i]
+                    << ", numerical=" << host_buffers.numerical_grad[i]
                     << ", error_min=" << error_min;
             }
         }
@@ -167,65 +156,45 @@ public:
         std::mt19937 gen(rd());
         std::uniform_real_distribution<T> dist(input_min, input_max);
         
-        // ホストメモリ
-        std::vector<T> host_input_data(InputDim);
-        std::vector<T> host_input_grad(InputDim);
-        std::vector<T> host_output_grad(OutputDim);
-        std::vector<T> host_analytical_grad(InputDim);
-        std::vector<T> host_numerical_grad(InputDim);
-        
-        // デバイスメモリ確保
-        auto device_input_data = makeCudaUniqueArray<T>(InputDim);
-        auto device_input_grad = makeCudaUniqueArray<T>(InputDim);
-        auto device_output_grad = makeCudaUniqueArray<T>(OutputDim);
-        auto device_analytical_grad = makeCudaUniqueArray<T>(InputDim);
-        auto device_numerical_grad = makeCudaUniqueArray<T>(InputDim);
-        
-        ASSERT_NE(device_input_data, nullptr);
-        ASSERT_NE(device_input_grad, nullptr);
-        ASSERT_NE(device_output_grad, nullptr);
-        ASSERT_NE(device_analytical_grad, nullptr);
-        ASSERT_NE(device_numerical_grad, nullptr);
+        // デバイスメモリ確保（単一確保）
+        auto device_buffers = makeCudaUnique<UnaryGradientTestBuffers<T, InputDim, OutputDim>>();
+        ASSERT_NE(device_buffers, nullptr);
         
         for (std::size_t test_case = 0; test_case < num_tests; ++test_case) {
+            UnaryGradientTestBuffers<T, InputDim, OutputDim> host_buffers = {};
+            
             // ランダム入力生成
             for (std::size_t i = 0; i < InputDim; ++i) {
-                host_input_data[i] = dist(gen);
+                host_buffers.input_data[i] = dist(gen);
             }
             
             // ランダム上流勾配生成
             for (std::size_t i = 0; i < OutputDim; ++i) {
-                host_output_grad[i] = dist(gen);
+                host_buffers.output_grad[i] = dist(gen);
             }
             
             // デバイスにコピー
-            ASSERT_EQ(cudaMemcpy(device_input_data.get(), host_input_data.data(), 
-                               InputDim * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-            ASSERT_EQ(cudaMemcpy(device_output_grad.get(), host_output_grad.data(), 
-                               OutputDim * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+            ASSERT_EQ(cudaMemcpy(device_buffers.get(), &host_buffers, 
+                               sizeof(UnaryGradientTestBuffers<T, InputDim, OutputDim>), cudaMemcpyHostToDevice), cudaSuccess);
             
             // テストカーネル実行
             test_unary_gradient_kernel<Logic, InputDim, OutputDim><<<1, 1>>>(
-                device_input_data.get(), device_input_grad.get(),
-                device_output_grad.get(), device_analytical_grad.get(),
-                device_numerical_grad.get(), static_cast<T>(delta));
+                device_buffers.get(), static_cast<T>(delta));
             
             ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
             
             // 結果をホストにコピー
-            ASSERT_EQ(cudaMemcpy(host_analytical_grad.data(), device_analytical_grad.get(), 
-                               InputDim * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-            ASSERT_EQ(cudaMemcpy(host_numerical_grad.data(), device_numerical_grad.get(), 
-                               InputDim * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+            ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), 
+                               sizeof(UnaryGradientTestBuffers<T, InputDim, OutputDim>), cudaMemcpyDeviceToHost), cudaSuccess);
             
             // 誤差チェック
             for (std::size_t i = 0; i < InputDim; ++i) {
-                T error_min = compute_error_min(host_analytical_grad[i], host_numerical_grad[i]);
+                T error_min = compute_error_min(host_buffers.analytical_grad[i], host_buffers.numerical_grad[i]);
                 
                 EXPECT_LE(error_min, tolerance) 
                     << operation_name << " test case " << test_case 
-                    << ", input[" << i << "]: analytical=" << host_analytical_grad[i]
-                    << ", numerical=" << host_numerical_grad[i]
+                    << ", input[" << i << "]: analytical=" << host_buffers.analytical_grad[i]
+                    << ", numerical=" << host_buffers.numerical_grad[i]
                     << ", error_min=" << error_min;
             }
         }

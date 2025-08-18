@@ -7,44 +7,12 @@
 
 using namespace xyz_autodiff;
 
-// テスト用汎用バッファ構造体
-template <typename T, std::size_t NumElements>
-class TestSymmetricMatrixBuffer {
-public:
-    std::array<T, NumElements> host_data;
-    std::array<T, NumElements> host_result;
-    cuda_unique_ptr<T[]> device_data;
-    cuda_unique_ptr<T[]> device_result;
-    
-    TestSymmetricMatrixBuffer() {
-        host_data.fill(T{});
-        host_result.fill(T{});
-        device_data = makeCudaUniqueArray<T>(NumElements);
-        device_result = makeCudaUniqueArray<T>(NumElements);
-    }
-    
-    void toGpu() {
-        cudaMemcpy(device_data.get(), host_data.data(), NumElements * sizeof(T), cudaMemcpyHostToDevice);
-        cudaDeviceSynchronize();
-    }
-    
-    void toHost() {
-        cudaMemcpy(host_result.data(), device_result.get(), NumElements * sizeof(T), cudaMemcpyDeviceToHost);
-        cudaDeviceSynchronize();
-    }
-    
-    void setData(std::size_t idx, T value) {
-        if (idx < NumElements) {
-            host_data[idx] = value;
-        }
-    }
-    
-    T getResult(std::size_t idx) const {
-        return idx < NumElements ? host_result[idx] : T{};
-    }
-    
-    T* getDeviceData() { return device_data.get(); }
-    T* getDeviceResult() { return device_result.get(); }
+// テスト用バッファ構造体（シンプル版）
+template <typename T>
+struct SymmetricMatrixTestBuffers {
+    T data[6];     // 3x3対称行列データ用（6要素）
+    T grad[6];     // 勾配用
+    T result[16];  // 結果格納用
 };
 
 // SymmetricMatrix基本テスト用CUDAカーネル
@@ -145,79 +113,82 @@ protected:
 TEST_F(SymmetricMatrixTest, BasicSymmetricMatrix) {
     using T = float;
     
-    TestSymmetricMatrixBuffer<T, 16> buffer;  // 6要素データ + 勾配 + 結果
-    buffer.toGpu();
+    auto device_buffers = makeCudaUnique<SymmetricMatrixTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
     test_symmetric_matrix_basic_kernel<T><<<1, 1>>>(
-        buffer.getDeviceData(),
-        buffer.getDeviceData() + 6,  // 勾配用
-        buffer.getDeviceResult());
+        device_buffers.get()->data,
+        device_buffers.get()->grad,
+        device_buffers.get()->result);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    buffer.toHost();
+    SymmetricMatrixTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(SymmetricMatrixTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // 基本的な対称性の検証
-    EXPECT_FLOAT_EQ(buffer.getResult(0), 1.0f);  // (0,0) = 1
-    EXPECT_FLOAT_EQ(buffer.getResult(1), 2.0f);  // (0,1) = 2
-    EXPECT_FLOAT_EQ(buffer.getResult(2), 2.0f);  // (1,0) = 2 (対称)
-    EXPECT_FLOAT_EQ(buffer.getResult(3), 4.0f);  // (1,1) = 4
-    EXPECT_FLOAT_EQ(buffer.getResult(4), 3.0f);  // (2,0) = 3 (対称)
-    EXPECT_FLOAT_EQ(buffer.getResult(5), 6.0f);  // (2,2) = 6
+    EXPECT_FLOAT_EQ(host_buffers.result[0], 1.0f);  // (0,0) = 1
+    EXPECT_FLOAT_EQ(host_buffers.result[1], 2.0f);  // (0,1) = 2
+    EXPECT_FLOAT_EQ(host_buffers.result[2], 2.0f);  // (1,0) = 2 (対称)
+    EXPECT_FLOAT_EQ(host_buffers.result[3], 4.0f);  // (1,1) = 4
+    EXPECT_FLOAT_EQ(host_buffers.result[4], 3.0f);  // (2,0) = 3 (対称)
+    EXPECT_FLOAT_EQ(host_buffers.result[5], 6.0f);  // (2,2) = 6
     
     // 下三角要素のアクセステスト
-    EXPECT_FLOAT_EQ(buffer.getResult(6), 2.0f);  // (1,0) = 2
-    EXPECT_FLOAT_EQ(buffer.getResult(7), 5.0f);  // (2,1) = 5
+    EXPECT_FLOAT_EQ(host_buffers.result[6], 2.0f);  // (1,0) = 2
+    EXPECT_FLOAT_EQ(host_buffers.result[7], 5.0f);  // (2,1) = 5
 }
 
 TEST_F(SymmetricMatrixTest, SymmetricMatrixTranspose) {
     using T = float;
     
-    TestSymmetricMatrixBuffer<T, 16> buffer;
-    buffer.toGpu();
+    auto device_buffers = makeCudaUnique<SymmetricMatrixTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
     test_symmetric_matrix_transpose_kernel<T><<<1, 1>>>(
-        buffer.getDeviceData(),
-        buffer.getDeviceData() + 6,
-        buffer.getDeviceResult());
+        device_buffers.get()->data,
+        device_buffers.get()->grad,
+        device_buffers.get()->result);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    buffer.toHost();
+    SymmetricMatrixTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(SymmetricMatrixTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // transpose後も同じ値（対称行列なので）
-    EXPECT_FLOAT_EQ(buffer.getResult(0), 1.0f);  // (0,0) = 1
-    EXPECT_FLOAT_EQ(buffer.getResult(1), 2.0f);  // (0,1) = 2
-    EXPECT_FLOAT_EQ(buffer.getResult(2), 2.0f);  // (1,0) = 2
-    EXPECT_FLOAT_EQ(buffer.getResult(3), 4.0f);  // (1,1) = 4
-    EXPECT_FLOAT_EQ(buffer.getResult(4), 5.0f);  // (2,1) = 5
-    EXPECT_FLOAT_EQ(buffer.getResult(5), 5.0f);  // (1,2) = 5
+    EXPECT_FLOAT_EQ(host_buffers.result[0], 1.0f);  // (0,0) = 1
+    EXPECT_FLOAT_EQ(host_buffers.result[1], 2.0f);  // (0,1) = 2
+    EXPECT_FLOAT_EQ(host_buffers.result[2], 2.0f);  // (1,0) = 2
+    EXPECT_FLOAT_EQ(host_buffers.result[3], 4.0f);  // (1,1) = 4
+    EXPECT_FLOAT_EQ(host_buffers.result[4], 5.0f);  // (2,1) = 5
+    EXPECT_FLOAT_EQ(host_buffers.result[5], 5.0f);  // (1,2) = 5
 }
 
 TEST_F(SymmetricMatrixTest, SymmetricMatrixStorage) {
     using T = float;
     
-    TestSymmetricMatrixBuffer<T, 16> buffer;
-    buffer.toGpu();
+    auto device_buffers = makeCudaUnique<SymmetricMatrixTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
     test_symmetric_matrix_storage_kernel<T><<<1, 1>>>(
-        buffer.getDeviceData(),
-        buffer.getDeviceData() + 6,
-        buffer.getDeviceResult());
+        device_buffers.get()->data,
+        device_buffers.get()->grad,
+        device_buffers.get()->result);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    buffer.toHost();
+    SymmetricMatrixTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(SymmetricMatrixTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // ストレージ順序でのアクセス結果確認
-    EXPECT_FLOAT_EQ(buffer.getResult(0), 1.0f);  // (0,0) = 1
-    EXPECT_FLOAT_EQ(buffer.getResult(1), 2.0f);  // (0,1) = 2
-    EXPECT_FLOAT_EQ(buffer.getResult(2), 3.0f);  // (0,2) = 3
-    EXPECT_FLOAT_EQ(buffer.getResult(3), 4.0f);  // (1,1) = 4
-    EXPECT_FLOAT_EQ(buffer.getResult(4), 5.0f);  // (1,2) = 5
-    EXPECT_FLOAT_EQ(buffer.getResult(5), 6.0f);  // (2,2) = 6
+    EXPECT_FLOAT_EQ(host_buffers.result[0], 1.0f);  // (0,0) = 1
+    EXPECT_FLOAT_EQ(host_buffers.result[1], 2.0f);  // (0,1) = 2
+    EXPECT_FLOAT_EQ(host_buffers.result[2], 3.0f);  // (0,2) = 3
+    EXPECT_FLOAT_EQ(host_buffers.result[3], 4.0f);  // (1,1) = 4
+    EXPECT_FLOAT_EQ(host_buffers.result[4], 5.0f);  // (1,2) = 5
+    EXPECT_FLOAT_EQ(host_buffers.result[5], 6.0f);  // (2,2) = 6
     
     // 対称性の確認
-    EXPECT_FLOAT_EQ(buffer.getResult(6), 2.0f);  // (1,0) = 2
-    EXPECT_FLOAT_EQ(buffer.getResult(7), 3.0f);  // (2,0) = 3
-    EXPECT_FLOAT_EQ(buffer.getResult(8), 5.0f);  // (2,1) = 5
+    EXPECT_FLOAT_EQ(host_buffers.result[6], 2.0f);  // (1,0) = 2
+    EXPECT_FLOAT_EQ(host_buffers.result[7], 3.0f);  // (2,0) = 3
+    EXPECT_FLOAT_EQ(host_buffers.result[8], 5.0f);  // (2,1) = 5
 }
 
 TEST_F(SymmetricMatrixTest, ConceptCheck) {
