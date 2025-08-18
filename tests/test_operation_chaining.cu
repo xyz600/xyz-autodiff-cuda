@@ -21,14 +21,12 @@ __global__ void test_chaining_analytical_kernel(
     VariableRef<T, 1> y_var(y_data, y_grad);
     VariableRef<T, 1> z_var(z_data, z_grad);
     
-    // 勾配をゼロクリア
-    x_var.zero_grad();
-    y_var.zero_grad();
-    z_var.zero_grad();
-    
     // f(x, y, z) = xz + y の計算（自動的にforwardが呼ばれ、結果が保存される）
     auto mul_result = op::mul(x_var, z_var);
     auto final_result = op::add(mul_result, y_var);
+    
+    // 勾配をゼロクリア（自動的に全ての入力のzero_gradが呼ばれる）
+    final_result.zero_grad();
     
     // 上流勾配を設定
     final_result.grad(0) = output_grad[0];
@@ -48,14 +46,12 @@ __global__ void test_chaining_numerical_kernel(
     VariableRef<T, 1> y_var(y_data, y_grad);
     VariableRef<T, 1> z_var(z_data, z_grad);
     
-    // 勾配をゼロクリア
-    x_var.zero_grad();
-    y_var.zero_grad();
-    z_var.zero_grad();
-    
     // f(x, y, z) = xz + y の計算（自動的にforwardが呼ばれ、結果が保存される）
     auto mul_result = op::mul(x_var, z_var);
     auto final_result = op::add(mul_result, y_var);
+    
+    // 勾配をゼロクリア（自動的に全ての入力のzero_gradが呼ばれる）
+    final_result.zero_grad();
     
     // 上流勾配を設定
     final_result.grad(0) = output_grad[0];

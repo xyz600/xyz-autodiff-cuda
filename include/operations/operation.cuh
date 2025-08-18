@@ -121,7 +121,14 @@ public:
     __device__ value_type* grad() { return output_.grad(); }
     __device__ const value_type* grad() const { return output_.grad(); }
     
-    __device__ void zero_grad() { output_.zero_grad(); }
+    __device__ void zero_grad() { 
+        output_.zero_grad(); 
+        
+        // 入力のzero_gradも自動的に呼ぶ（Operationまたはzero_gradメソッドを持つ場合のみ）
+        if constexpr (requires { input_.zero_grad(); }) {
+            input_.zero_grad();
+        }
+    }
     
 };
 
@@ -273,7 +280,17 @@ public:
     __device__ value_type* grad() { return output_.grad(); }
     __device__ const value_type* grad() const { return output_.grad(); }
     
-    __device__ void zero_grad() { output_.zero_grad(); }
+    __device__ void zero_grad() { 
+        output_.zero_grad(); 
+        
+        // 入力のzero_gradも自動的に呼ぶ（Operationまたはzero_gradメソッドを持つ場合のみ）
+        if constexpr (requires { input1_.zero_grad(); }) {
+            input1_.zero_grad();
+        }
+        if constexpr (requires { input2_.zero_grad(); }) {
+            input2_.zero_grad();
+        }
+    }
     
 };
 
@@ -448,7 +465,20 @@ public:
     __device__ value_type* grad() { return output_.grad(); }
     __device__ const value_type* grad() const { return output_.grad(); }
     
-    __device__ void zero_grad() { output_.zero_grad(); }
+    __device__ void zero_grad() { 
+        output_.zero_grad(); 
+        
+        // 入力のzero_gradも自動的に呼ぶ（Operationまたはzero_gradメソッドを持つ場合のみ）
+        if constexpr (requires { input1_.zero_grad(); }) {
+            input1_.zero_grad();
+        }
+        if constexpr (requires { input2_.zero_grad(); }) {
+            input2_.zero_grad();
+        }
+        if constexpr (requires { input3_.zero_grad(); }) {
+            input3_.zero_grad();
+        }
+    }
     
 };
 
