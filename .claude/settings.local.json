@@ -23,7 +23,8 @@
       "Bash(./tests/test_numerical_verification)",
       "Bash(make test_complex_operations:*)",
       "Bash(./tests/test_complex_operations)",
-      "Bash(make:*)"
+      "Bash(make:*)",
+      "Bash(./tests/test_unary_operations:*)"
     ],
     "deny": []
   }

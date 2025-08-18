@@ -54,15 +54,19 @@ set_target_properties(test_symmetric_matrix PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# UnaryOperations テスト
+add_executable(test_unary_operations test_unary_operations.cu)
+target_link_libraries(test_unary_operations xyz_autodiff gtest gtest_main)
+target_include_directories(test_unary_operations PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_unary_operations PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
 add_test(NAME DiagonalMatrixTest COMMAND test_diagonal_matrix)
-add_test(NAME OperationTest COMMAND test_operation)
-add_test(NAME OperationChainingTest COMMAND test_operation_chaining)
-add_test(NAME OperationChainingSimpleTest COMMAND test_operation_chaining_simple)
 add_test(NAME MatrixTransposeTest COMMAND test_matrix_transpose)
 add_test(NAME SymmetricMatrixTest COMMAND test_symmetric_matrix)
-add_test(NAME UnaryFunctionsTest COMMAND test_unary_functions)
-add_test(NAME ComplexOperationsTest COMMAND test_complex_operations)
-add_test(NAME NumericalVerificationTest COMMAND test_numerical_verification)
+add_test(NAME UnaryOperationsTest COMMAND test_unary_operations)

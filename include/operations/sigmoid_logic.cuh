@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cmath>
 #include <cuda_runtime.h>
+#include "operation.cuh"
+#include "../concept/variable.cuh"
 
 namespace xyz_autodiff {
 
@@ -33,5 +35,22 @@ struct SigmoidLogic {
         }
     }
 };
+
+// Sigmoid関数のファクトリ
+template <std::size_t Dim, DifferentiableVariableConcept Input>
+__host__ __device__ auto sigmoid(const Input& input) {
+    SigmoidLogic<Dim> logic;
+    
+    auto op = UnaryOperation<Dim, SigmoidLogic<Dim>, Input>(logic, input);
+    op.forward();
+    return op;
+}
+
+// 型推論をサポートする版（入力のサイズから自動的にDimを決定）
+template <DifferentiableVariableConcept Input>
+__host__ __device__ auto sigmoid(const Input& input) {
+    constexpr std::size_t Dim = Input::size;
+    return sigmoid<Dim>(input);
+}
 
 } // namespace xyz_autodiff

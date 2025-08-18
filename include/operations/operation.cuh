@@ -85,27 +85,27 @@ public:
             forward();
             value_type plus_out[OutputSize];
             for (std::size_t j = 0; j < OutputSize; j++) {
-                plus_out[i] = output_data_[j];
+                plus_out[j] = output_data_[j];
             }
 
             input_[i] = orig - delta;
             forward();
             value_type minus_out[OutputSize];
             for (std::size_t j = 0; j < OutputSize; j++) {
-                minus_out[i] = output_data_[j];
+                minus_out[j] = output_data_[j];
             }
 
             input_[i] = orig;
 
             // 退避した forward の結果を戻す
-            for (std::size_t i = 0; i < OutputSize; i++) {
-                output_data_[i] = original_output_data_[i];
+            for (std::size_t k = 0; k < OutputSize; k++) {
+                output_data_[k] = original_output_data_[k];
             }
 
             // 勾配の数値計算
             input_.zero_grad();
             for (std::size_t j = 0; j < OutputSize; j++) {
-                const do_di = (plus_out[j] - minus_out[j]) / (input_type(2.0) * delta);
+                const auto dj_di = (plus_out[j] - minus_out[j]) / (input_type(2.0) * delta);
                 input_.grad(i) += output_.grad(j) * dj_di;
             }
         }
