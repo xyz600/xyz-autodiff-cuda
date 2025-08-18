@@ -40,7 +40,6 @@ __host__ __device__ auto sigmoid(Input& input) {
     SigmoidLogic<Dim> logic;
     
     auto op = UnaryOperation<Dim, SigmoidLogic<Dim>, Input>(logic, input);
-    op.forward();
     return op;
 }
 

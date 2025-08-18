@@ -45,15 +45,18 @@ public:
     // コアロジックと入力を受け取るコンストラクタ
     __host__ __device__ UnaryOperation(const Logic& logic, Input& input)
         : logic_(logic), input_(input), output_() {
+        // forwardは明示的に呼ばれるまで実行しない
     }
     
     // Forward pass
     __device__ void forward() {
-        // inputがOperationの場合、参照カウントを増やす
+        // 1. inputがOperationの場合、先にforwardと参照カウント処理
         if constexpr (OperationNode<Input>) {
+            input_.forward();
             input_.increment_ref_count();
         }
         
+        // 2. 自身のlogic.forwardを実行
         logic_.forward(output_, input_);
     }
     
@@ -147,8 +150,17 @@ public:
     
     __device__ void zero_grad() { 
         output_.zero_grad(); 
-        
-        input_.zero_grad();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    __device__ void run() {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward();
     }
     
     
@@ -193,18 +205,22 @@ public:
     // コアロジックと入力を受け取るコンストラクタ
     __host__ __device__ BinaryOperation(const Logic& logic, Input1& input1, Input2& input2)
         : logic_(logic), input1_(input1), input2_(input2), output_() {
+        // forwardは明示的に呼ばれるまで実行しない
     }
     
     // Forward pass
     __device__ void forward() {
-        // inputがOperationの場合、参照カウントを増やす
+        // 1. inputがOperationの場合、先にforwardと参照カウント処理
         if constexpr (OperationNode<Input1>) {
+            input1_.forward();
             input1_.increment_ref_count();
         }
         if constexpr (OperationNode<Input2>) {
+            input2_.forward();
             input2_.increment_ref_count();
         }
         
+        // 2. 自身のlogic.forwardを実行
         logic_.forward(output_, input1_, input2_);
     }
     
@@ -336,9 +352,17 @@ public:
     
     __device__ void zero_grad() { 
         output_.zero_grad(); 
-        
-        input1_.zero_grad();
-        input2_.zero_grad();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    __device__ void run() {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward();
     }
     
     
@@ -386,21 +410,26 @@ public:
     __host__ __device__ TernaryOperation(const Logic& logic, Input1& input1, 
                                          Input2& input2, Input3& input3)
         : logic_(logic), input1_(input1), input2_(input2), input3_(input3), output_() {
+        // forwardは明示的に呼ばれるまで実行しない
     }
     
     // Forward pass
     __device__ void forward() {
-        // inputがOperationの場合、参照カウントを増やす
+        // 1. inputがOperationの場合、先にforwardと参照カウント処理
         if constexpr (OperationNode<Input1>) {
+            input1_.forward();
             input1_.increment_ref_count();
         }
         if constexpr (OperationNode<Input2>) {
+            input2_.forward();
             input2_.increment_ref_count();
         }
         if constexpr (OperationNode<Input3>) {
+            input3_.forward();
             input3_.increment_ref_count();
         }
         
+        // 2. 自身のlogic.forwardを実行
         logic_.forward(output_, input1_, input2_, input3_);
     }
     
@@ -569,10 +598,17 @@ public:
     
     __device__ void zero_grad() { 
         output_.zero_grad(); 
-        
-        input1_.zero_grad();
-        input2_.zero_grad();
-        input3_.zero_grad();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    __device__ void run() {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward();
     }
     
     

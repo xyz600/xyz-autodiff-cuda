@@ -97,11 +97,6 @@ __global__ void parallel_gradient_computation_kernel(
     // 現在のスレッドが担当するデータポイント
     const DataPoint& data = batch_data[idx];
     
-    // 入力値（x1, x2, y）は定数なので、直接 data.x1, data.x2, data.y を使用
-    
-    // 計算グラフの構築: y_pred = (x1 - a)^2 + b * (x2 - c)^2 + d
-    // カスタムオペレーション subtract_and_square を使用
-    
     // (x1 - a)^2 をカスタムオペレーションで計算
     auto x1_term = op::subtract_and_square(a_var, data.x1);
     
@@ -120,8 +115,7 @@ __global__ void parallel_gradient_computation_kernel(
     // loss = (y_pred - y_target)^2 もカスタムオペレーションで計算
     auto loss = op::subtract_and_square(y_pred, data.y);
     
-    loss.add_grad(0, 1.0); // d(loss)/d(loss) = 1
-    loss.backward();
+    loss.run();
 }
 
 // パラメータ更新カーネル

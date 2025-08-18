@@ -47,8 +47,9 @@ __global__ void test_quaternion_to_rotation_matrix_forward_kernel(float* result)
     
     VariableRef<float, 4> quaternion(quat_data, quat_grad);
     
-    // Create operation - forward() is called automatically in helper function
+    // Create operation
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
+    rotation_matrix.forward();
     
     // Expected identity matrix: [1,0,0,0,1,0,0,0,1]
     float expected[9] = {1.0f, 0.0f, 0.0f,
@@ -91,6 +92,7 @@ __global__ void test_quaternion_90_degree_z_rotation_kernel(float* result) {
     
     // Create operation
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
+    rotation_matrix.forward();
     
     // Expected 90-degree Z rotation matrix: [0,-1,0,1,0,0,0,0,1]
     float expected[9] = {0.0f, -1.0f, 0.0f,
@@ -133,15 +135,8 @@ __global__ void test_quaternion_gradient_verification_kernel(float* result) {
     // Create operation
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
     
-    // Set up output gradient (gradient flows from a scalar loss)
-    // Single zero_grad call propagates through computation graph
-    rotation_matrix.zero_grad();
-    for (int i = 0; i < 9; i++) {
-        rotation_matrix.add_grad(i, 1.0); // Simple uniform gradient
-    }
-    
-    // Compute analytical gradients
-    rotation_matrix.backward();
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    rotation_matrix.run();
     
     // Save analytical gradients
     double analytical_grad[4];
@@ -150,7 +145,10 @@ __global__ void test_quaternion_gradient_verification_kernel(float* result) {
     }
     
     // Reset gradients for numerical computation
-    // Single zero_grad call propagates through computation graph
+    // Clear quaternion gradients
+    for (int i = 0; i < 4; i++) {
+        quat_grad[i] = 0.0;
+    }
     rotation_matrix.zero_grad();
     for (int i = 0; i < 9; i++) {
         rotation_matrix.add_grad(i, 1.0);

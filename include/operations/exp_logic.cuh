@@ -39,7 +39,6 @@ __host__ __device__ auto exp(Input& input) {
     ExpLogic<Dim> logic;
     
     auto op = UnaryOperation<Dim, ExpLogic<Dim>, Input>(logic, input);
-    op.forward();
     return op;
 }
 

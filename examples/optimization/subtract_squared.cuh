@@ -51,9 +51,7 @@ __device__ auto subtract_and_square(Input& input, typename Input::value_type con
     using LogicType = SubtractAndSquareLogic<Input>;
     
     LogicType logic(constant_c);
-    auto op = UnaryOperation<LogicType::outputDim, LogicType, Input>(logic, input);
-    op.forward();
-    return op;
+    return UnaryOperation<LogicType::outputDim, LogicType, Input>(logic, input);
 }
 
 } // namespace op

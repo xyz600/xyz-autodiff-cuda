@@ -58,17 +58,8 @@ __global__ void test_dag_single_shared_node_kernel(DAGTestBuffers<double>* buffe
     auto c = op::mul(a_var, three_var);   // c = a * 3
     auto d = op::add(b, c);                // d = b + c
     
-    // forwardを順次呼ぶ（参照カウントが正しく設定される）
-    b.forward();
-    c.forward();
-    d.forward();
-    
-    // 勾配初期化
-    d.zero_grad();
-    d.add_grad(0, 1.0);  // d/d(d) = 1
-    
-    // backward実行（DAG対応）
-    d.backward();
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    d.run();
     
     // 結果保存
     buffers->result = buffers->a_grad[0];
@@ -116,13 +107,9 @@ __global__ void test_dag_multiple_paths_kernel(DAGTestBuffers<double>* buffers) 
     auto c = op::add(a_var, one_var);     // c = a + 1
     auto temp = op::add(b, c);            // temp = b + c
     auto d = op::add(temp, a_var);        // d = temp + a
-        
-    // 勾配初期化
-    d.zero_grad();
-    d.add_grad(0, 1.0);  // d/d(d) = 1
     
-    // backward実行（DAG対応）
-    d.backward();
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    d.run();
     
     // 結果保存
     buffers->result = buffers->a_grad[0];
@@ -162,12 +149,8 @@ __global__ void test_dag_self_multiplication_kernel(DAGTestBuffers<double>* buff
     auto b = op::mul(a_var, a_var);       // b = a * a
     auto c = op::add(b, a_var);           // c = b + a
     
-    // 勾配初期化
-    c.zero_grad();
-    c.add_grad(0, 1.0);  // d/d(c) = 1
-    
-    // backward実行（DAG対応）
-    c.backward();
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    c.run();
     
     // 結果保存
     buffers->result = buffers->a_grad[0];

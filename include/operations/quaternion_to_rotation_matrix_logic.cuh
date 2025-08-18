@@ -120,7 +120,6 @@ namespace op {
     __device__ auto quaternion_to_rotation_matrix(Input& quaternion) {
         QuaternionToRotationMatrixLogic<4> logic;
         auto op = UnaryOperation<9, QuaternionToRotationMatrixLogic<4>, Input>(logic, quaternion);
-        op.forward();
         return op;
     }
 }
