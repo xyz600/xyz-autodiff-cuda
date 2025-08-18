@@ -65,6 +65,12 @@ auto device_ptr = makeCudaUnique<T>();
 - Use unified buffer structures to manage all test data in a single allocation
 - Create test-specific buffer structures when multiple parameters are needed:
 
+#### ADDITIONAL CONSTRAINT: Direct cudaMalloc/cudaFree Prohibition
+**Direct calls to `cudaMalloc` and `cudaFree` are PROHIBITED in all test files within `tests/` directory.**
+
+- Use `makeCudaUnique*()` functions for automatic memory management
+- This ensures consistent memory management patterns and prevents memory leaks
+
 ```cpp
 // GOOD: Single allocation with unified structure
 template <typename T>
@@ -80,6 +86,12 @@ auto device_buffers = makeCudaUnique<TestBuffers<T>>();
 // BAD: Multiple allocations
 auto device_input = makeCudaUniqueArray<T>(N);   // ❌ 
 auto device_output = makeCudaUniqueArray<T>(M);  // ❌ Second allocation
+
+// PROHIBITED: Direct cudaMalloc/cudaFree calls
+float* device_data;
+cudaMalloc(&device_data, sizeof(float));         // ❌ PROHIBITED
+// ... usage ...
+cudaFree(device_data);                          // ❌ PROHIBITED
 ```
 
 This constraint ensures:

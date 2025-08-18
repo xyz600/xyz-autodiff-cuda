@@ -7,6 +7,7 @@
 #include "../include/operations/quaternion_to_rotation_matrix_logic.cuh"
 #include "../include/concept/variable.cuh"
 #include "../include/concept/operation_node.cuh"
+#include "../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;
 
@@ -119,17 +120,14 @@ __global__ void test_variable_zero_grad_kernel(T* result) {
 }
 
 TEST_F(OperationConceptTest, VariableZeroGradInterface) {
-    float* device_result;
-    ASSERT_EQ(cudaMalloc(&device_result, sizeof(float)), cudaSuccess);
+    auto device_result = makeCudaUnique<float>();
     
-    test_variable_zero_grad_kernel<<<1, 1>>>(device_result);
+    test_variable_zero_grad_kernel<<<1, 1>>>(device_result.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result, sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
     EXPECT_EQ(host_result, 1.0f);
-    
-    cudaFree(device_result);
 }
 
 // Operationのインターフェーステスト用カーネル
@@ -159,17 +157,14 @@ __global__ void test_operation_interface_kernel(float* result) {
 }
 
 TEST_F(OperationConceptTest, OperationVariableInterface) {
-    float* device_result;
-    ASSERT_EQ(cudaMalloc(&device_result, sizeof(float)), cudaSuccess);
+    auto device_result = makeCudaUnique<float>();
     
-    test_operation_interface_kernel<<<1, 1>>>(device_result);
+    test_operation_interface_kernel<<<1, 1>>>(device_result.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result, sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
     EXPECT_EQ(host_result, 1.0f);
-    
-    cudaFree(device_result);
 }
 
 int main(int argc, char** argv) {
