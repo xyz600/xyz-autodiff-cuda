@@ -38,17 +38,13 @@ __global__ void test_chaining_analytical_kernel(
     VariableRef<T, 1> y_var(&params->value[1], &params->grad[1]);  // y
     VariableRef<T, 1> z_var(&params->value[2], &params->grad[2]);  // z
     
-    // f(x, y, z) = xz + y の計算（自動的にforwardが呼ばれ、結果が保存される）
+    // f(x, y, z) = xz + y の計算
     auto mul_result = op::mul(x_var, z_var);
     auto final_result = op::add(mul_result, y_var);
     
-    // 勾配をゼロクリア（top-downで自動的に全ての勾配がクリアされる）
+    final_result.forward();
     final_result.zero_grad();
-    
-    // 上流勾配を設定
-    final_result.add_grad(0, output_grad[0]);
-    
-    // 逆伝播実行（自動的に全ての中間operationのbackwardが呼ばれる）
+    final_result.add_grad(0, output_grad[0]); // 指定された上流勾配を使用
     final_result.backward();
 }
 
@@ -62,17 +58,13 @@ __global__ void test_chaining_numerical_kernel(
     VariableRef<T, 1> y_var(&params->value[1], &params->grad[1]);  // y
     VariableRef<T, 1> z_var(&params->value[2], &params->grad[2]);  // z
     
-    // f(x, y, z) = xz + y の計算（自動的にforwardが呼ばれ、結果が保存される）
+    // f(x, y, z) = xz + y の計算
     auto mul_result = op::mul(x_var, z_var);
     auto final_result = op::add(mul_result, y_var);
     
-    // 勾配をゼロクリア（top-downで自動的に全ての勾配がクリアされる）
+    final_result.forward();
     final_result.zero_grad();
-    
-    // 上流勾配を設定
-    final_result.add_grad(0, output_grad[0]);
-    
-    // 数値微分による逆伝播実行（自動的に全ての中間operationのbackward_numericalが呼ばれる）
+    final_result.add_grad(0, output_grad[0]); // 指定された上流勾配を使用
     final_result.backward_numerical(delta);
 }
 

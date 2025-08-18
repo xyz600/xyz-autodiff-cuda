@@ -141,3 +141,17 @@ task build:debug && cd build/debug && ./examples/linear_regression_sgd
 - Successfully demonstrates automatic differentiation in CUDA
 - Shows gradient accumulation across batches
 - Partial convergence achieved (needs optimization tuning for full convergence)
+
+## Forward実行の変更 
+- operationのファクトリ関数（op::add, op::mul等）で.forward()を明示的に呼ぶ
+- Operation::forward()は input.forward() + 参照カウント → logic.forward() の順で実行
+- Operation構築時には自動実行しない（明示的な.forward()呼び出しが必要）
+
+## 修正済みの問題
+- zero_grad()が再帰的に入力をゼロクリアする問題を修正
+- 現在は各Operationの出力のみをゼロクリアし、入力は保持
+
+## 残存する問題
+- 多くのgradient verification testsが失敗（解析的勾配が数値的勾配の約半分）
+- DAGテストのMultiplePathsToSameNodeが失敗（勾配が1.0、期待値4.0）
+- 参照カウントメカニズムの動作に課題

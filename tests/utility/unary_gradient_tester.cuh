@@ -45,6 +45,11 @@ __global__ void test_unary_gradient_kernel(
     
     // 解析的勾配計算
     {
+        // 入力勾配をクリア
+        for (std::size_t i = 0; i < InDim; ++i) {
+            buffers->input_grad[i] = T(0);
+        }
+        
         auto op = UnaryOperation<OutDim, LogicType, VariableRef<T, InDim>>(logic, input_var);
         op.forward();
         
@@ -64,6 +69,11 @@ __global__ void test_unary_gradient_kernel(
     
     // 数値勾配計算
     {
+        // 入力勾配をクリア
+        for (std::size_t i = 0; i < InDim; ++i) {
+            buffers->input_grad[i] = T(0);
+        }
+        
         auto op = UnaryOperation<OutDim, LogicType, VariableRef<T, InDim>>(logic, input_var);
         op.forward();
         
@@ -88,7 +98,7 @@ class UnaryGradientTester {
 private:
     static constexpr std::size_t NUM_TESTS = 100;
     static constexpr double TOLERANCE = 1e-5;
-    static constexpr double DELTA = 1e-7;
+    static constexpr double DELTA = 1e-5;
     
 public:
     static void test(const std::string& operation_name) {

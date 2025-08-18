@@ -24,6 +24,7 @@ private:
     Logic logic_;
     Input& input_;
     output_type output_;  // Variableが自身でバッファを持つ
+    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -44,10 +45,18 @@ public:
     // コアロジックと入力を受け取るコンストラクタ
     __host__ __device__ UnaryOperation(const Logic& logic, Input& input)
         : logic_(logic), input_(input), output_() {
+        // forwardは明示的に呼ばれるまで実行しない
     }
     
     // Forward pass
     __device__ void forward() {
+        // 1. inputがOperationの場合、先にforwardと参照カウント処理
+        if constexpr (OperationNode<Input>) {
+            input_.forward();
+            input_.increment_ref_count();
+        }
+        
+        // 2. 自身のlogic.forwardを実行
         logic_.forward(output_, input_);
     }
     
@@ -55,10 +64,21 @@ public:
     __device__ void backward() {
         logic_.backward(output_, input_);
         
-        // 入力がOperationNodeの場合のみbackwardを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward
         if constexpr (OperationNode<Input>) {
-            input_.backward();
+            if (input_.decrement_ref_count_and_check()) {
+                input_.backward();
+            }
         }
+    }
+    
+    // 参照カウント管理メソッド
+    __device__ void increment_ref_count() const {
+        ref_count_++;
+    }
+    
+    __device__ bool decrement_ref_count_and_check() const {
+        return --ref_count_ == 0;
     }
     
     // 数値微分による backward pass
@@ -66,20 +86,25 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力がOperationNodeの場合のみzero_gradを呼ぶ
+        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
         if constexpr (OperationNode<Input>) {
             input_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input::size; ++i) {
+                input_.grad()[i] = value_type(0);
+            }
         }
         
         for (std::size_t i = 0; i < Input::size; i++) {
             const auto orig = input_[i];
 
             input_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input_[i] = orig;
@@ -94,9 +119,11 @@ public:
             }
         }
         
-        // 入力がOperationNodeの場合のみbackward_numericalを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward_numerical
         if constexpr (OperationNode<Input>) {
-            input_.backward_numerical(delta);
+            if (input_.decrement_ref_count_and_check()) {
+                input_.backward_numerical(delta);
+            }
         }
     }
     
@@ -128,8 +155,28 @@ public:
     
     __device__ void zero_grad() { 
         output_.zero_grad(); 
-        
-        input_.zero_grad();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    __device__ void run() {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward_numerical の定型処理
+    __device__ void run_numerical(const value_type delta = value_type(1e-5)) {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward_numerical(delta);
     }
     
     
@@ -152,6 +199,7 @@ private:
     Input1& input1_;
     Input2& input2_;
     output_type output_;
+    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -173,10 +221,22 @@ public:
     // コアロジックと入力を受け取るコンストラクタ
     __host__ __device__ BinaryOperation(const Logic& logic, Input1& input1, Input2& input2)
         : logic_(logic), input1_(input1), input2_(input2), output_() {
+        // forwardは明示的に呼ばれるまで実行しない
     }
     
     // Forward pass
     __device__ void forward() {
+        // 1. inputがOperationの場合、先にforwardと参照カウント処理
+        if constexpr (OperationNode<Input1>) {
+            input1_.forward();
+            input1_.increment_ref_count();
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.forward();
+            input2_.increment_ref_count();
+        }
+        
+        // 2. 自身のlogic.forwardを実行
         logic_.forward(output_, input1_, input2_);
     }
     
@@ -184,13 +244,26 @@ public:
     __device__ void backward() {
         logic_.backward(output_, input1_, input2_);
         
-        // 入力がOperationNodeの場合のみbackwardを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward
         if constexpr (OperationNode<Input1>) {
-            input1_.backward();
+            if (input1_.decrement_ref_count_and_check()) {
+                input1_.backward();
+            }
         }
         if constexpr (OperationNode<Input2>) {
-            input2_.backward();
+            if (input2_.decrement_ref_count_and_check()) {
+                input2_.backward();
+            }
         }
+    }
+    
+    // 参照カウント管理メソッド
+    __device__ void increment_ref_count() const {
+        ref_count_++;
+    }
+    
+    __device__ bool decrement_ref_count_and_check() const {
+        return --ref_count_ == 0;
     }
     
     // 数値微分による backward pass
@@ -198,12 +271,22 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力がOperationNodeの場合のみzero_gradを呼ぶ
+        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
         if constexpr (OperationNode<Input1>) {
             input1_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input1::size; ++i) {
+                input1_.grad()[i] = value_type(0);
+            }
         }
         if constexpr (OperationNode<Input2>) {
             input2_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input2::size; ++i) {
+                input2_.grad()[i] = value_type(0);
+            }
         }
         
         // Input1 に対する数値微分
@@ -211,11 +294,11 @@ public:
             const auto orig = input1_[i];
 
             input1_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input1_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input1_[i] = orig;
@@ -235,11 +318,11 @@ public:
             const auto orig = input2_[i];
 
             input2_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input2_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input2_[i] = orig;
@@ -254,12 +337,16 @@ public:
             }
         }
         
-        // 入力がOperationNodeの場合のみbackward_numericalを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward_numerical
         if constexpr (OperationNode<Input1>) {
-            input1_.backward_numerical(delta);
+            if (input1_.decrement_ref_count_and_check()) {
+                input1_.backward_numerical(delta);
+            }
         }
         if constexpr (OperationNode<Input2>) {
-            input2_.backward_numerical(delta);
+            if (input2_.decrement_ref_count_and_check()) {
+                input2_.backward_numerical(delta);
+            }
         }
     }
     
@@ -291,9 +378,28 @@ public:
     
     __device__ void zero_grad() { 
         output_.zero_grad(); 
-        
-        input1_.zero_grad();
-        input2_.zero_grad();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    __device__ void run() {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward_numerical の定型処理
+    __device__ void run_numerical(const value_type delta = value_type(1e-5)) {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward_numerical(delta);
     }
     
     
@@ -318,6 +424,7 @@ private:
     Input2& input2_;
     Input3& input3_;
     output_type output_;
+    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -340,10 +447,26 @@ public:
     __host__ __device__ TernaryOperation(const Logic& logic, Input1& input1, 
                                          Input2& input2, Input3& input3)
         : logic_(logic), input1_(input1), input2_(input2), input3_(input3), output_() {
+        // forwardは明示的に呼ばれるまで実行しない
     }
     
     // Forward pass
     __device__ void forward() {
+        // 1. inputがOperationの場合、先にforwardと参照カウント処理
+        if constexpr (OperationNode<Input1>) {
+            input1_.forward();
+            input1_.increment_ref_count();
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.forward();
+            input2_.increment_ref_count();
+        }
+        if constexpr (OperationNode<Input3>) {
+            input3_.forward();
+            input3_.increment_ref_count();
+        }
+        
+        // 2. 自身のlogic.forwardを実行
         logic_.forward(output_, input1_, input2_, input3_);
     }
     
@@ -351,16 +474,31 @@ public:
     __device__ void backward() {
         logic_.backward(output_, input1_, input2_, input3_);
         
-        // 入力がOperationNodeの場合のみbackwardを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward
         if constexpr (OperationNode<Input1>) {
-            input1_.backward();
+            if (input1_.decrement_ref_count_and_check()) {
+                input1_.backward();
+            }
         }
         if constexpr (OperationNode<Input2>) {
-            input2_.backward();
+            if (input2_.decrement_ref_count_and_check()) {
+                input2_.backward();
+            }
         }
         if constexpr (OperationNode<Input3>) {
-            input3_.backward();
+            if (input3_.decrement_ref_count_and_check()) {
+                input3_.backward();
+            }
         }
+    }
+    
+    // 参照カウント管理メソッド
+    __device__ void increment_ref_count() const {
+        ref_count_++;
+    }
+    
+    __device__ bool decrement_ref_count_and_check() const {
+        return --ref_count_ == 0;
     }
     
     // 数値微分による backward pass
@@ -368,15 +506,30 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力がOperationNodeの場合のみzero_gradを呼ぶ
+        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
         if constexpr (OperationNode<Input1>) {
             input1_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input1::size; ++i) {
+                input1_.grad()[i] = value_type(0);
+            }
         }
         if constexpr (OperationNode<Input2>) {
             input2_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input2::size; ++i) {
+                input2_.grad()[i] = value_type(0);
+            }
         }
         if constexpr (OperationNode<Input3>) {
             input3_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input3::size; ++i) {
+                input3_.grad()[i] = value_type(0);
+            }
         }
         
         // Input1 に対する数値微分
@@ -384,11 +537,11 @@ public:
             const auto orig = input1_[i];
 
             input1_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input1_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input1_[i] = orig;
@@ -408,11 +561,11 @@ public:
             const auto orig = input2_[i];
 
             input2_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input2_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input2_[i] = orig;
@@ -432,11 +585,11 @@ public:
             const auto orig = input3_[i];
 
             input3_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input3_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input3_[i] = orig;
@@ -451,15 +604,21 @@ public:
             }
         }
         
-        // 入力がOperationNodeの場合のみbackward_numericalを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward_numerical
         if constexpr (OperationNode<Input1>) {
-            input1_.backward_numerical(delta);
+            if (input1_.decrement_ref_count_and_check()) {
+                input1_.backward_numerical(delta);
+            }
         }
         if constexpr (OperationNode<Input2>) {
-            input2_.backward_numerical(delta);
+            if (input2_.decrement_ref_count_and_check()) {
+                input2_.backward_numerical(delta);
+            }
         }
         if constexpr (OperationNode<Input3>) {
-            input3_.backward_numerical(delta);
+            if (input3_.decrement_ref_count_and_check()) {
+                input3_.backward_numerical(delta);
+            }
         }
     }
     
@@ -491,10 +650,28 @@ public:
     
     __device__ void zero_grad() { 
         output_.zero_grad(); 
-        
-        input1_.zero_grad();
-        input2_.zero_grad();
-        input3_.zero_grad();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    __device__ void run() {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward_numerical の定型処理
+    __device__ void run_numerical(const value_type delta = value_type(1e-5)) {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward_numerical(delta);
     }
     
     

@@ -42,11 +42,20 @@ __global__ void test_binary_gradient_kernel(
     
     // 解析的勾配計算
     {
+        // 入力勾配をクリア
+        for (std::size_t i = 0; i < In1Dim; ++i) {
+            buffers->input1_grad[i] = T(0);
+        }
+        for (std::size_t i = 0; i < In2Dim; ++i) {
+            buffers->input2_grad[i] = T(0);
+        }
+        
         auto op = BinaryOperation<OutDim, LogicType, VariableRef<T, In1Dim>, VariableRef<T, In2Dim>>(
             logic, input1_var, input2_var);
+
         op.forward();
         
-        // 上流勾配設定
+        // 上流勾配設定（数値勾配と同じ）
         op.zero_grad();
         for (std::size_t i = 0; i < OutDim; ++i) {
             op.add_grad(i, buffers->output_grad[i]);
@@ -65,8 +74,17 @@ __global__ void test_binary_gradient_kernel(
     
     // 数値勾配計算
     {
+        // 入力勾配をクリア
+        for (std::size_t i = 0; i < In1Dim; ++i) {
+            buffers->input1_grad[i] = T(0);
+        }
+        for (std::size_t i = 0; i < In2Dim; ++i) {
+            buffers->input2_grad[i] = T(0);
+        }
+        
         auto op = BinaryOperation<OutDim, LogicType, VariableRef<T, In1Dim>, VariableRef<T, In2Dim>>(
             logic, input1_var, input2_var);
+        
         op.forward();
         
         // 上流勾配設定
@@ -93,7 +111,7 @@ class BinaryGradientTester {
 private:
     static constexpr std::size_t NUM_TESTS = 100;
     static constexpr double TOLERANCE = 1e-5;
-    static constexpr double DELTA = 1e-7;
+    static constexpr double DELTA = 1e-5;
     
     // 相対誤差と絶対誤差の最小値を計算するヘルパー関数
     static double compute_error_min(double analytical, double numerical) {

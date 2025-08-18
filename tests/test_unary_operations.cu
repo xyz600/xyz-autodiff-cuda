@@ -21,6 +21,7 @@ __global__ void test_sigmoid_factory_kernel(T* input_data, T* output_data) {
     
     // Test factory function from sigmoid_logic.cuh
     auto result = sigmoid(input);
+    result.forward();
     
     for (int i = 0; i < 3; ++i) {
         output_data[i] = result[i];
@@ -34,6 +35,7 @@ __global__ void test_exp_factory_kernel(T* input_data, T* output_data) {
     
     // Test factory function from exp_logic.cuh
     auto result = exp(input);
+    result.forward();
     
     for (int i = 0; i < 3; ++i) {
         output_data[i] = result[i];

@@ -126,6 +126,15 @@ set_target_properties(test_shared_memory_atomic PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# DAG Backward テスト
+add_executable(test_dag_backward test_dag_backward.cu)
+target_link_libraries(test_dag_backward xyz_autodiff gtest gtest_main)
+target_include_directories(test_dag_backward PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_dag_backward PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
@@ -140,3 +149,4 @@ add_test(NAME OperationConceptsTest COMMAND test_operation_concepts)
 add_test(NAME QuaternionToRotationMatrixTest COMMAND test_quaternion_to_rotation_matrix)
 add_test(NAME ParallelGradientAccumulationTest COMMAND test_parallel_gradient_accumulation)
 add_test(NAME SharedMemoryAtomicTest COMMAND test_shared_memory_atomic)
+add_test(NAME DAGBackwardTest COMMAND test_dag_backward)
