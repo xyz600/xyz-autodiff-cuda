@@ -5,6 +5,7 @@
 #include "../include/operations/quaternion_to_rotation_matrix_logic.cuh"
 #include "../include/concept/variable.cuh"
 #include "../include/concept/operation_node.cuh"
+#include "../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;
 
@@ -69,17 +70,14 @@ __global__ void test_quaternion_to_rotation_matrix_forward_kernel(float* result)
 }
 
 TEST_F(QuaternionToRotationMatrixTest, ForwardPassIdentityQuaternion) {
-    float* device_result;
-    ASSERT_EQ(cudaMalloc(&device_result, sizeof(float)), cudaSuccess);
+    auto device_result = makeCudaUnique<float>();
     
-    test_quaternion_to_rotation_matrix_forward_kernel<<<1, 1>>>(device_result);
+    test_quaternion_to_rotation_matrix_forward_kernel<<<1, 1>>>(device_result.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result, sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
     EXPECT_EQ(host_result, 1.0f);
-    
-    cudaFree(device_result);
 }
 
 // 90-degree rotation around Z-axis test kernel
@@ -114,17 +112,14 @@ __global__ void test_quaternion_90_degree_z_rotation_kernel(float* result) {
 }
 
 TEST_F(QuaternionToRotationMatrixTest, ForwardPass90DegreeZRotation) {
-    float* device_result;
-    ASSERT_EQ(cudaMalloc(&device_result, sizeof(float)), cudaSuccess);
+    auto device_result = makeCudaUnique<float>();
     
-    test_quaternion_90_degree_z_rotation_kernel<<<1, 1>>>(device_result);
+    test_quaternion_90_degree_z_rotation_kernel<<<1, 1>>>(device_result.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result, sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
     EXPECT_EQ(host_result, 1.0f);
-    
-    cudaFree(device_result);
 }
 
 // Gradient verification test kernel using numerical differentiation with double precision
@@ -180,17 +175,14 @@ __global__ void test_quaternion_gradient_verification_kernel(float* result) {
 }
 
 TEST_F(QuaternionToRotationMatrixTest, GradientVerification) {
-    float* device_result;
-    ASSERT_EQ(cudaMalloc(&device_result, sizeof(float)), cudaSuccess);
+    auto device_result = makeCudaUnique<float>();
     
-    test_quaternion_gradient_verification_kernel<<<1, 1>>>(device_result);
+    test_quaternion_gradient_verification_kernel<<<1, 1>>>(device_result.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result, sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
     EXPECT_EQ(host_result, 1.0f);
-    
-    cudaFree(device_result);
 }
 
 // Interface compliance test kernel
@@ -222,17 +214,14 @@ __global__ void test_quaternion_operation_interface_kernel(float* result) {
 }
 
 TEST_F(QuaternionToRotationMatrixTest, OperationInterfaceCompliance) {
-    float* device_result;
-    ASSERT_EQ(cudaMalloc(&device_result, sizeof(float)), cudaSuccess);
+    auto device_result = makeCudaUnique<float>();
     
-    test_quaternion_operation_interface_kernel<<<1, 1>>>(device_result);
+    test_quaternion_operation_interface_kernel<<<1, 1>>>(device_result.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result, sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
     EXPECT_EQ(host_result, 1.0f);
-    
-    cudaFree(device_result);
 }
 
 // Operation chaining test kernel
@@ -270,17 +259,14 @@ __global__ void test_quaternion_operation_chaining_kernel(float* result) {
 }
 
 TEST_F(QuaternionToRotationMatrixTest, OperationChaining) {
-    float* device_result;
-    ASSERT_EQ(cudaMalloc(&device_result, sizeof(float)), cudaSuccess);
+    auto device_result = makeCudaUnique<float>();
     
-    test_quaternion_operation_chaining_kernel<<<1, 1>>>(device_result);
+    test_quaternion_operation_chaining_kernel<<<1, 1>>>(device_result.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result, sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
     EXPECT_EQ(host_result, 1.0f);
-    
-    cudaFree(device_result);
 }
 
 int main(int argc, char** argv) {

@@ -35,7 +35,11 @@
       "Bash(./tests/test_parallel_gradient_accumulation)",
       "Bash(./tests/test_parallel_gradient_accumulation:*)",
       "Bash(./tests/test_shared_memory_atomic:*)",
-      "Bash(./examples/linear_regression_sgd)"
+      "Bash(./examples/linear_regression_sgd)",
+      "Bash(./tests/test_math_dispatcher)",
+      "Bash(./tests/test_diagonal_matrix:*)",
+      "Bash(grep:*)",
+      "Bash(./tests/test_symmetric_matrix)"
     ],
     "deny": []
   }

@@ -58,6 +58,48 @@ auto device_ptr = makeCudaUnique<T>();
 // Automatic cleanup when scope ends
 ```
 
+#### CRITICAL CONSTRAINT: Single GPU Memory Allocation Per Test
+**Each TEST_F function MUST allocate GPU memory only ONCE per test method.**
+
+- Only one call to `makeCudaUnique*()`, `makeCudaUniqueArray()`, or indirect `cudaMalloc` functions per TEST_F
+- Use unified buffer structures to manage all test data in a single allocation
+- Create test-specific buffer structures when multiple parameters are needed:
+
+#### ADDITIONAL CONSTRAINT: Direct cudaMalloc/cudaFree Prohibition
+**Direct calls to `cudaMalloc` and `cudaFree` are PROHIBITED in all test files within `tests/` directory.**
+
+- Use `makeCudaUnique*()` functions for automatic memory management
+- This ensures consistent memory management patterns and prevents memory leaks
+
+```cpp
+// GOOD: Single allocation with unified structure
+template <typename T>
+struct TestBuffers {
+    T input_data[N];
+    T input_grad[N];
+    T output_data[M];
+    T output_grad[M];
+    T expected_results[M];
+};
+auto device_buffers = makeCudaUnique<TestBuffers<T>>();
+
+// BAD: Multiple allocations
+auto device_input = makeCudaUniqueArray<T>(N);   // ❌ 
+auto device_output = makeCudaUniqueArray<T>(M);  // ❌ Second allocation
+
+// PROHIBITED: Direct cudaMalloc/cudaFree calls
+float* device_data;
+cudaMalloc(&device_data, sizeof(float));         // ❌ PROHIBITED
+// ... usage ...
+cudaFree(device_data);                          // ❌ PROHIBITED
+```
+
+This constraint ensures:
+- Efficient memory usage
+- Predictable memory management 
+- Simplified debugging and profiling
+- Consistent test architecture
+
 ### Gradient Clearing Best Practices  
 Use minimal `zero_grad()` calls in computation graphs:
 

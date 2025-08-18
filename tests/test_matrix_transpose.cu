@@ -8,49 +8,16 @@
 
 using namespace xyz_autodiff;
 
-// テスト用汎用バッファ構造体
-template <typename T, std::size_t NumElements>
-class TestMatrixBuffer {
-public:
-    std::array<T, NumElements> host_data;
-    std::array<T, NumElements> host_result;
-    cuda_unique_ptr<T[]> device_data;
-    cuda_unique_ptr<T[]> device_result;
-    
-    TestMatrixBuffer() {
-        host_data.fill(T{});
-        host_result.fill(T{});
-        device_data = makeCudaUniqueArray<T>(NumElements);
-        device_result = makeCudaUniqueArray<T>(NumElements);
-    }
-    
-    void toGpu() {
-        cudaMemcpy(device_data.get(), host_data.data(), NumElements * sizeof(T), cudaMemcpyHostToDevice);
-        cudaDeviceSynchronize();
-    }
-    
-    void toHost() {
-        cudaMemcpy(host_result.data(), device_result.get(), NumElements * sizeof(T), cudaMemcpyDeviceToHost);
-        cudaDeviceSynchronize();
-    }
-    
-    void setData(std::size_t idx, T value) {
-        if (idx < NumElements) {
-            host_data[idx] = value;
-        }
-    }
-    
-    T getResult(std::size_t idx) const {
-        return idx < NumElements ? host_result[idx] : T{};
-    }
-    
-    T* getDeviceData() { return device_data.get(); }
-    T* getDeviceResult() { return device_result.get(); }
+// テスト用バッファ構造体（シンプル版）
+template <typename T>
+struct MatrixTransposeTestBuffers {
+    T data[10];    // 入力データ用
+    T result[20];  // 結果格納用
 };
 
 // DenseMatrix transpose テスト用CUDAカーネル
 template <typename T>
-__global__ void test_matrix_view_transpose_kernel(T* data, T* result) {
+__global__ void test_matrix_view_transpose_kernel(T* result) {
     // 2x3行列を作成
     DenseMatrix<T, 2, 3> matrix;
     
@@ -109,8 +76,8 @@ __global__ void test_dense_matrix_transpose_kernel(T* result) {
 
 // DiagonalMatrix transpose テスト用CUDAカーネル
 template <typename T>
-__global__ void test_diagonal_matrix_transpose_kernel(T* data, T* grad, T* result) {
-    VariableRef<T, 3> var(data, grad);
+__global__ void test_diagonal_matrix_transpose_kernel(T* data, T* result) {
+    VariableRef<T, 3> var(data, data + 3);  // data後半を勾配用に使用
     
     // 対角要素設定
     var[0] = static_cast<T>(1.0);
@@ -143,69 +110,68 @@ protected:
 TEST_F(MatrixTransposeTest, MatrixViewTranspose) {
     using T = float;
     
-    TestMatrixBuffer<T, 8> buffer;  // 結果8個
-    buffer.toGpu();
+    auto device_buffers = makeCudaUnique<MatrixTransposeTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
-    test_matrix_view_transpose_kernel<T><<<1, 1>>>(
-        buffer.getDeviceData(),
-        buffer.getDeviceResult());
+    test_matrix_view_transpose_kernel<T><<<1, 1>>>(device_buffers.get()->result);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    buffer.toHost();
+    MatrixTransposeTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(MatrixTransposeTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // transpose結果の検証
-    EXPECT_FLOAT_EQ(buffer.getResult(0), 1.0f);  // (0,0) = 1
-    EXPECT_FLOAT_EQ(buffer.getResult(1), 4.0f);  // (0,1) = 4
-    EXPECT_FLOAT_EQ(buffer.getResult(2), 2.0f);  // (1,0) = 2
-    EXPECT_FLOAT_EQ(buffer.getResult(3), 5.0f);  // (1,1) = 5
-    EXPECT_FLOAT_EQ(buffer.getResult(4), 3.0f);  // (2,0) = 3
-    EXPECT_FLOAT_EQ(buffer.getResult(5), 6.0f);  // (2,1) = 6
+    EXPECT_FLOAT_EQ(host_buffers.result[0], 1.0f);  // (0,0) = 1
+    EXPECT_FLOAT_EQ(host_buffers.result[1], 4.0f);  // (0,1) = 4
+    EXPECT_FLOAT_EQ(host_buffers.result[2], 2.0f);  // (1,0) = 2
+    EXPECT_FLOAT_EQ(host_buffers.result[3], 5.0f);  // (1,1) = 5
+    EXPECT_FLOAT_EQ(host_buffers.result[4], 3.0f);  // (2,0) = 3
+    EXPECT_FLOAT_EQ(host_buffers.result[5], 6.0f);  // (2,1) = 6
     
     // 二重transpose結果の検証
-    EXPECT_FLOAT_EQ(buffer.getResult(6), 1.0f);  // (0,0) = 1
-    EXPECT_FLOAT_EQ(buffer.getResult(7), 6.0f);  // (1,2) = 6
+    EXPECT_FLOAT_EQ(host_buffers.result[6], 1.0f);  // (0,0) = 1
+    EXPECT_FLOAT_EQ(host_buffers.result[7], 6.0f);  // (1,2) = 6
 }
 
 TEST_F(MatrixTransposeTest, DenseMatrixTranspose) {
     using T = float;
     
-    TestMatrixBuffer<T, 6> buffer;
-    buffer.toGpu();
+    auto device_buffers = makeCudaUnique<MatrixTransposeTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
-    test_dense_matrix_transpose_kernel<T><<<1, 1>>>(buffer.getDeviceResult());
+    test_dense_matrix_transpose_kernel<T><<<1, 1>>>(device_buffers.get()->result);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    buffer.toHost();
+    MatrixTransposeTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(MatrixTransposeTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // transpose結果の検証
-    EXPECT_FLOAT_EQ(buffer.getResult(0), 1.0f);  // (0,0) = 1
-    EXPECT_FLOAT_EQ(buffer.getResult(1), 4.0f);  // (0,1) = 4
-    EXPECT_FLOAT_EQ(buffer.getResult(2), 2.0f);  // (1,0) = 2
-    EXPECT_FLOAT_EQ(buffer.getResult(3), 5.0f);  // (1,1) = 5
-    EXPECT_FLOAT_EQ(buffer.getResult(4), 3.0f);  // (2,0) = 3
-    EXPECT_FLOAT_EQ(buffer.getResult(5), 6.0f);  // (2,1) = 6
+    EXPECT_FLOAT_EQ(host_buffers.result[0], 1.0f);  // (0,0) = 1
+    EXPECT_FLOAT_EQ(host_buffers.result[1], 4.0f);  // (0,1) = 4
+    EXPECT_FLOAT_EQ(host_buffers.result[2], 2.0f);  // (1,0) = 2
+    EXPECT_FLOAT_EQ(host_buffers.result[3], 5.0f);  // (1,1) = 5
+    EXPECT_FLOAT_EQ(host_buffers.result[4], 3.0f);  // (2,0) = 3
+    EXPECT_FLOAT_EQ(host_buffers.result[5], 6.0f);  // (2,1) = 6
 }
 
 TEST_F(MatrixTransposeTest, DiagonalMatrixTranspose) {
     using T = float;
     
-    TestMatrixBuffer<T, 6> buffer;  // 3要素データ + 勾配 + 結果
-    buffer.toGpu();
+    auto device_buffers = makeCudaUnique<MatrixTransposeTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
     test_diagonal_matrix_transpose_kernel<T><<<1, 1>>>(
-        buffer.getDeviceData(),
-        buffer.getDeviceData() + 3,  // 勾配用
-        buffer.getDeviceResult());
+        device_buffers.get()->data, device_buffers.get()->result);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    buffer.toHost();
+    MatrixTransposeTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(MatrixTransposeTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // transpose結果の検証（対角行列なので変わらない）
-    EXPECT_FLOAT_EQ(buffer.getResult(0), 1.0f);  // (0,0) = 1
-    EXPECT_FLOAT_EQ(buffer.getResult(1), 2.0f);  // (1,1) = 2
-    EXPECT_FLOAT_EQ(buffer.getResult(2), 3.0f);  // (2,2) = 3
-    EXPECT_FLOAT_EQ(buffer.getResult(3), 0.0f);  // (0,1) = 0
-    EXPECT_FLOAT_EQ(buffer.getResult(4), 0.0f);  // (1,0) = 0
+    EXPECT_FLOAT_EQ(host_buffers.result[0], 1.0f);  // (0,0) = 1
+    EXPECT_FLOAT_EQ(host_buffers.result[1], 2.0f);  // (1,1) = 2
+    EXPECT_FLOAT_EQ(host_buffers.result[2], 3.0f);  // (2,2) = 3
+    EXPECT_FLOAT_EQ(host_buffers.result[3], 0.0f);  // (0,1) = 0
+    EXPECT_FLOAT_EQ(host_buffers.result[4], 0.0f);  // (1,0) = 0
 }
 
 // Concept チェックテスト
