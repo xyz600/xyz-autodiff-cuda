@@ -5,8 +5,9 @@
 
 namespace xyz_autodiff {
 
+// VariableRef - 外部バッファへの参照版 (現在のVariableの設計)
 template <typename T, std::size_t N>
-class Variable {
+class VariableRef {
 public:
     using value_type = T;
     static constexpr std::size_t size = N;
@@ -17,7 +18,7 @@ private:
     
 public:
     // 外部メモリへの参照を受け取るコンストラクタ
-    __host__ __device__ constexpr Variable(T* data, T* grad) 
+    __host__ __device__ constexpr VariableRef(T* data, T* grad) 
         : data_ptr_(data), grad_ptr_(grad) {}
     
     // データアクセサ
@@ -49,6 +50,136 @@ public:
         for (std::size_t i = 0; i < N; ++i) {
             atomicAdd(&grad_ptr_[i], grad_values[i]);
         }
+    }
+};
+
+// Variable - 自身でバッファを持つ版
+template <typename T, std::size_t N>
+class Variable {
+public:
+    using value_type = T;
+    static constexpr std::size_t size = N;
+    
+private:
+    T data_[N];
+    T grad_[N];
+    
+public:
+    // デフォルトコンストラクタ
+    __host__ __device__ Variable() {
+        #pragma unroll
+        for (std::size_t i = 0; i < N; ++i) {
+            data_[i] = T{};
+            grad_[i] = T{};
+        }
+    }
+    
+    // 初期値を指定するコンストラクタ
+    __host__ __device__ Variable(const T& initial_value) {
+        #pragma unroll
+        for (std::size_t i = 0; i < N; ++i) {
+            data_[i] = initial_value;
+            grad_[i] = T{};
+        }
+    }
+    
+    // 配列からのコンストラクタ
+    __host__ __device__ Variable(const T* values) {
+        #pragma unroll
+        for (std::size_t i = 0; i < N; ++i) {
+            data_[i] = values[i];
+            grad_[i] = T{};
+        }
+    }
+    
+    // コピーコンストラクタ
+    __host__ __device__ Variable(const Variable& other) {
+        #pragma unroll
+        for (std::size_t i = 0; i < N; ++i) {
+            data_[i] = other.data_[i];
+            grad_[i] = other.grad_[i];
+        }
+    }
+    
+    // ムーブコンストラクタ
+    __host__ __device__ Variable(Variable&& other) noexcept {
+        #pragma unroll
+        for (std::size_t i = 0; i < N; ++i) {
+            data_[i] = other.data_[i];
+            grad_[i] = other.grad_[i];
+        }
+    }
+    
+    // コピー代入演算子
+    __host__ __device__ Variable& operator=(const Variable& other) {
+        if (this != &other) {
+            #pragma unroll
+            for (std::size_t i = 0; i < N; ++i) {
+                data_[i] = other.data_[i];
+                grad_[i] = other.grad_[i];
+            }
+        }
+        return *this;
+    }
+    
+    // ムーブ代入演算子
+    __host__ __device__ Variable& operator=(Variable&& other) noexcept {
+        if (this != &other) {
+            #pragma unroll
+            for (std::size_t i = 0; i < N; ++i) {
+                data_[i] = other.data_[i];
+                grad_[i] = other.grad_[i];
+            }
+        }
+        return *this;
+    }
+    
+    // データアクセサ
+    __device__ __forceinline__ T* data() noexcept { return data_; }
+    __device__ __forceinline__ const T* data() const noexcept { return data_; }
+    
+    // 勾配アクセサ
+    __device__ __forceinline__ T* grad() noexcept { return grad_; }
+    __device__ __forceinline__ const T* grad() const noexcept { return grad_; }
+    
+    // インデックスアクセス (値)
+    __device__ __forceinline__ T& operator[](std::size_t i) noexcept { 
+        return data_[i]; 
+    }
+    __device__ __forceinline__ const T& operator[](std::size_t i) const noexcept { 
+        return data_[i]; 
+    }
+    
+    // インデックスアクセス (勾配)
+    __device__ __forceinline__ T& grad(std::size_t i) noexcept { 
+        return grad_[i]; 
+    }
+    __device__ __forceinline__ const T& grad(std::size_t i) const noexcept { 
+        return grad_[i]; 
+    }
+    
+    // 勾配をゼロクリア
+    __device__ void zero_grad() noexcept {
+        #pragma unroll
+        for (std::size_t i = 0; i < N; ++i) {
+            grad_[i] = T{};
+        }
+    }
+    
+    // 勾配を累積
+    __device__ void accumulate_grad(const T* const grad_values) noexcept {
+        for (std::size_t i = 0; i < N; ++i) {
+            grad_[i] += grad_values[i];
+        }
+    }
+    
+    // VariableRefに変換
+    __device__ VariableRef<T, N> ref() noexcept {
+        return VariableRef<T, N>(data_, grad_);
+    }
+    
+    __device__ VariableRef<T, N> ref() const noexcept {
+        return VariableRef<T, N>(const_cast<T*>(data_), const_cast<T*>(grad_));
     }
 };
 

@@ -6,7 +6,7 @@
 
 namespace xyz_autodiff {
 
-template <typename T, std::size_t N>
+template <typename T, std::size_t N, typename VariableType = VariableRef<T, N>>
 class DiagonalMatrixView {
 public:
     using value_type = T;
@@ -15,11 +15,11 @@ public:
     static constexpr std::size_t size = N;  // 対角要素のみ
     
 private:
-    const Variable<T, N>& variable_;
+    VariableType& variable_;
     
 public:
-    // Variableの参照を受け取るコンストラクタ
-    __host__ __device__ DiagonalMatrixView(const Variable<T, N>& var)
+    // Variable または VariableRef の参照を受け取るコンストラクタ
+    __host__ __device__ DiagonalMatrixView(VariableType& var)
         : variable_(var) {}
     
     // コピーコンストラクタ
@@ -83,7 +83,19 @@ public:
     }
     
     // Variable参照を取得
-    __device__ const Variable<T, N>& variable() const { return variable_; }
+    __device__ VariableType& variable() { return variable_; }
+    __device__ const VariableType& variable() const { return variable_; }
 };
+
+// ヘルパー関数
+template <std::size_t N, typename T>
+__host__ __device__ auto make_diagonal_matrix_view(VariableRef<T, N>& var) {
+    return DiagonalMatrixView<T, N, VariableRef<T, N>>(var);
+}
+
+template <std::size_t N, typename T>
+__host__ __device__ auto make_diagonal_matrix_view(Variable<T, N>& var) {
+    return DiagonalMatrixView<T, N, Variable<T, N>>(var);
+}
 
 } // namespace xyz_autodiff

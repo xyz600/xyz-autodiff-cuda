@@ -51,7 +51,7 @@ public:
 template <typename T>
 __global__ void test_symmetric_matrix_basic_kernel(T* data, T* grad, T* result) {
     // 3x3対称行列（6要素）を作成
-    Variable<T, 6> var(data, grad);
+    VariableRef<T, 6> var(data, grad);
     auto sym_matrix = make_symmetric_matrix_view<3>(var);
     
     // 上三角要素の設定
@@ -81,7 +81,7 @@ __global__ void test_symmetric_matrix_basic_kernel(T* data, T* grad, T* result) 
 // SymmetricMatrix transpose テスト用CUDAカーネル
 template <typename T>
 __global__ void test_symmetric_matrix_transpose_kernel(T* data, T* grad, T* result) {
-    Variable<T, 6> var(data, grad);
+    VariableRef<T, 6> var(data, grad);
     auto sym_matrix = make_symmetric_matrix_view<3>(var);
     
     // データ設定
@@ -107,7 +107,7 @@ __global__ void test_symmetric_matrix_transpose_kernel(T* data, T* grad, T* resu
 // SymmetricMatrix ストレージテスト用CUDAカーネル
 template <typename T>
 __global__ void test_symmetric_matrix_storage_kernel(T* data, T* grad, T* result) {
-    Variable<T, 6> var(data, grad);
+    VariableRef<T, 6> var(data, grad);
     auto sym_matrix = make_symmetric_matrix_view<3>(var);
     
     // 直接的にストレージにアクセス

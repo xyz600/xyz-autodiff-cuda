@@ -43,15 +43,6 @@ __host__ __device__ auto add(const Input1& input1, const Input2& input2) {
     return BinaryOperation<LogicType::outputDim, LogicType, Input1, Input2>(logic, input1, input2);
 }
 
-// BinaryOperationRefを返すファクトリ関数（外部バッファ版）
-template <typename Input1, typename Input2>
-requires BinaryLogicParameterConcept<Input1, Input2>
-__host__ __device__ auto add_ref(const Input1& input1, const Input2& input2, 
-                                      Variable<typename Input1::value_type, AddLogic<Input1, Input2>::outputDim>& output) {
-    using LogicType = AddLogic<Input1, Input2>;
-    LogicType logic;
-    return BinaryOperationRef<LogicType::outputDim, LogicType, Input1, Input2>(logic, input1, input2, output);
-}
 
 } // namespace op
 } // namespace xyz_autodiff

@@ -24,7 +24,9 @@
       "Bash(make test_complex_operations:*)",
       "Bash(./tests/test_complex_operations)",
       "Bash(make:*)",
-      "Bash(./tests/test_unary_operations:*)"
+      "Bash(./tests/test_unary_operations:*)",
+      "Bash(cp:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

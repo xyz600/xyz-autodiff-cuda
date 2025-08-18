@@ -12,7 +12,7 @@ using namespace xyz_autodiff;
 // DiagonalMatrixView テスト用のCUDAカーネル
 template <typename T, std::size_t N>
 __global__ void test_diagonal_basic_kernel(T* data, T* grad, T* output) {
-    Variable<T, N> var(data, grad);
+    VariableRef<T, N> var(data, grad);
     DiagonalMatrixView<T, N> diag_view(var);
     
     // 対角要素を設定
@@ -32,7 +32,7 @@ __global__ void test_diagonal_basic_kernel(T* data, T* grad, T* output) {
 template <typename T, std::size_t N>
 __global__ void test_diagonal_dense_multiply_kernel(T* diag_data, T* diag_grad, T* result_output) {
     // 対角行列作成: diag([1, 2, 3])
-    Variable<T, N> diag_var(diag_data, diag_grad);
+    VariableRef<T, N> diag_var(diag_data, diag_grad);
     DiagonalMatrixView<T, N> diag_matrix(diag_var);
     
     for (std::size_t i = 0; i < N; ++i) {
@@ -65,7 +65,7 @@ __global__ void test_dense_diagonal_multiply_kernel(T* diag_data, T* diag_grad, 
     dense_matrix[3] = 4; dense_matrix[4] = 5; dense_matrix[5] = 6;  // 行1
     
     // 対角行列作成: diag([1, 2, 3])
-    Variable<T, N> diag_var(diag_data, diag_grad);
+    VariableRef<T, N> diag_var(diag_data, diag_grad);
     DiagonalMatrixView<T, N> diag_matrix(diag_var);
     
     for (std::size_t i = 0; i < N; ++i) {

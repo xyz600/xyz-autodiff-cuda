@@ -110,14 +110,14 @@ __global__ void test_dense_matrix_transpose_kernel(T* result) {
 // DiagonalMatrix transpose テスト用CUDAカーネル
 template <typename T>
 __global__ void test_diagonal_matrix_transpose_kernel(T* data, T* grad, T* result) {
-    Variable<T, 3> var(data, grad);
+    VariableRef<T, 3> var(data, grad);
     
     // 対角要素設定
     var[0] = static_cast<T>(1.0);
     var[1] = static_cast<T>(2.0);
     var[2] = static_cast<T>(3.0);
     
-    DiagonalMatrixView<T, 3> diag_view(var);
+    DiagonalMatrixView<T, 3, VariableRef<T, 3>> diag_view(var);
     
     // transpose操作（対角行列なので変わらない）
     auto transposed = diag_view.transpose();
@@ -212,7 +212,7 @@ TEST_F(MatrixTransposeTest, DiagonalMatrixTranspose) {
 TEST_F(MatrixTransposeTest, ConceptCheck) {
     using DenseMat23 = DenseMatrix<float, 2, 3>;
     using DenseMat32 = DenseMatrix<float, 3, 2>;
-    using DiagView3 = DiagonalMatrixView<float, 3>;
+    using DiagView3 = DiagonalMatrixView<float, 3, VariableRef<float, 3>>;
     
     // MatrixViewConcept の要件チェック
     static_assert(MatrixViewConcept<DenseMat23>);

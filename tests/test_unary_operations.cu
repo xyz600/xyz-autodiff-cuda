@@ -10,7 +10,7 @@ using namespace xyz_autodiff;
 // Test kernel for sigmoid factory function
 template <typename T>
 __global__ void test_sigmoid_factory_kernel(T* input_data, T* output_data) {
-    Variable<T, 3> input(input_data, input_data + 3);
+    VariableRef<T, 3> input(input_data, input_data + 3);
     
     // Test factory function from sigmoid_logic.cuh
     auto result = sigmoid(input);
@@ -23,7 +23,7 @@ __global__ void test_sigmoid_factory_kernel(T* input_data, T* output_data) {
 // Test kernel for exp factory function
 template <typename T>
 __global__ void test_exp_factory_kernel(T* input_data, T* output_data) {
-    Variable<T, 3> input(input_data, input_data + 3);
+    VariableRef<T, 3> input(input_data, input_data + 3);
     
     // Test factory function from exp_logic.cuh
     auto result = exp(input);
