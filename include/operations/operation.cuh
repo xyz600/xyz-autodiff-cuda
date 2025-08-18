@@ -4,7 +4,7 @@
 #include <type_traits>
 #include "../concept/core_logic.cuh"
 #include "../concept/variable.cuh"
-#include "../concept/node.cuh"
+#include "../concept/operation_node.cuh"
 #include "../variable.cuh"
 
 namespace xyz_autodiff {
@@ -16,7 +16,6 @@ class UnaryOperation {
 public:
     using input_type = Input;
     using output_type = Variable<typename Input::value_type, OutputSize>;
-    using variable_type = output_type;  // NodeConcept用
     using value_type = typename Input::value_type;
     static constexpr std::size_t output_size = OutputSize;
     static constexpr std::size_t size = OutputSize;
@@ -56,8 +55,10 @@ public:
     __device__ void backward() {
         logic_.backward(output_, input_);
         
-        // 入力のbackwardも自動的に呼ぶ
-        input_.backward();
+        // 入力がOperationNodeの場合のみbackwardを呼ぶ
+        if constexpr (OperationNode<Input>) {
+            input_.backward();
+        }
     }
     
     // 数値微分による backward pass
@@ -65,7 +66,10 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        input_.zero_grad();
+        // 入力がOperationNodeの場合のみzero_gradを呼ぶ
+        if constexpr (OperationNode<Input>) {
+            input_.zero_grad();
+        }
         
         for (std::size_t i = 0; i < Input::size; i++) {
             const auto orig = input_[i];
@@ -90,8 +94,10 @@ public:
             }
         }
         
-        // 入力のbackward_numericalも自動的に呼ぶ
-        input_.backward_numerical(delta);
+        // 入力がOperationNodeの場合のみbackward_numericalを呼ぶ
+        if constexpr (OperationNode<Input>) {
+            input_.backward_numerical(delta);
+        }
     }
     
     // 出力への参照を取得
@@ -122,13 +128,9 @@ public:
     __device__ void zero_grad() { 
         output_.zero_grad(); 
         
-        // 入力のzero_gradも自動的に呼ぶ
         input_.zero_grad();
     }
     
-    // NodeConcept インターフェース
-    __device__ variable_type& variable() { return output_; }
-    __device__ const variable_type& variable() const { return output_; }
     
 };
 
@@ -140,7 +142,6 @@ public:
     using input1_type = Input1;
     using input2_type = Input2;
     using output_type = Variable<typename Input1::value_type, OutputSize>;
-    using variable_type = output_type;  // NodeConcept用
     using value_type = typename Input1::value_type;
     static constexpr std::size_t output_size = OutputSize;
     static constexpr std::size_t size = OutputSize;
@@ -182,9 +183,13 @@ public:
     __device__ void backward() {
         logic_.backward(output_, input1_, input2_);
         
-        // 入力のbackwardも自動的に呼ぶ
-        input1_.backward();
-        input2_.backward();
+        // 入力がOperationNodeの場合のみbackwardを呼ぶ
+        if constexpr (OperationNode<Input1>) {
+            input1_.backward();
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.backward();
+        }
     }
     
     // 数値微分による backward pass
@@ -192,8 +197,13 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        input1_.zero_grad();
-        input2_.zero_grad();
+        // 入力がOperationNodeの場合のみzero_gradを呼ぶ
+        if constexpr (OperationNode<Input1>) {
+            input1_.zero_grad();
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.zero_grad();
+        }
         
         // Input1 に対する数値微分
         for (std::size_t i = 0; i < Input1::size; i++) {
@@ -243,9 +253,13 @@ public:
             }
         }
         
-        // 入力のbackward_numericalも自動的に呼ぶ
-        input1_.backward_numerical(delta);
-        input2_.backward_numerical(delta);
+        // 入力がOperationNodeの場合のみbackward_numericalを呼ぶ
+        if constexpr (OperationNode<Input1>) {
+            input1_.backward_numerical(delta);
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.backward_numerical(delta);
+        }
     }
     
     // 出力への参照を取得
@@ -276,14 +290,10 @@ public:
     __device__ void zero_grad() { 
         output_.zero_grad(); 
         
-        // 入力のzero_gradも自動的に呼ぶ
         input1_.zero_grad();
         input2_.zero_grad();
     }
     
-    // NodeConcept インターフェース
-    __device__ variable_type& variable() { return output_; }
-    __device__ const variable_type& variable() const { return output_; }
     
 };
 
@@ -296,7 +306,6 @@ public:
     using input2_type = Input2;
     using input3_type = Input3;
     using output_type = Variable<typename Input1::value_type, OutputSize>;
-    using variable_type = output_type;  // NodeConcept用
     using value_type = typename Input1::value_type;
     static constexpr std::size_t output_size = OutputSize;
     static constexpr std::size_t size = OutputSize;
@@ -340,10 +349,16 @@ public:
     __device__ void backward() {
         logic_.backward(output_, input1_, input2_, input3_);
         
-        // 入力のbackwardも自動的に呼ぶ
-        input1_.backward();
-        input2_.backward();
-        input3_.backward();
+        // 入力がOperationNodeの場合のみbackwardを呼ぶ
+        if constexpr (OperationNode<Input1>) {
+            input1_.backward();
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.backward();
+        }
+        if constexpr (OperationNode<Input3>) {
+            input3_.backward();
+        }
     }
     
     // 数値微分による backward pass
@@ -351,9 +366,16 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        input1_.zero_grad();
-        input2_.zero_grad();
-        input3_.zero_grad();
+        // 入力がOperationNodeの場合のみzero_gradを呼ぶ
+        if constexpr (OperationNode<Input1>) {
+            input1_.zero_grad();
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.zero_grad();
+        }
+        if constexpr (OperationNode<Input3>) {
+            input3_.zero_grad();
+        }
         
         // Input1 に対する数値微分
         for (std::size_t i = 0; i < Input1::size; i++) {
@@ -427,10 +449,16 @@ public:
             }
         }
         
-        // 入力のbackward_numericalも自動的に呼ぶ
-        input1_.backward_numerical(delta);
-        input2_.backward_numerical(delta);
-        input3_.backward_numerical(delta);
+        // 入力がOperationNodeの場合のみbackward_numericalを呼ぶ
+        if constexpr (OperationNode<Input1>) {
+            input1_.backward_numerical(delta);
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.backward_numerical(delta);
+        }
+        if constexpr (OperationNode<Input3>) {
+            input3_.backward_numerical(delta);
+        }
     }
     
     // 出力への参照を取得
@@ -461,15 +489,11 @@ public:
     __device__ void zero_grad() { 
         output_.zero_grad(); 
         
-        // 入力のzero_gradも自動的に呼ぶ
         input1_.zero_grad();
         input2_.zero_grad();
         input3_.zero_grad();
     }
     
-    // NodeConcept インターフェース
-    __device__ variable_type& variable() { return output_; }
-    __device__ const variable_type& variable() const { return output_; }
     
 };
 

@@ -25,7 +25,7 @@ __global__ void test_chaining_analytical_kernel(
     auto mul_result = op::mul(x_var, z_var);
     auto final_result = op::add(mul_result, y_var);
     
-    // 勾配をゼロクリア（自動的に全ての入力のzero_gradが呼ばれる）
+    // 勾配をゼロクリア（top-downで自動的に全ての勾配がクリアされる）
     final_result.zero_grad();
     
     // 上流勾配を設定
@@ -50,7 +50,7 @@ __global__ void test_chaining_numerical_kernel(
     auto mul_result = op::mul(x_var, z_var);
     auto final_result = op::add(mul_result, y_var);
     
-    // 勾配をゼロクリア（自動的に全ての入力のzero_gradが呼ばれる）
+    // 勾配をゼロクリア（top-downで自動的に全ての勾配がクリアされる）
     final_result.zero_grad();
     
     // 上流勾配を設定

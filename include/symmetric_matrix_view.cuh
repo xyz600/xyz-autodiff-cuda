@@ -4,7 +4,6 @@
 #include <cuda_runtime.h>
 #include "concept/matrix.cuh"
 #include "concept/variable.cuh"
-#include "concept/node.cuh"
 
 namespace xyz_autodiff {
 
@@ -13,7 +12,6 @@ template <typename T, std::size_t N, DifferentiableVariableConcept Variable>
 class SymmetricMatrixView {
 public:
     using value_type = T;
-    using variable_type = SymmetricMatrixView<T, N, Variable>;  // NodeConcept用
     static constexpr std::size_t rows = N;
     static constexpr std::size_t cols = N;
     static constexpr std::size_t size = N * N;
@@ -98,19 +96,6 @@ public:
     __host__ __device__ auto& underlying_variable() { return variable_; }
     __host__ __device__ const auto& underlying_variable() const { return variable_; }
     
-    // NodeConcept インターフェース
-    __device__ variable_type& variable() { return *this; }
-    __device__ const variable_type& variable() const { return *this; }
-    
-    // backward (MatrixView では内部Variableに委譲)
-    __device__ void backward() { 
-        variable_.backward();
-    }
-    
-    // backward_numerical (MatrixView では内部Variableに委譲)
-    __device__ void backward_numerical(const value_type& delta = value_type(1e-5)) { 
-        variable_.backward_numerical(delta);
-    }
 };
 
 // 型推論ヘルパー

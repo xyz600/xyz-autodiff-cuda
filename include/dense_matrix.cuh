@@ -5,7 +5,6 @@
 #include <cuda_runtime.h>
 
 #include "concept/matrix.cuh"
-#include "concept/node.cuh"
 
 namespace xyz_autodiff {
 
@@ -13,7 +12,6 @@ template <typename T, std::size_t Rows, std::size_t Cols>
 class DenseMatrix {
 public:
     using value_type = T;
-    using variable_type = DenseMatrix<T, Rows, Cols>;  // NodeConcept用
     static constexpr std::size_t rows = Rows;
     static constexpr std::size_t cols = Cols;
     static constexpr std::size_t size = Rows * Cols;
@@ -56,17 +54,6 @@ public:
         }
     }
     
-    // NodeConcept インターフェース
-    __device__ variable_type& variable() { return *this; }
-    __device__ const variable_type& variable() const { return *this; }
-    
-    // backward (Matrix では何もしない - 計算グラフの葉ノード)
-    __device__ void backward() { /* Matrix は計算グラフの葉ノードなので何もしない */ }
-    
-    // backward_numerical (Matrix では何もしない - 計算グラフの葉ノード)
-    __device__ void backward_numerical(const value_type& delta = value_type(1e-5)) { 
-        /* Matrix は計算グラフの葉ノードなので何もしない */ 
-    }
     
     
     // === MatrixView concept の要件 ===
