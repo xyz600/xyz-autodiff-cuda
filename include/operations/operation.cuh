@@ -53,6 +53,11 @@ public:
     // Backward pass
     __device__ void backward() {
         logic_.backward(output_, input_);
+        
+        // 入力のbackwardも自動的に呼ぶ（Operationの場合のみ）
+        if constexpr (requires { input_.backward(); }) {
+            input_.backward();
+        }
     }
     
     // 数値微分による backward pass
@@ -83,6 +88,11 @@ public:
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
                 input_.grad(i) += output_.grad(j) * dj_di;
             }
+        }
+        
+        // 入力のbackward_numericalも自動的に呼ぶ（Operationの場合のみ）
+        if constexpr (requires { input_.backward_numerical(delta); }) {
+            input_.backward_numerical(delta);
         }
     }
     
@@ -163,6 +173,14 @@ public:
     // Backward pass
     __device__ void backward() {
         logic_.backward(output_, input1_, input2_);
+        
+        // 入力のbackwardも自動的に呼ぶ（Operationの場合のみ）
+        if constexpr (requires { input1_.backward(); }) {
+            input1_.backward();
+        }
+        if constexpr (requires { input2_.backward(); }) {
+            input2_.backward();
+        }
     }
     
     // 数値微分による backward pass
@@ -219,6 +237,14 @@ public:
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
                 input2_.grad(i) += output_.grad(j) * dj_di;
             }
+        }
+        
+        // 入力のbackward_numericalも自動的に呼ぶ（Operationの場合のみ）
+        if constexpr (requires { input1_.backward_numerical(delta); }) {
+            input1_.backward_numerical(delta);
+        }
+        if constexpr (requires { input2_.backward_numerical(delta); }) {
+            input2_.backward_numerical(delta);
         }
     }
     
@@ -302,6 +328,17 @@ public:
     // Backward pass
     __device__ void backward() {
         logic_.backward(output_, input1_, input2_, input3_);
+        
+        // 入力のbackwardも自動的に呼ぶ（Operationの場合のみ）
+        if constexpr (requires { input1_.backward(); }) {
+            input1_.backward();
+        }
+        if constexpr (requires { input2_.backward(); }) {
+            input2_.backward();
+        }
+        if constexpr (requires { input3_.backward(); }) {
+            input3_.backward();
+        }
     }
     
     // 数値微分による backward pass
