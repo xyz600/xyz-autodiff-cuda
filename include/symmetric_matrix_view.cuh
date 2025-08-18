@@ -86,8 +86,9 @@ public:
     __host__ __device__ T* grad() { return variable_.grad(); }
     __host__ __device__ const T* grad() const { return variable_.grad(); }
     
-    __host__ __device__ T& grad(std::size_t i) { return variable_.grad(i); }
     __host__ __device__ const T& grad(std::size_t i) const { return variable_.grad(i); }
+    
+    __host__ __device__ void add_grad(std::size_t i, T value) { variable_.add_grad(i, value); }
     
     __host__ __device__ void zero_grad() { variable_.zero_grad(); }
     

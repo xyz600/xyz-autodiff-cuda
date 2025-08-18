@@ -32,9 +32,15 @@ public:
         return data_ptr_[i]; 
     }
     
-    // インデックスアクセス (勾配)
-    __device__ __forceinline__ T& grad(std::size_t i) const noexcept { 
+    // インデックスアクセス (勾配の読み取り専用)
+    __device__ __forceinline__ const T& grad(std::size_t i) const noexcept { 
         return grad_ptr_[i]; 
+    }
+    
+    // 勾配への加算（一時的にatomicAddを無効化）
+    __device__ __forceinline__ void add_grad(std::size_t i, T value) const noexcept {
+        // TODO: 条件付きatomicAdd実装
+        grad_ptr_[i] += value;
     }
     
     // 勾配をゼロクリア
@@ -145,12 +151,14 @@ public:
         return data_[i]; 
     }
     
-    // インデックスアクセス (勾配)
-    __device__ __forceinline__ T& grad(std::size_t i) noexcept { 
-        return grad_[i]; 
-    }
+    // インデックスアクセス (勾配の読み取り専用)
     __device__ __forceinline__ const T& grad(std::size_t i) const noexcept { 
         return grad_[i]; 
+    }
+    
+    // 勾配への加算（通常の加算、atomic演算不要）
+    __device__ __forceinline__ void add_grad(std::size_t i, T value) noexcept {
+        grad_[i] += value;
     }
     
     // 勾配をゼロクリア

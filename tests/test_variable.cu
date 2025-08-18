@@ -19,8 +19,9 @@ __global__ void test_variable_kernel(T* data, T* grad, T* output) {
     }
     
     // 勾配テスト
+    var.zero_grad();
     for (std::size_t i = 0; i < N; ++i) {
-        var.grad(i) = static_cast<T>(i * 2);  // 0, 2, 4, ...
+        var.add_grad(i, static_cast<T>(i * 2));  // 0, 2, 4, ...
     }
     
     // アクセサテスト
@@ -54,9 +55,10 @@ __global__ void test_variable_self_buffer_kernel(T* output) {
     Variable<T, N> var;
     
     // データ設定
+    var.zero_grad();
     for (std::size_t i = 0; i < N; ++i) {
         var[i] = static_cast<T>(i + 10);  // 10, 11, 12, ...
-        var.grad(i) = static_cast<T>(i * 3);  // 0, 3, 6, ...
+        var.add_grad(i, static_cast<T>(i * 3));  // 0, 3, 6, ...
     }
     
     // 結果をoutputに保存

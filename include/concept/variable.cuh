@@ -26,14 +26,16 @@ concept VariableConcept = requires(T var) {
 
 // Backward propagation に必要な要件
 template <typename T>
-concept DifferentiableVariableConcept = VariableConcept<T> && requires(T var) {
-    // 勾配データへのアクセス
+concept DifferentiableVariableConcept = VariableConcept<T> && requires(T var, typename T::value_type value) {
+    // 勾配データへのアクセス（読み取り専用）
     { var.grad() } -> std::convertible_to<typename T::value_type*>;
     { var.grad() } -> std::convertible_to<const typename T::value_type*>;
     
-    // インデックスアクセス (勾配)
-    { var.grad(std::size_t{}) } -> std::convertible_to<typename T::value_type&>;
+    // インデックスアクセス (勾配の読み取り専用)
     { var.grad(std::size_t{}) } -> std::convertible_to<const typename T::value_type&>;
+    
+    // 勾配への加算（スレッドセーフな加算を想定）
+    { var.add_grad(std::size_t{}, value) } -> std::same_as<void>;
     
     // 勾配初期化
     { var.zero_grad() } -> std::same_as<void>;

@@ -90,7 +90,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                input_.grad(i) += output_.grad(j) * dj_di;
+                input_.add_grad(i, output_.grad(j) * dj_di);
             }
         }
         
@@ -112,11 +112,12 @@ public:
         return output_[i]; 
     }
     
-    __device__ __forceinline__ value_type& grad(std::size_t i) { 
-        return output_.grad(i); 
-    }
     __device__ __forceinline__ const value_type& grad(std::size_t i) const { 
         return output_.grad(i); 
+    }
+    
+    __device__ __forceinline__ void add_grad(std::size_t i, value_type value) { 
+        output_.add_grad(i, value); 
     }
     
     __device__ value_type* data() { return output_.data(); }
@@ -225,7 +226,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                input1_.grad(i) += output_.grad(j) * dj_di;
+                input1_.add_grad(i, output_.grad(j) * dj_di);
             }
         }
         
@@ -249,7 +250,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                input2_.grad(i) += output_.grad(j) * dj_di;
+                input2_.add_grad(i, output_.grad(j) * dj_di);
             }
         }
         
@@ -274,11 +275,12 @@ public:
         return output_[i]; 
     }
     
-    __device__ __forceinline__ value_type& grad(std::size_t i) { 
-        return output_.grad(i); 
-    }
     __device__ __forceinline__ const value_type& grad(std::size_t i) const { 
         return output_.grad(i); 
+    }
+    
+    __device__ __forceinline__ void add_grad(std::size_t i, value_type value) { 
+        output_.add_grad(i, value); 
     }
     
     __device__ value_type* data() { return output_.data(); }
@@ -397,7 +399,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                input1_.grad(i) += output_.grad(j) * dj_di;
+                input1_.add_grad(i, output_.grad(j) * dj_di);
             }
         }
         
@@ -421,7 +423,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                input2_.grad(i) += output_.grad(j) * dj_di;
+                input2_.add_grad(i, output_.grad(j) * dj_di);
             }
         }
         
@@ -445,7 +447,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                input3_.grad(i) += output_.grad(j) * dj_di;
+                input3_.add_grad(i, output_.grad(j) * dj_di);
             }
         }
         
@@ -473,11 +475,12 @@ public:
         return output_[i]; 
     }
     
-    __device__ __forceinline__ value_type& grad(std::size_t i) { 
-        return output_.grad(i); 
-    }
     __device__ __forceinline__ const value_type& grad(std::size_t i) const { 
         return output_.grad(i); 
+    }
+    
+    __device__ __forceinline__ void add_grad(std::size_t i, value_type value) { 
+        output_.add_grad(i, value); 
     }
     
     __device__ value_type* data() { return output_.data(); }

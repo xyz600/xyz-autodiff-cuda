@@ -29,7 +29,7 @@ struct SigmoidLogic {
             using T = typename Input::value_type;
             T sigmoid_val = math::sigmoid(input[i]);
             T sigmoid_derivative = sigmoid_val * (T{1} - sigmoid_val);
-            input.grad(i) += output.grad(i) * sigmoid_derivative;
+            input.add_grad(i, output.grad(i) * sigmoid_derivative);
         }
     }
 };

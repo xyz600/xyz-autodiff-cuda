@@ -33,8 +33,8 @@ struct AddLogic {
         // 加算の微分は1なので、そのまま上流の勾配を伝播
         for (std::size_t i = 0; i < Dim; ++i) {
             const T& output_grad = output.grad(i);
-            input1.grad(i) += output_grad;
-            input2.grad(i) += output_grad;
+            input1.add_grad(i, output_grad);
+            input2.add_grad(i, output_grad);
         }
     }
 };

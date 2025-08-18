@@ -29,7 +29,8 @@ __global__ void test_chaining_analytical_kernel(
     final_result.zero_grad();
     
     // 上流勾配を設定
-    final_result.grad(0) = output_grad[0];
+    final_result.zero_grad();
+    final_result.add_grad(0, output_grad[0]);
     
     // 逆伝播実行（自動的に全ての中間operationのbackwardが呼ばれる）
     final_result.backward();
@@ -54,7 +55,8 @@ __global__ void test_chaining_numerical_kernel(
     final_result.zero_grad();
     
     // 上流勾配を設定
-    final_result.grad(0) = output_grad[0];
+    final_result.zero_grad();
+    final_result.add_grad(0, output_grad[0]);
     
     // 数値微分による逆伝播実行（自動的に全ての中間operationのbackward_numericalが呼ばれる）
     final_result.backward_numerical(delta);

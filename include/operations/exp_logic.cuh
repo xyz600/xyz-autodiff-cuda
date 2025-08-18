@@ -28,7 +28,7 @@ struct ExpLogic {
             // d/dx exp(x) = exp(x)
             using T = typename Input::value_type;
             T exp_val = math::exp(input[i]);
-            input.grad(i) += output.grad(i) * exp_val;
+            input.add_grad(i, output.grad(i) * exp_val);
         }
     }
 };

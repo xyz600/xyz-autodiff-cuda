@@ -35,8 +35,9 @@ __global__ void test_binary_gradient_kernel(
         op.forward();
         
         // 上流勾配設定
+        op.zero_grad();
         for (std::size_t i = 0; i < OutDim; ++i) {
-            op.grad(i) = output_grad[i];
+            op.add_grad(i, output_grad[i]);
         }
         
         input1_var.zero_grad();
@@ -59,8 +60,9 @@ __global__ void test_binary_gradient_kernel(
         op.forward();
         
         // 上流勾配設定
+        op.zero_grad();
         for (std::size_t i = 0; i < OutDim; ++i) {
-            op.grad(i) = output_grad[i];
+            op.add_grad(i, output_grad[i]);
         }
         
         input1_var.zero_grad();

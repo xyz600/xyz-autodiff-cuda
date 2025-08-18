@@ -33,8 +33,8 @@ struct MulLogic {
         // 乗算の微分: d/dx1(x1[i]*x2[i]) = x2[i], d/dx2(x1[i]*x2[i]) = x1[i]
         for (std::size_t i = 0; i < Dim; ++i) {
             const T& output_grad = output.grad(i);
-            input1.grad(i) += output_grad * input2[i];
-            input2.grad(i) += output_grad * input1[i];
+            input1.add_grad(i, output_grad * input2[i]);
+            input2.add_grad(i, output_grad * input1[i]);
         }
     }
 };

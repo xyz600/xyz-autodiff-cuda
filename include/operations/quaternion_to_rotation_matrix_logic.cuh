@@ -106,10 +106,10 @@ struct QuaternionToRotationMatrixLogic {
         grad_w += output.grad(8) * T(0);                         // ∂r22/∂w = 0
         
         // 入力の勾配に加算
-        input.grad(0) += grad_x;
-        input.grad(1) += grad_y;
-        input.grad(2) += grad_z;
-        input.grad(3) += grad_w;
+        input.add_grad(0, grad_x);
+        input.add_grad(1, grad_y);
+        input.add_grad(2, grad_z);
+        input.add_grad(3, grad_w);
     }
 };
 

@@ -139,8 +139,9 @@ __global__ void test_quaternion_gradient_verification_kernel(float* result) {
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
     
     // Set up output gradient (gradient flows from a scalar loss)
+    rotation_matrix.zero_grad();
     for (int i = 0; i < 9; i++) {
-        rotation_matrix.grad(i) = 1.0; // Simple uniform gradient
+        rotation_matrix.add_grad(i, 1.0); // Simple uniform gradient
     }
     
     // Compute analytical gradients
@@ -158,7 +159,7 @@ __global__ void test_quaternion_gradient_verification_kernel(float* result) {
     
     // Set up output gradient again
     for (int i = 0; i < 9; i++) {
-        rotation_matrix.grad(i) = 1.0;
+        rotation_matrix.add_grad(i, 1.0);
     }
     
     // Compute numerical gradients with smaller step for double precision
@@ -251,7 +252,7 @@ __global__ void test_quaternion_operation_chaining_kernel(float* result) {
     
     // Set gradients on multiple outputs to ensure non-zero gradient flow
     for (int i = 0; i < 9; i++) {
-        rotation_matrix.grad(i) = 1.0f;
+        rotation_matrix.add_grad(i, 1.0f);
     }
     
     // Backward should automatically propagate

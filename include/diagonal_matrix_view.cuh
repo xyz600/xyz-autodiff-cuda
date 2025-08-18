@@ -43,9 +43,14 @@ public:
         return variable_[i]; 
     }
     
-    // インデックスアクセス (勾配) - 1次元アクセス（対角要素）
-    __device__ T& grad(std::size_t i) const { 
+    // インデックスアクセス (勾配) - 1次元アクセス（対角要素、読み取り専用）
+    __device__ const T& grad(std::size_t i) const { 
         return variable_.grad(i); 
+    }
+    
+    // 勾配への加算
+    __device__ void add_grad(std::size_t i, T value) const {
+        variable_.add_grad(i, value);
     }
     
     // 勾配をゼロクリア

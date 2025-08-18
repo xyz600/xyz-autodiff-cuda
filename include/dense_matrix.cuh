@@ -43,9 +43,11 @@ public:
     __device__ T& operator[](std::size_t i) { return data_[i]; }
     __device__ const T& operator[](std::size_t i) const { return data_[i]; }
     
-    // インデックスアクセス (勾配) - 1次元アクセス
-    __device__ T& grad(std::size_t i) { return grad_[i]; }
+    // インデックスアクセス (勾配の読み取り専用)
     __device__ const T& grad(std::size_t i) const { return grad_[i]; }
+    
+    // 勾配への加算
+    __device__ void add_grad(std::size_t i, T value) { grad_[i] += value; }
     
     // 勾配をゼロクリア
     __device__ void zero_grad() {

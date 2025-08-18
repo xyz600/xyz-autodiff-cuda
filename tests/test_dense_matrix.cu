@@ -34,11 +34,12 @@ __global__ void test_dense_matrix_operations_kernel(T* output) {
     DenseMatrix<T, Rows, Cols> matrix;
     
     // データ初期化
+    matrix.zero_grad();
     for (std::size_t i = 0; i < Rows; ++i) {
         for (std::size_t j = 0; j < Cols; ++j) {
             std::size_t linear_idx = i * Cols + j;
             matrix[linear_idx] = static_cast<T>((i + 1) * (j + 1));
-            matrix.grad(linear_idx) = static_cast<T>(linear_idx + 1); // 初期勾配設定
+            matrix.add_grad(linear_idx, static_cast<T>(linear_idx + 1)); // 初期勾配設定
         }
     }
     
