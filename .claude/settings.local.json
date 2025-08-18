@@ -27,7 +27,8 @@
       "Bash(./tests/test_unary_operations:*)",
       "Bash(cp:*)",
       "Bash(sed:*)",
-      "Bash(./tests/test_gradient_verification:*)"
+      "Bash(./tests/test_gradient_verification:*)",
+      "Bash(./tests/test_operation_chaining)"
     ],
     "deny": []
   }

@@ -7,10 +7,10 @@
 namespace xyz_autodiff {
 namespace op {
     
-// 要素毎の加算ロジック（element-wise addition）
+// 要素毎の乗算ロジック（element-wise multiplication）
 template <typename Input1, typename Input2>
 requires BinaryLogicParameterConcept<Input1, Input2> && (Input1::size == Input2::size)
-struct AddLogic {
+struct MulLogic {
     using T = typename Input1::value_type;
     static constexpr std::size_t Dim = Input1::size;
     using Output = Variable<T, Dim>;
@@ -19,22 +19,22 @@ struct AddLogic {
     static constexpr std::size_t outputDim = Dim;
     
     // デフォルトコンストラクタ
-    __host__ __device__ AddLogic() = default;
+    __host__ __device__ MulLogic() = default;
     
     // forward: 出力に結果を書き込む（element-wise）
     __device__ void forward(Output& output, const Input1& input1, const Input2& input2) const {
         for (std::size_t i = 0; i < Dim; ++i) {
-            output[i] = input1[i] + input2[i];
+            output[i] = input1[i] * input2[i];
         }
     }
     
     // backward: 入力の勾配に結果を書き込む（element-wise）
     __device__ void backward(const Output& output, Input1& input1, Input2& input2) const {
-        // 加算の微分は1なので、そのまま上流の勾配を伝播
+        // 乗算の微分: d/dx1(x1[i]*x2[i]) = x2[i], d/dx2(x1[i]*x2[i]) = x1[i]
         for (std::size_t i = 0; i < Dim; ++i) {
             const T& output_grad = output.grad(i);
-            input1.grad(i) += output_grad;
-            input2.grad(i) += output_grad;
+            input1.grad(i) += output_grad * input2[i];
+            input2.grad(i) += output_grad * input1[i];
         }
     }
 };
@@ -42,14 +42,13 @@ struct AddLogic {
 // BinaryOperationを返すファクトリ関数
 template <typename Input1, typename Input2>
 requires BinaryLogicParameterConcept<Input1, Input2>
-__host__ __device__ auto add(Input1& input1, Input2& input2) {
-    using LogicType = AddLogic<Input1, Input2>;
+__host__ __device__ auto mul(Input1& input1, Input2& input2) {
+    using LogicType = MulLogic<Input1, Input2>;
     LogicType logic;
     auto op = BinaryOperation<LogicType::outputDim, LogicType, Input1, Input2>(logic, input1, input2);
     op.forward();
     return op;
 }
-
 
 } // namespace op
 } // namespace xyz_autodiff

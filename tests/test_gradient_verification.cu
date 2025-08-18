@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
-#include "gradient_test_utility.cuh"
+#include "utility/gradient_test_utility.cuh"
 #include "../include/operations/sigmoid_logic.cuh"
 #include "../include/operations/exp_logic.cuh"
 #include "../include/operations/add_logic.cuh"
+#include "../include/operations/mul_logic.cuh"
 
 using namespace xyz_autodiff;
 using namespace xyz_autodiff::test;
@@ -50,17 +51,38 @@ protected:
 TEST_F(GradientVerificationTest, ManualSigmoidTest) {
     // より詳細なテストロジックがここに書ける
     // 例: 特定の入力値での詳細なデバッグ
-    UnaryGradientTester<SigmoidLogic<2>, 2, 2>::test("ManualSigmoidTest");
+    xyz_autodiff::test::UnaryGradientTester<SigmoidLogic<2>, 2, 2>::test("ManualSigmoidTest");
 }
 
 TEST_F(GradientVerificationTest, ManualExpTest) {
-    UnaryGradientTester<ExpLogic<2>, 2, 2>::test("ManualExpTest");
+    xyz_autodiff::test::UnaryGradientTester<ExpLogic<2>, 2, 2>::test("ManualExpTest");
 }
 
 // エッジケーステスト
 TEST_F(GradientVerificationTest, EdgeCaseSingleDimension) {
-    UnaryGradientTester<SigmoidLogic<1>, 1, 1>::test("EdgeCaseSingleDimension");
+    xyz_autodiff::test::UnaryGradientTester<SigmoidLogic<1>, 1, 1>::test("EdgeCaseSingleDimension");
 }
+
+// BinaryOperationのテスト（element-wise operations）
+// Type aliases to handle commas in template arguments
+using MulLogic1D_t = xyz_autodiff::op::MulLogic<VariableRef<double, 1>, VariableRef<double, 1>>;
+using AddLogic1D_t = xyz_autodiff::op::AddLogic<VariableRef<double, 1>, VariableRef<double, 1>>;
+using MulLogic3D_t = xyz_autodiff::op::MulLogic<VariableRef<double, 3>, VariableRef<double, 3>>;
+using AddLogic3D_t = xyz_autodiff::op::AddLogic<VariableRef<double, 3>, VariableRef<double, 3>>;
+using MulLogic5D_t = xyz_autodiff::op::MulLogic<VariableRef<double, 5>, VariableRef<double, 5>>;
+using AddLogic5D_t = xyz_autodiff::op::AddLogic<VariableRef<double, 5>, VariableRef<double, 5>>;
+
+// 1次元
+TEST_BINARY_GRADIENT(MulLogic1D_t, 1, 1, 1, MulLogic1D)
+TEST_BINARY_GRADIENT(AddLogic1D_t, 1, 1, 1, AddLogic1D)
+
+// 3次元
+TEST_BINARY_GRADIENT(MulLogic3D_t, 3, 3, 3, MulLogic3D)
+TEST_BINARY_GRADIENT(AddLogic3D_t, 3, 3, 3, AddLogic3D)
+
+// 5次元
+TEST_BINARY_GRADIENT(MulLogic5D_t, 5, 5, 5, MulLogic5D)
+TEST_BINARY_GRADIENT(AddLogic5D_t, 5, 5, 5, AddLogic5D)
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
