@@ -9,6 +9,14 @@
 
 using namespace xyz_autodiff;
 
+// テスト用バッファ構造体
+template <typename T>
+struct DiagonalTestBuffers {
+    T data[10];     // 最大10要素までサポート
+    T grad[10];     // 最大10要素までサポート
+    T output[100];  // 最大10x10行列結果用
+};
+
 // DiagonalMatrixView テスト用のCUDAカーネル
 template <typename T, std::size_t N>
 __global__ void test_diagonal_basic_kernel(T* data, T* grad, T* output) {
@@ -97,20 +105,14 @@ TEST_F(DiagonalMatrixTest, BasicConstruction) {
     constexpr std::size_t N = 3;
     using T = float;
     
-    std::vector<T> host_output(N * N, 0);
+    auto device_buffers = makeCudaUnique<DiagonalTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
-    auto device_data = makeCudaUniqueArray<T>(N);
-    auto device_grad = makeCudaUniqueArray<T>(N);
-    auto device_output = makeCudaUniqueArray<T>(N * N);
-    
-    ASSERT_NE(device_data, nullptr);
-    ASSERT_NE(device_grad, nullptr);
-    ASSERT_NE(device_output, nullptr);
-    
-    test_diagonal_basic_kernel<T, N><<<1, 1>>>(device_data.get(), device_grad.get(), device_output.get());
+    test_diagonal_basic_kernel<T, N><<<1, 1>>>(device_buffers.get()->data, device_buffers.get()->grad, device_buffers.get()->output);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), N * N * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    DiagonalTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(DiagonalTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // 対角行列の検証: diag([1, 2, 3])
     std::vector<T> expected = {
@@ -120,7 +122,7 @@ TEST_F(DiagonalMatrixTest, BasicConstruction) {
     };
     
     for (std::size_t i = 0; i < N * N; ++i) {
-        EXPECT_FLOAT_EQ(host_output[i], expected[i]);
+        EXPECT_FLOAT_EQ(host_buffers.output[i], expected[i]);
     }
 }
 
@@ -128,27 +130,21 @@ TEST_F(DiagonalMatrixTest, DiagonalDenseMultiply) {
     constexpr std::size_t N = 3;
     using T = float;
     
-    std::vector<T> host_output(N * 2, 0);
-    
-    auto device_diag_data = makeCudaUniqueArray<T>(N);
-    auto device_diag_grad = makeCudaUniqueArray<T>(N);
-    auto device_output = makeCudaUniqueArray<T>(N * 2);
-    
-    ASSERT_NE(device_diag_data, nullptr);
-    ASSERT_NE(device_diag_grad, nullptr);
-    ASSERT_NE(device_output, nullptr);
+    auto device_buffers = makeCudaUnique<DiagonalTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
     test_diagonal_dense_multiply_kernel<T, N><<<1, 1>>>(
-        device_diag_data.get(), device_diag_grad.get(), device_output.get());
+        device_buffers.get()->data, device_buffers.get()->grad, device_buffers.get()->output);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), N * 2 * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    DiagonalTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(DiagonalTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // 期待値: diag([1,2,3]) * [[1,2],[3,4],[5,6]] = [[1,2],[6,8],[15,18]]
     std::vector<T> expected = {1, 2, 6, 8, 15, 18};
     
     for (std::size_t i = 0; i < N * 2; ++i) {
-        EXPECT_FLOAT_EQ(host_output[i], expected[i]);
+        EXPECT_FLOAT_EQ(host_buffers.output[i], expected[i]);
     }
 }
 
@@ -156,27 +152,21 @@ TEST_F(DiagonalMatrixTest, DenseDiagonalMultiply) {
     constexpr std::size_t N = 3;
     using T = float;
     
-    std::vector<T> host_output(2 * N, 0);
-    
-    auto device_diag_data = makeCudaUniqueArray<T>(N);
-    auto device_diag_grad = makeCudaUniqueArray<T>(N);
-    auto device_output = makeCudaUniqueArray<T>(2 * N);
-    
-    ASSERT_NE(device_diag_data, nullptr);
-    ASSERT_NE(device_diag_grad, nullptr);
-    ASSERT_NE(device_output, nullptr);
+    auto device_buffers = makeCudaUnique<DiagonalTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
     test_dense_diagonal_multiply_kernel<T, N><<<1, 1>>>(
-        device_diag_data.get(), device_diag_grad.get(), device_output.get());
+        device_buffers.get()->data, device_buffers.get()->grad, device_buffers.get()->output);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), 2 * N * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    DiagonalTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(DiagonalTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // 期待値: [[1,2,3],[4,5,6]] * diag([1,2,3]) = [[1,4,9],[4,10,18]]
     std::vector<T> expected = {1, 4, 9, 4, 10, 18};
     
     for (std::size_t i = 0; i < 2 * N; ++i) {
-        EXPECT_FLOAT_EQ(host_output[i], expected[i]);
+        EXPECT_FLOAT_EQ(host_buffers.output[i], expected[i]);
     }
 }
 

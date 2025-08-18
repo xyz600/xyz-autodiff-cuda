@@ -14,19 +14,23 @@ using namespace xyz_autodiff;
  * 勾配を加算し、atomicAddが正しく動作することを確認
  */
 
+// パラメータ管理用の構造体
+template <typename T>
+struct TestParameters {
+    T value[3];  // x, y, result
+    T grad[3];   // grad_x, grad_y, grad_result
+};
+
 __global__ void parallel_gradient_accumulation_kernel(
-    double* global_x_data, double* global_x_grad,
-    double* global_y_data, double* global_y_grad,
-    double* global_result_data, double* global_result_grad,
-    std::size_t num_threads) {
+    TestParameters<double>* params, std::size_t num_threads) {
     
     std::size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid >= num_threads) return;
     
-    // グローバルメモリを参照するVariableRefを作成
-    VariableRef<double, 1> x_ref(global_x_data, global_x_grad);
-    VariableRef<double, 1> y_ref(global_y_data, global_y_grad);
-    VariableRef<double, 1> result_ref(global_result_data, global_result_grad);
+    // グローバルメモリを参照するVariableRefを作成（ポインタ演算で各パラメータを指定）
+    VariableRef<double, 1> x_ref(&params->value[0], &params->grad[0]);
+    VariableRef<double, 1> y_ref(&params->value[1], &params->grad[1]);
+    VariableRef<double, 1> result_ref(&params->value[2], &params->grad[2]);
     
     // f(x, y) = x + y の勾配は単純に ∂f/∂x = 1, ∂f/∂y = 1
     // 各スレッドが1.0ずつ勾配を加算
@@ -58,41 +62,30 @@ TEST_F(ParallelGradientAccumulationTest, AtomicGradientAccumulation) {
     const std::size_t THREADS_PER_BLOCK = 256;
     const std::size_t NUM_BLOCKS = (NUM_THREADS + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     
-    // デバイスメモリ確保（cuda_unique_ptrを使用）
-    auto device_x_data = makeCudaUnique<double>();
-    auto device_x_grad = makeCudaUnique<double>();
-    auto device_y_data = makeCudaUnique<double>();
-    auto device_y_grad = makeCudaUnique<double>();
-    auto device_result_data = makeCudaUnique<double>();
-    auto device_result_grad = makeCudaUnique<double>();
+    // デバイスメモリ確保（構造体で一元管理）
+    auto device_params = makeCudaUnique<TestParameters<double>>();
     
     // 初期値設定
-    double initial_x = 5.0;
-    double initial_y = 3.0;
-    double zero = 0.0;
-    
-    ASSERT_EQ(cudaMemcpy(device_x_data.get(), &initial_x, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_x_grad.get(), &zero, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_y_data.get(), &initial_y, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_y_grad.get(), &zero, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_result_data.get(), &zero, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_result_grad.get(), &zero, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
+    TestParameters<double> host_params = {
+        {5.0, 3.0, 0.0},  // value: x, y, result
+        {0.0, 0.0, 0.0}   // grad: grad_x, grad_y, grad_result (初期化)
+    };
+    ASSERT_EQ(cudaMemcpy(device_params.get(), &host_params, sizeof(TestParameters<double>), cudaMemcpyHostToDevice), cudaSuccess);
     
     // カーネル実行
     parallel_gradient_accumulation_kernel<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
-        device_x_data.get(), device_x_grad.get(),
-        device_y_data.get(), device_y_grad.get(),
-        device_result_data.get(), device_result_grad.get(),
-        NUM_THREADS
+        device_params.get(), NUM_THREADS
     );
     
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    double host_x_grad, host_y_grad, host_result_sum;
-    ASSERT_EQ(cudaMemcpy(&host_x_grad, device_x_grad.get(), sizeof(double), cudaMemcpyDeviceToHost), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(&host_y_grad, device_y_grad.get(), sizeof(double), cudaMemcpyDeviceToHost), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(&host_result_sum, device_result_grad.get(), sizeof(double), cudaMemcpyDeviceToHost), cudaSuccess);
+    TestParameters<double> result_params;
+    ASSERT_EQ(cudaMemcpy(&result_params, device_params.get(), sizeof(TestParameters<double>), cudaMemcpyDeviceToHost), cudaSuccess);
+    
+    double host_x_grad = result_params.grad[0];
+    double host_y_grad = result_params.grad[1];
+    double host_result_sum = result_params.grad[2];
     
     // 検証
     // f(x, y) = x + y の勾配は ∂f/∂x = 1, ∂f/∂y = 1
@@ -130,21 +123,15 @@ TEST_F(ParallelGradientAccumulationTest, DISABLED_LargeScaleAtomicAccumulation) 
     const std::size_t THREADS_PER_BLOCK = 512;
     const std::size_t NUM_BLOCKS = (NUM_THREADS + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
     
-    // デバイスメモリ確保（cuda_unique_ptrを使用）
-    auto device_x_data = makeCudaUnique<double>();
-    auto device_x_grad = makeCudaUnique<double>();
-    auto device_y_data = makeCudaUnique<double>();
-    auto device_y_grad = makeCudaUnique<double>();
+    // デバイスメモリ確保（構造体で一元管理）
+    auto device_params = makeCudaUnique<TestParameters<double>>();
     
     // 初期値設定
-    double initial_x = 1.0;
-    double initial_y = 1.0;
-    double zero = 0.0;
-    
-    ASSERT_EQ(cudaMemcpy(device_x_data.get(), &initial_x, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_x_grad.get(), &zero, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_y_data.get(), &initial_y, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_y_grad.get(), &zero, sizeof(double), cudaMemcpyHostToDevice), cudaSuccess);
+    TestParameters<double> host_params = {
+        {1.0, 1.0, 0.0},  // value: x, y, result
+        {0.0, 0.0, 0.0}   // grad: grad_x, grad_y, grad_result (初期化)
+    };
+    ASSERT_EQ(cudaMemcpy(device_params.get(), &host_params, sizeof(TestParameters<double>), cudaMemcpyHostToDevice), cudaSuccess);
     
     // 実行時間測定
     cudaEvent_t start, stop;
@@ -153,12 +140,9 @@ TEST_F(ParallelGradientAccumulationTest, DISABLED_LargeScaleAtomicAccumulation) 
     
     cudaEventRecord(start);
     
-    // 簡略化カーネル（結果の合計は省略）
+    // 簡略化カーネル実行
     parallel_gradient_accumulation_kernel<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
-        device_x_data.get(), device_x_grad.get(),
-        device_y_data.get(), device_y_grad.get(),
-        nullptr, nullptr,  // result計算を省略
-        NUM_THREADS
+        device_params.get(), NUM_THREADS
     );
     
     cudaEventRecord(stop);
@@ -168,9 +152,11 @@ TEST_F(ParallelGradientAccumulationTest, DISABLED_LargeScaleAtomicAccumulation) 
     cudaEventElapsedTime(&milliseconds, start, stop);
     
     // 結果検証
-    double host_x_grad, host_y_grad;
-    ASSERT_EQ(cudaMemcpy(&host_x_grad, device_x_grad.get(), sizeof(double), cudaMemcpyDeviceToHost), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(&host_y_grad, device_y_grad.get(), sizeof(double), cudaMemcpyDeviceToHost), cudaSuccess);
+    TestParameters<double> result_params;
+    ASSERT_EQ(cudaMemcpy(&result_params, device_params.get(), sizeof(TestParameters<double>), cudaMemcpyDeviceToHost), cudaSuccess);
+    
+    double host_x_grad = result_params.grad[0];
+    double host_y_grad = result_params.grad[1];
     
     double expected_grad = static_cast<double>(NUM_THREADS);
     

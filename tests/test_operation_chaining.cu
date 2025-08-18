@@ -10,16 +10,33 @@
 
 using namespace xyz_autodiff;
 
+// パラメータ管理用の構造体
+template <typename T>
+struct TestParameters {
+    T value[3];  // x, y, z
+    T grad[3];   // grad_x, grad_y, grad_z
+};
+
+// 全体のテストバッファ構造体（単一メモリ確保用）
+template <typename T>
+struct OperationChainingBuffers {
+    TestParameters<T> params;
+    T output_data[1];
+    T output_grad[1];
+    T direct_x_grad[1];
+    T direct_y_grad[1];
+    T direct_z_grad[1];
+};
+
 // f(x, y, z) = xz + y を計算するカーネル（解析的微分）
 template <typename T>
 __global__ void test_chaining_analytical_kernel(
-    T* x_data, T* x_grad, T* y_data, T* y_grad, T* z_data, T* z_grad,
-    T* output_data, T* output_grad) {
+    TestParameters<T>* params, T* output_data, T* output_grad) {
     
-    // Variable作成
-    VariableRef<T, 1> x_var(x_data, x_grad);
-    VariableRef<T, 1> y_var(y_data, y_grad);
-    VariableRef<T, 1> z_var(z_data, z_grad);
+    // Variable作成（ポインタ演算で各パラメータを指定）
+    VariableRef<T, 1> x_var(&params->value[0], &params->grad[0]);  // x
+    VariableRef<T, 1> y_var(&params->value[1], &params->grad[1]);  // y
+    VariableRef<T, 1> z_var(&params->value[2], &params->grad[2]);  // z
     
     // f(x, y, z) = xz + y の計算（自動的にforwardが呼ばれ、結果が保存される）
     auto mul_result = op::mul(x_var, z_var);
@@ -38,13 +55,12 @@ __global__ void test_chaining_analytical_kernel(
 // f(x, y, z) = xz + y を数値微分で計算するカーネル
 template <typename T>
 __global__ void test_chaining_numerical_kernel(
-    T* x_data, T* x_grad, T* y_data, T* y_grad, T* z_data, T* z_grad,
-    T* output_data, T* output_grad, T delta) {
+    TestParameters<T>* params, T* output_data, T* output_grad, T delta) {
     
-    // Variable作成
-    VariableRef<T, 1> x_var(x_data, x_grad);
-    VariableRef<T, 1> y_var(y_data, y_grad);
-    VariableRef<T, 1> z_var(z_data, z_grad);
+    // Variable作成（ポインタ演算で各パラメータを指定）
+    VariableRef<T, 1> x_var(&params->value[0], &params->grad[0]);  // x
+    VariableRef<T, 1> y_var(&params->value[1], &params->grad[1]);  // y
+    VariableRef<T, 1> z_var(&params->value[2], &params->grad[2]);  // z
     
     // f(x, y, z) = xz + y の計算（自動的にforwardが呼ばれ、結果が保存される）
     auto mul_result = op::mul(x_var, z_var);
@@ -103,24 +119,8 @@ TEST_F(OperationChainingTest, AnalyticalVsNumericalGradient) {
     std::mt19937 gen(rd());
     std::uniform_real_distribution<T> dist(-2.0, 2.0);
     
-    // デバイスメモリ確保
-    auto device_x_data = makeCudaUniqueArray<T>(1);
-    auto device_x_grad = makeCudaUniqueArray<T>(1);
-    auto device_y_data = makeCudaUniqueArray<T>(1);
-    auto device_y_grad = makeCudaUniqueArray<T>(1);
-    auto device_z_data = makeCudaUniqueArray<T>(1);
-    auto device_z_grad = makeCudaUniqueArray<T>(1);
-    auto device_output_data = makeCudaUniqueArray<T>(1);
-    auto device_output_grad = makeCudaUniqueArray<T>(1);
-    auto device_analytical_x_grad = makeCudaUniqueArray<T>(1);
-    auto device_analytical_y_grad = makeCudaUniqueArray<T>(1);
-    auto device_analytical_z_grad = makeCudaUniqueArray<T>(1);
-    auto device_numerical_x_grad = makeCudaUniqueArray<T>(1);
-    auto device_numerical_y_grad = makeCudaUniqueArray<T>(1);
-    auto device_numerical_z_grad = makeCudaUniqueArray<T>(1);
-    auto device_direct_x_grad = makeCudaUniqueArray<T>(1);
-    auto device_direct_y_grad = makeCudaUniqueArray<T>(1);
-    auto device_direct_z_grad = makeCudaUniqueArray<T>(1);
+    // デバイスメモリ確保（単一確保）
+    auto device_buffers = makeCudaUnique<OperationChainingBuffers<T>>();
     
     for (int test_case = 0; test_case < NUM_TESTS; ++test_case) {
         // ランダム入力生成
@@ -129,66 +129,64 @@ TEST_F(OperationChainingTest, AnalyticalVsNumericalGradient) {
         T z = dist(gen);
         T upstream_grad = dist(gen);
         
-        // デバイスにコピー
-        ASSERT_EQ(cudaMemcpy(device_x_data.get(), &x, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(device_y_data.get(), &y, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(device_z_data.get(), &z, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(device_output_grad.get(), &upstream_grad, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+        // バッファ構造体にデータをセット
+        OperationChainingBuffers<T> host_buffers = {};
+        host_buffers.params.value[0] = x;
+        host_buffers.params.value[1] = y;
+        host_buffers.params.value[2] = z;
+        host_buffers.output_grad[0] = upstream_grad;
+        
+        ASSERT_EQ(cudaMemcpy(device_buffers.get(), &host_buffers, sizeof(OperationChainingBuffers<T>), cudaMemcpyHostToDevice), cudaSuccess);
         
         // 解析的勾配計算
         test_chaining_analytical_kernel<T><<<1, 1>>>(
-            device_x_data.get(), device_x_grad.get(),
-            device_y_data.get(), device_y_grad.get(),
-            device_z_data.get(), device_z_grad.get(),
-            device_output_data.get(), device_output_grad.get());
+            &device_buffers.get()->params, device_buffers.get()->output_data, device_buffers.get()->output_grad);
         ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
         
-        // 数値勾配計算（operation chaining経由）
+        // 数値勾配計算用にパラメータをリセット
+        host_buffers.params.grad[0] = host_buffers.params.grad[1] = host_buffers.params.grad[2] = 0;
+        ASSERT_EQ(cudaMemcpy(device_buffers.get(), &host_buffers, sizeof(OperationChainingBuffers<T>), cudaMemcpyHostToDevice), cudaSuccess);
+        
         test_chaining_numerical_kernel<T><<<1, 1>>>(
-            device_x_data.get(), device_x_grad.get(),
-            device_y_data.get(), device_y_grad.get(),
-            device_z_data.get(), device_z_grad.get(),
-            device_output_data.get(), device_output_grad.get(),
+            &device_buffers.get()->params, device_buffers.get()->output_data, device_buffers.get()->output_grad,
             static_cast<T>(DELTA));
         ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
         
         // 直接数値微分計算（検証用）
         compute_direct_numerical_gradient_kernel<T><<<1, 1>>>(
-            x, y, z, device_direct_x_grad.get(), device_direct_y_grad.get(), device_direct_z_grad.get(),
+            x, y, z, device_buffers.get()->direct_x_grad, device_buffers.get()->direct_y_grad, device_buffers.get()->direct_z_grad,
             static_cast<T>(DELTA), upstream_grad);
         ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
         
-        // 結果をホストにコピー（自動保存されたVariable gradから）
-        T analytical_x_grad, analytical_y_grad, analytical_z_grad;
-        T numerical_x_grad, numerical_y_grad, numerical_z_grad;
-        T direct_x_grad, direct_y_grad, direct_z_grad;
+        // 解析的勾配結果をホストにコピー
+        OperationChainingBuffers<T> analytical_result;
+        ASSERT_EQ(cudaMemcpy(&analytical_result, device_buffers.get(), sizeof(OperationChainingBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
         
-        ASSERT_EQ(cudaMemcpy(&analytical_x_grad, device_x_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(&analytical_y_grad, device_y_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(&analytical_z_grad, device_z_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+        T analytical_x_grad = analytical_result.params.grad[0];
+        T analytical_y_grad = analytical_result.params.grad[1];
+        T analytical_z_grad = analytical_result.params.grad[2];
         
-        // 数値微分のテストのために勾配をリセット
-        T zero = T(0);
-        ASSERT_EQ(cudaMemcpy(device_x_grad.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(device_y_grad.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(device_z_grad.get(), &zero, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+        // 数値微分のテストのためにパラメータをリセット
+        host_buffers.params.grad[0] = host_buffers.params.grad[1] = host_buffers.params.grad[2] = 0;
+        ASSERT_EQ(cudaMemcpy(device_buffers.get(), &host_buffers, sizeof(OperationChainingBuffers<T>), cudaMemcpyHostToDevice), cudaSuccess);
         
         // 数値勾配計算（operation chaining経由）
         test_chaining_numerical_kernel<T><<<1, 1>>>(
-            device_x_data.get(), device_x_grad.get(),
-            device_y_data.get(), device_y_grad.get(),
-            device_z_data.get(), device_z_grad.get(),
-            device_output_data.get(), device_output_grad.get(),
+            &device_buffers.get()->params, device_buffers.get()->output_data, device_buffers.get()->output_grad,
             static_cast<T>(DELTA));
         ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
         
-        ASSERT_EQ(cudaMemcpy(&numerical_x_grad, device_x_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(&numerical_y_grad, device_y_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(&numerical_z_grad, device_z_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+        // 数値勾配結果をホストにコピー
+        OperationChainingBuffers<T> numerical_result;
+        ASSERT_EQ(cudaMemcpy(&numerical_result, device_buffers.get(), sizeof(OperationChainingBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
         
-        ASSERT_EQ(cudaMemcpy(&direct_x_grad, device_direct_x_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(&direct_y_grad, device_direct_y_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-        ASSERT_EQ(cudaMemcpy(&direct_z_grad, device_direct_z_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+        T numerical_x_grad = numerical_result.params.grad[0];
+        T numerical_y_grad = numerical_result.params.grad[1];
+        T numerical_z_grad = numerical_result.params.grad[2];
+        
+        T direct_x_grad = analytical_result.direct_x_grad[0];
+        T direct_y_grad = analytical_result.direct_y_grad[0];
+        T direct_z_grad = analytical_result.direct_z_grad[0];
         
         // 解析的 vs 数値勾配の比較
         auto compute_error_min = [](T analytical, T numerical) -> T {
@@ -244,39 +242,30 @@ TEST_F(OperationChainingTest, SimpleForwardTest) {
     T x = 2.0, y = 3.0, z = 4.0;
     T expected_output = 11.0;
     
-    auto device_x_data = makeCudaUniqueArray<T>(1);
-    auto device_x_grad = makeCudaUniqueArray<T>(1);
-    auto device_y_data = makeCudaUniqueArray<T>(1);
-    auto device_y_grad = makeCudaUniqueArray<T>(1);
-    auto device_z_data = makeCudaUniqueArray<T>(1);
-    auto device_z_grad = makeCudaUniqueArray<T>(1);
-    auto device_output_data = makeCudaUniqueArray<T>(1);
-    auto device_output_grad = makeCudaUniqueArray<T>(1);
-    auto device_result_x_grad = makeCudaUniqueArray<T>(1);
-    auto device_result_y_grad = makeCudaUniqueArray<T>(1);
-    auto device_result_z_grad = makeCudaUniqueArray<T>(1);
+    auto device_buffers = makeCudaUnique<OperationChainingBuffers<T>>();
     
     T upstream_grad = 1.0;
     
-    ASSERT_EQ(cudaMemcpy(device_x_data.get(), &x, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_y_data.get(), &y, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_z_data.get(), &z, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_output_grad.get(), &upstream_grad, sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+    // バッファ構造体にデータをセット
+    OperationChainingBuffers<T> host_buffers = {};
+    host_buffers.params.value[0] = x;
+    host_buffers.params.value[1] = y;
+    host_buffers.params.value[2] = z;
+    host_buffers.output_grad[0] = upstream_grad;
+    
+    ASSERT_EQ(cudaMemcpy(device_buffers.get(), &host_buffers, sizeof(OperationChainingBuffers<T>), cudaMemcpyHostToDevice), cudaSuccess);
     
     test_chaining_analytical_kernel<T><<<1, 1>>>(
-        device_x_data.get(), device_x_grad.get(),
-        device_y_data.get(), device_y_grad.get(),
-        device_z_data.get(), device_z_grad.get(),
-        device_output_data.get(), device_output_grad.get());
+        &device_buffers.get()->params, device_buffers.get()->output_data, device_buffers.get()->output_grad);
     
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    T grad_x, grad_y, grad_z;
+    // 結果をホストにコピー
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(OperationChainingBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
-    // 結果は自動的に保存されている
-    ASSERT_EQ(cudaMemcpy(&grad_x, device_x_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(&grad_y, device_y_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(&grad_z, device_z_grad.get(), sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    T grad_x = host_buffers.params.grad[0];
+    T grad_y = host_buffers.params.grad[1];
+    T grad_z = host_buffers.params.grad[2];
     
     // 順伝播の検証は省略（final_resultから直接確認できない）
     

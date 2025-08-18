@@ -7,6 +7,14 @@
 
 using namespace xyz_autodiff;
 
+// テスト用バッファ構造体（固定サイズ版）
+template <typename T>
+struct VariableTestBuffers {
+    T data[10];   // 最大4要素までサポート
+    T grad[10];   // 最大4要素までサポート
+    T output[20]; // for storing results (2 * 10)
+};
+
 // Variable テスト用のCUDAカーネル
 template <typename T, std::size_t N>
 __global__ void test_variable_kernel(T* data, T* grad, T* output) {
@@ -88,26 +96,23 @@ TEST_F(VariableTest, BasicConstruction) {
     std::vector<T> host_grad(N, 0);
     std::vector<T> host_output(2 * N, 0);
     
-    // デバイスメモリ確保 (cuda_unique_ptr使用)
-    auto device_data = makeCudaUniqueArray<T>(N);
-    auto device_grad = makeCudaUniqueArray<T>(N);
-    auto device_output = makeCudaUniqueArray<T>(2 * N);
+    // デバイスメモリ確保 (cuda_unique_ptr使用、単一確保)
+    auto device_buffers = makeCudaUnique<VariableTestBuffers<T>>();
     
-    ASSERT_NE(device_data, nullptr);
-    ASSERT_NE(device_grad, nullptr);
-    ASSERT_NE(device_output, nullptr);
+    ASSERT_NE(device_buffers, nullptr);
     
     // カーネル実行
-    test_variable_kernel<T, N><<<1, 1>>>(device_data.get(), device_grad.get(), device_output.get());
+    test_variable_kernel<T, N><<<1, 1>>>(device_buffers.get()->data, device_buffers.get()->grad, device_buffers.get()->output);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), 2 * N * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    VariableTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(VariableTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // 結果検証
     for (std::size_t i = 0; i < N; ++i) {
-        EXPECT_FLOAT_EQ(host_output[i], static_cast<T>(i + 1));        // データ値
-        EXPECT_FLOAT_EQ(host_output[N + i], static_cast<T>(i * 2));    // 勾配値
+        EXPECT_FLOAT_EQ(host_buffers.output[i], static_cast<T>(i + 1));        // データ値
+        EXPECT_FLOAT_EQ(host_buffers.output[N + i], static_cast<T>(i * 2));    // 勾配値
     }
     
     // メモリは自動解放される
@@ -122,28 +127,30 @@ TEST_F(VariableTest, ZeroGradOperation) {
     std::vector<T> host_grad(N, 1.0f);  // 初期値1.0
     std::vector<T> host_output(N, 0);
     
-    // デバイスメモリ確保 (cuda_unique_ptr使用)
-    auto device_data = makeCudaUniqueArray<T>(N);
-    auto device_grad = makeCudaUniqueArray<T>(N);
-    auto device_output = makeCudaUniqueArray<T>(N);
+    // デバイスメモリ確保 (cuda_unique_ptr使用、単一確保)
+    auto device_buffers = makeCudaUnique<VariableTestBuffers<T>>();
     
-    ASSERT_NE(device_data, nullptr);
-    ASSERT_NE(device_grad, nullptr);
-    ASSERT_NE(device_output, nullptr);
+    ASSERT_NE(device_buffers, nullptr);
+    
+    // ホストバッファを初期化
+    VariableTestBuffers<T> host_buffers = {};
+    for (std::size_t i = 0; i < N; ++i) {
+        host_buffers.grad[i] = host_grad[i];  // 初期値1.0
+    }
     
     // データをデバイスにコピー
-    ASSERT_EQ(cudaMemcpy(device_grad.get(), host_grad.data(), N * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(device_buffers.get(), &host_buffers, sizeof(VariableTestBuffers<T>), cudaMemcpyHostToDevice), cudaSuccess);
     
     // カーネル実行
-    test_variable_operations_kernel<T, N><<<1, 1>>>(device_data.get(), device_grad.get(), device_output.get());
+    test_variable_operations_kernel<T, N><<<1, 1>>>(device_buffers.get()->data, device_buffers.get()->grad, device_buffers.get()->output);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), N * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(VariableTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // zero_gradの結果を検証（すべて0になっているはず）
     for (std::size_t i = 0; i < N; ++i) {
-        EXPECT_FLOAT_EQ(host_output[i], 0.0f);
+        EXPECT_FLOAT_EQ(host_buffers.output[i], 0.0f);
     }
     
     // メモリは自動解放される
@@ -153,22 +160,22 @@ TEST_F(VariableTest, SelfBufferVariableTest) {
     using T = float;
     constexpr std::size_t N = 3;
     
-    auto device_output = makeCudaUniqueArray<T>(N * 2);
+    auto device_buffers = makeCudaUnique<VariableTestBuffers<T>>();
     
-    test_variable_self_buffer_kernel<T, N><<<1, 1>>>(device_output.get());
+    test_variable_self_buffer_kernel<T, N><<<1, 1>>>(device_buffers.get()->output);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
-    T host_output[N * 2];
-    cudaMemcpy(host_output, device_output.get(), N * 2 * sizeof(T), cudaMemcpyDeviceToHost);
+    VariableTestBuffers<T> host_buffers;
+    cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(VariableTestBuffers<T>), cudaMemcpyDeviceToHost);
     
     // データ値をチェック
     for (std::size_t i = 0; i < N; ++i) {
-        EXPECT_FLOAT_EQ(host_output[i], static_cast<T>(i + 10));
+        EXPECT_FLOAT_EQ(host_buffers.output[i], static_cast<T>(i + 10));
     }
     
     // 勾配値をチェック
     for (std::size_t i = 0; i < N; ++i) {
-        EXPECT_FLOAT_EQ(host_output[N + i], static_cast<T>(i * 3));
+        EXPECT_FLOAT_EQ(host_buffers.output[N + i], static_cast<T>(i * 3));
     }
 }
 

@@ -8,6 +8,12 @@
 
 using namespace xyz_autodiff;
 
+// テスト用バッファ構造体
+template <typename T>
+struct DenseMatrixTestBuffers {
+    T output[50];  // 最大50要素までサポート
+};
+
 // DenseMatrix テスト用のCUDAカーネル
 template <typename T, std::size_t Rows, std::size_t Cols>
 __global__ void test_dense_matrix_basic_kernel(T* output) {
@@ -95,28 +101,26 @@ TEST_F(DenseMatrixTest, BasicConstruction) {
     constexpr std::size_t Size = Rows * Cols;
     using T = float;
     
-    // ホストメモリ
-    std::vector<T> host_output(2 * Size, 0);
-    
     // デバイスメモリ確保 (cuda_unique_ptr使用)
-    auto device_output = makeCudaUniqueArray<T>(2 * Size);
-    ASSERT_NE(device_output, nullptr);
+    auto device_buffers = makeCudaUnique<DenseMatrixTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
     // カーネル実行
-    test_dense_matrix_basic_kernel<T, Rows, Cols><<<1, 1>>>(device_output.get());
+    test_dense_matrix_basic_kernel<T, Rows, Cols><<<1, 1>>>(device_buffers.get()->output);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), 2 * Size * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    DenseMatrixTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(DenseMatrixTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // データ値の検証
     for (std::size_t i = 0; i < Size; ++i) {
-        EXPECT_FLOAT_EQ(host_output[i], static_cast<T>(i + 1));
+        EXPECT_FLOAT_EQ(host_buffers.output[i], static_cast<T>(i + 1));
     }
     
     // 勾配値の検証（初期化時は0）
     for (std::size_t i = 0; i < Size; ++i) {
-        EXPECT_FLOAT_EQ(host_output[Size + i], static_cast<T>(0));
+        EXPECT_FLOAT_EQ(host_buffers.output[Size + i], static_cast<T>(0));
     }
     
     // メモリは自動解放される
@@ -128,30 +132,27 @@ TEST_F(DenseMatrixTest, ZeroGradOperation) {
     constexpr std::size_t Size = Rows * Cols;
     using T = float;
     
-    // ホストメモリ
-    std::vector<T> host_output(2 * Size, 0);
-    
     // デバイスメモリ確保 (cuda_unique_ptr使用)
-    auto device_output = makeCudaUniqueArray<T>(2 * Size);
-    
-    ASSERT_NE(device_output, nullptr);
+    auto device_buffers = makeCudaUnique<DenseMatrixTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
     // カーネル実行
-    test_dense_matrix_operations_kernel<T, Rows, Cols><<<1, 1>>>(device_output.get());
+    test_dense_matrix_operations_kernel<T, Rows, Cols><<<1, 1>>>(device_buffers.get()->output);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), 2 * Size * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    DenseMatrixTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(DenseMatrixTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // データ値の検証 ((i+1) * (j+1))
     std::vector<T> expected_data = {1.0f, 2.0f, 2.0f, 4.0f, 3.0f, 6.0f};
     for (std::size_t i = 0; i < Size; ++i) {
-        EXPECT_FLOAT_EQ(host_output[i], expected_data[i]);
+        EXPECT_FLOAT_EQ(host_buffers.output[i], expected_data[i]);
     }
     
     // 勾配値の検証（zero_gradにより全て0になっているはず）
     for (std::size_t i = 0; i < Size; ++i) {
-        EXPECT_FLOAT_EQ(host_output[Size + i], 0.0f);
+        EXPECT_FLOAT_EQ(host_buffers.output[Size + i], 0.0f);
     }
     
     // メモリは自動解放される
@@ -162,24 +163,22 @@ TEST_F(DenseMatrixTest, AccessorConsistency) {
     constexpr std::size_t Cols = 4;
     using T = float;
     
-    // ホストメモリ
-    std::vector<T> host_output(3, 0);
-    
     // デバイスメモリ確保 (cuda_unique_ptr使用)
-    auto device_output = makeCudaUniqueArray<T>(3);
-    ASSERT_NE(device_output, nullptr);
+    auto device_buffers = makeCudaUnique<DenseMatrixTestBuffers<T>>();
+    ASSERT_NE(device_buffers, nullptr);
     
     // カーネル実行
-    test_matrix_accessors_kernel<T, Rows, Cols><<<1, 1>>>(device_output.get());
+    test_matrix_accessors_kernel<T, Rows, Cols><<<1, 1>>>(device_buffers.get()->output);
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), 3 * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
+    DenseMatrixTestBuffers<T> host_buffers;
+    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(DenseMatrixTestBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
     
     // 検証
-    EXPECT_FLOAT_EQ(host_output[0], 1.0f); // 2次元と1次元アクセスの一致
-    EXPECT_FLOAT_EQ(host_output[1], 1.0f); // dataポインタの有効性
-    EXPECT_FLOAT_EQ(host_output[2], 1.0f); // gradポインタの有効性
+    EXPECT_FLOAT_EQ(host_buffers.output[0], 1.0f); // 2次元と1次元アクセスの一致
+    EXPECT_FLOAT_EQ(host_buffers.output[1], 1.0f); // dataポインタの有効性
+    EXPECT_FLOAT_EQ(host_buffers.output[2], 1.0f); // gradポインタの有効性
     
     // メモリは自動解放される
 }
