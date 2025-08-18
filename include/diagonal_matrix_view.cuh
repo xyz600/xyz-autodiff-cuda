@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cuda_runtime.h>
 #include "variable.cuh"
+#include "concept/node.cuh"
 
 namespace xyz_autodiff {
 
@@ -10,6 +11,7 @@ template <typename T, std::size_t N, typename VariableType = VariableRef<T, N>>
 class DiagonalMatrixView {
 public:
     using value_type = T;
+    using variable_type = DiagonalMatrixView<T, N, VariableType>;  // NodeConcept用
     static constexpr std::size_t rows = N;
     static constexpr std::size_t cols = N;
     static constexpr std::size_t size = N;  // 対角要素のみ
@@ -78,9 +80,23 @@ public:
         return *this;
     }
     
-    // Variable参照を取得
-    __device__ VariableType& variable() { return variable_; }
-    __device__ const VariableType& variable() const { return variable_; }
+    // 内部Variable参照を取得
+    __device__ VariableType& underlying_variable() { return variable_; }
+    __device__ const VariableType& underlying_variable() const { return variable_; }
+    
+    // NodeConcept インターフェース
+    __device__ variable_type& variable() { return *this; }
+    __device__ const variable_type& variable() const { return *this; }
+    
+    // backward (MatrixView では内部Variableに委譲)
+    __device__ void backward() { 
+        variable_.backward();
+    }
+    
+    // backward_numerical (MatrixView では内部Variableに委譲)
+    __device__ void backward_numerical(const value_type& delta = value_type(1e-5)) { 
+        variable_.backward_numerical(delta);
+    }
 };
 
 // ヘルパー関数

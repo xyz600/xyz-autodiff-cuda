@@ -10,6 +10,7 @@ template <typename T, std::size_t N>
 class VariableRef {
 public:
     using value_type = T;
+    using variable_type = VariableRef<T, N>;  // NodeConcept用
     static constexpr std::size_t size = N;
     
 private:
@@ -45,6 +46,18 @@ public:
         }
     }
     
+    // NodeConcept インターフェース
+    __device__ variable_type& variable() { return *this; }
+    __device__ const variable_type& variable() const { return *this; }
+    
+    // backward (Variable では何もしない)
+    __device__ void backward() { /* Variable は計算グラフの葉ノードなので何もしない */ }
+    
+    // backward_numerical (Variable では何もしない)
+    __device__ void backward_numerical(const value_type& delta = value_type(1e-5)) { 
+        /* Variable は計算グラフの葉ノードなので何もしない */ 
+    }
+    
 };
 
 // Variable - 自身でバッファを持つ版
@@ -52,6 +65,7 @@ template <typename T, std::size_t N>
 class Variable {
 public:
     using value_type = T;
+    using variable_type = Variable<T, N>;  // NodeConcept用
     static constexpr std::size_t size = N;
     
 private:
@@ -168,6 +182,18 @@ public:
     
     __device__ VariableRef<T, N> ref() const noexcept {
         return VariableRef<T, N>(const_cast<T*>(data_), const_cast<T*>(grad_));
+    }
+    
+    // NodeConcept インターフェース
+    __device__ variable_type& variable() { return *this; }
+    __device__ const variable_type& variable() const { return *this; }
+    
+    // backward (Variable では何もしない)
+    __device__ void backward() { /* Variable は計算グラフの葉ノードなので何もしない */ }
+    
+    // backward_numerical (Variable では何もしない)
+    __device__ void backward_numerical(const value_type& delta = value_type(1e-5)) { 
+        /* Variable は計算グラフの葉ノードなので何もしない */ 
     }
 };
 
