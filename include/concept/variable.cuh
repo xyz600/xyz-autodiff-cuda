@@ -36,7 +36,6 @@ concept DifferentiableVariableConcept = VariableConcept<T> && requires(T var) {
     
     // 勾配操作
     { var.zero_grad() } -> std::same_as<void>;
-    { var.accumulate_grad(std::declval<const typename T::value_type*>()) } -> std::same_as<void>;
 };
 
 } // namespace xyz_autodiff

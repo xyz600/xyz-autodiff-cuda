@@ -113,9 +113,6 @@ public:
     
     __device__ void zero_grad() { output_.zero_grad(); }
     
-    __device__ void accumulate_grad(const value_type* const grad_values) { 
-        output_.accumulate_grad(grad_values); 
-    }
 };
 
 // 2入力1出力のOperation
@@ -195,9 +192,6 @@ public:
     
     __device__ void zero_grad() { output_.zero_grad(); }
     
-    __device__ void accumulate_grad(const value_type* const grad_values) { 
-        output_.accumulate_grad(grad_values); 
-    }
 };
 
 // 3入力1出力のOperation
@@ -281,9 +275,6 @@ public:
     
     __device__ void zero_grad() { output_.zero_grad(); }
     
-    __device__ void accumulate_grad(const value_type* const grad_values) { 
-        output_.accumulate_grad(grad_values); 
-    }
 };
 
 } // namespace xyz_autodiff

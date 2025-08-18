@@ -45,12 +45,6 @@ public:
         }
     }
     
-    // 勾配を累積
-    __device__ void accumulate_grad(const T* const grad_values) const noexcept {
-        for (std::size_t i = 0; i < N; ++i) {
-            atomicAdd(&grad_ptr_[i], grad_values[i]);
-        }
-    }
 };
 
 // Variable - 自身でバッファを持つ版
@@ -166,12 +160,6 @@ public:
         }
     }
     
-    // 勾配を累積
-    __device__ void accumulate_grad(const T* const grad_values) noexcept {
-        for (std::size_t i = 0; i < N; ++i) {
-            grad_[i] += grad_values[i];
-        }
-    }
     
     // VariableRefに変換
     __device__ VariableRef<T, N> ref() noexcept {

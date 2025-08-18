@@ -54,12 +54,6 @@ public:
         }
     }
     
-    // 勾配を累積
-    __device__ void accumulate_grad(const T* grad_values) {
-        for (std::size_t i = 0; i < size; ++i) {
-            grad_[i] += grad_values[i];
-        }
-    }
     
     // === MatrixView concept の要件 ===
     

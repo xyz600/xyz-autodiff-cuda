@@ -53,10 +53,6 @@ public:
         variable_.zero_grad();
     }
     
-    // 勾配を累積
-    __device__ void accumulate_grad(const T* grad_values) const {
-        variable_.accumulate_grad(grad_values);
-    }
     
     // === MatrixView concept の要件 ===
     

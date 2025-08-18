@@ -35,14 +35,11 @@ __global__ void test_variable_kernel(T* data, T* grad, T* output) {
 }
 
 template <typename T, std::size_t N>
-__global__ void test_variable_operations_kernel(T* data, T* grad, T* grad_values, T* output) {
+__global__ void test_variable_operations_kernel(T* data, T* grad, T* output) {
     VariableRef<T, N> var(data, grad);
     
     // zero_gradテスト
     var.zero_grad();
-    
-    // accumulate_gradテスト
-    var.accumulate_grad(grad_values);
     
     // 結果を保存
     for (std::size_t i = 0; i < N; ++i) {
@@ -114,41 +111,37 @@ TEST_F(VariableTest, BasicConstruction) {
     // メモリは自動解放される
 }
 
-TEST_F(VariableTest, GradientOperations) {
+TEST_F(VariableTest, ZeroGradOperation) {
     constexpr std::size_t N = 3;
     using T = float;
     
     // ホストメモリ
     std::vector<T> host_data(N, 0);
     std::vector<T> host_grad(N, 1.0f);  // 初期値1.0
-    std::vector<T> host_grad_values = {2.0f, 3.0f, 4.0f};
     std::vector<T> host_output(N, 0);
     
     // デバイスメモリ確保 (cuda_unique_ptr使用)
     auto device_data = makeCudaUniqueArray<T>(N);
     auto device_grad = makeCudaUniqueArray<T>(N);
-    auto device_grad_values = makeCudaUniqueArray<T>(N);
     auto device_output = makeCudaUniqueArray<T>(N);
     
     ASSERT_NE(device_data, nullptr);
     ASSERT_NE(device_grad, nullptr);
-    ASSERT_NE(device_grad_values, nullptr);
     ASSERT_NE(device_output, nullptr);
     
     // データをデバイスにコピー
     ASSERT_EQ(cudaMemcpy(device_grad.get(), host_grad.data(), N * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-    ASSERT_EQ(cudaMemcpy(device_grad_values.get(), host_grad_values.data(), N * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
     
     // カーネル実行
-    test_variable_operations_kernel<T, N><<<1, 1>>>(device_data.get(), device_grad.get(), device_grad_values.get(), device_output.get());
+    test_variable_operations_kernel<T, N><<<1, 1>>>(device_data.get(), device_grad.get(), device_output.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
     ASSERT_EQ(cudaMemcpy(host_output.data(), device_output.get(), N * sizeof(T), cudaMemcpyDeviceToHost), cudaSuccess);
     
-    // zero_grad → accumulate_gradの結果を検証
+    // zero_gradの結果を検証（すべて0になっているはず）
     for (std::size_t i = 0; i < N; ++i) {
-        EXPECT_FLOAT_EQ(host_output[i], host_grad_values[i]);
+        EXPECT_FLOAT_EQ(host_output[i], 0.0f);
     }
     
     // メモリは自動解放される

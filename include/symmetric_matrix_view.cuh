@@ -91,9 +91,6 @@ public:
     
     __host__ __device__ void zero_grad() { variable_.zero_grad(); }
     
-    __host__ __device__ void accumulate_grad(const T* grad_values) {
-        variable_.accumulate_grad(grad_values);
-    }
     
     // 基底Variableへのアクセス
     __host__ __device__ auto& variable() { return variable_; }

@@ -30,7 +30,7 @@ __global__ void test_dense_matrix_basic_kernel(T* output) {
 }
 
 template <typename T, std::size_t Rows, std::size_t Cols>
-__global__ void test_dense_matrix_operations_kernel(T* grad_values, T* output) {
+__global__ void test_dense_matrix_operations_kernel(T* output) {
     DenseMatrix<T, Rows, Cols> matrix;
     
     // データ初期化
@@ -38,12 +38,12 @@ __global__ void test_dense_matrix_operations_kernel(T* grad_values, T* output) {
         for (std::size_t j = 0; j < Cols; ++j) {
             std::size_t linear_idx = i * Cols + j;
             matrix[linear_idx] = static_cast<T>((i + 1) * (j + 1));
+            matrix.grad(linear_idx) = static_cast<T>(linear_idx + 1); // 初期勾配設定
         }
     }
     
-    // 勾配操作テスト
+    // zero_grad操作テスト
     matrix.zero_grad();
-    matrix.accumulate_grad(grad_values);
     
     // 結果保存
     for (std::size_t i = 0; i < matrix.size; ++i) {
@@ -121,28 +121,22 @@ TEST_F(DenseMatrixTest, BasicConstruction) {
     // メモリは自動解放される
 }
 
-TEST_F(DenseMatrixTest, MatrixOperations) {
+TEST_F(DenseMatrixTest, ZeroGradOperation) {
     constexpr std::size_t Rows = 3;
     constexpr std::size_t Cols = 2;
     constexpr std::size_t Size = Rows * Cols;
     using T = float;
     
     // ホストメモリ
-    std::vector<T> host_grad_values = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
     std::vector<T> host_output(2 * Size, 0);
     
     // デバイスメモリ確保 (cuda_unique_ptr使用)
-    auto device_grad_values = makeCudaUniqueArray<T>(Size);
     auto device_output = makeCudaUniqueArray<T>(2 * Size);
     
-    ASSERT_NE(device_grad_values, nullptr);
     ASSERT_NE(device_output, nullptr);
     
-    // 勾配値をデバイスにコピー
-    ASSERT_EQ(cudaMemcpy(device_grad_values.get(), host_grad_values.data(), Size * sizeof(T), cudaMemcpyHostToDevice), cudaSuccess);
-    
     // カーネル実行
-    test_dense_matrix_operations_kernel<T, Rows, Cols><<<1, 1>>>(device_grad_values.get(), device_output.get());
+    test_dense_matrix_operations_kernel<T, Rows, Cols><<<1, 1>>>(device_output.get());
     ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
     
     // 結果をホストにコピー
@@ -154,9 +148,9 @@ TEST_F(DenseMatrixTest, MatrixOperations) {
         EXPECT_FLOAT_EQ(host_output[i], expected_data[i]);
     }
     
-    // 勾配値の検証（zero_grad + accumulate_grad）
+    // 勾配値の検証（zero_gradにより全て0になっているはず）
     for (std::size_t i = 0; i < Size; ++i) {
-        EXPECT_FLOAT_EQ(host_output[Size + i], host_grad_values[i]);
+        EXPECT_FLOAT_EQ(host_output[Size + i], 0.0f);
     }
     
     // メモリは自動解放される
