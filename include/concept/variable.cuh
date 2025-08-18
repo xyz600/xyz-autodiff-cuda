@@ -5,11 +5,16 @@
 
 namespace xyz_autodiff {
 
+// 浮動小数点型の制約（floatまたはdoubleのみ許可）
+template <typename T>
+concept FloatingPointConcept = std::same_as<T, float> || std::same_as<T, double>;
+
 // Forward propagation に必要な要件
 template <typename T>
 concept VariableConcept = requires(T var) {
     // 基本的な型情報
     typename T::value_type;
+    requires FloatingPointConcept<typename T::value_type>;  // 浮動小数点型の制約
     { T::size } -> std::convertible_to<std::size_t>;
     
     // 値データへのアクセス

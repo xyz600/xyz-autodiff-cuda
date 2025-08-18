@@ -18,9 +18,8 @@ struct SubtractAndSquareLogic {
     // 出力次元をconstexprで定義
     static constexpr std::size_t outputDim = Dim;
     
-    // static_assert for type safety
-    static_assert(std::is_floating_point_v<T>, "SubtractAndSquareLogic requires floating point type");
-    static_assert(Dim > 0, "SubtractAndSquareLogic requires non-zero dimension");
+    // static_assert for concept validation
+    static_assert(UnaryLogicParameterConcept<Input>, "Input must satisfy UnaryLogicParameterConcept");
     
     T constant_c;  // 定数 c を格納
     
@@ -50,6 +49,7 @@ template <typename Input>
 requires UnaryLogicParameterConcept<Input>
 __device__ auto subtract_and_square(Input& input, typename Input::value_type constant_c) {
     using LogicType = SubtractAndSquareLogic<Input>;
+    
     LogicType logic(constant_c);
     auto op = UnaryOperation<LogicType::outputDim, LogicType, Input>(logic, input);
     op.forward();
