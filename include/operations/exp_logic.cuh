@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstddef>
-#include <cmath>
 #include <cuda_runtime.h>
 #include "operation.cuh"
+#include "math.cuh"
 #include "../concept/variable.cuh"
 
 namespace xyz_autodiff {
@@ -18,7 +18,7 @@ struct ExpLogic {
         for (std::size_t i = 0; i < outputDim; ++i) {
             // exp(x)
             using T = typename Input::value_type;
-            output[i] = static_cast<T>(exp(static_cast<double>(input[i])));
+            output[i] = math::exp(input[i]);
         }
     }
     
@@ -27,7 +27,7 @@ struct ExpLogic {
         for (std::size_t i = 0; i < outputDim; ++i) {
             // d/dx exp(x) = exp(x)
             using T = typename Input::value_type;
-            T exp_val = static_cast<T>(exp(static_cast<double>(input[i])));
+            T exp_val = math::exp(input[i]);
             input.grad(i) += output.grad(i) * exp_val;
         }
     }

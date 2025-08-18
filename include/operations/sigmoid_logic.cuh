@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstddef>
-#include <cmath>
 #include <cuda_runtime.h>
 #include "operation.cuh"
+#include "math.cuh"
 #include "../concept/variable.cuh"
 
 namespace xyz_autodiff {
@@ -18,8 +18,7 @@ struct SigmoidLogic {
         for (std::size_t i = 0; i < outputDim; ++i) {
             // sigmoid(x) = 1 / (1 + exp(-x))
             using T = typename Input::value_type;
-            T exp_neg_x = static_cast<T>(exp(-static_cast<double>(input[i])));
-            output[i] = static_cast<T>(1) / (static_cast<T>(1) + exp_neg_x);
+            output[i] = math::sigmoid(input[i]);
         }
     }
     
@@ -28,9 +27,8 @@ struct SigmoidLogic {
         for (std::size_t i = 0; i < outputDim; ++i) {
             // d/dx sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
             using T = typename Input::value_type;
-            T exp_neg_x = static_cast<T>(exp(-static_cast<double>(input[i])));
-            T sigmoid_val = static_cast<T>(1) / (static_cast<T>(1) + exp_neg_x);
-            T sigmoid_derivative = sigmoid_val * (static_cast<T>(1) - sigmoid_val);
+            T sigmoid_val = math::sigmoid(input[i]);
+            T sigmoid_derivative = sigmoid_val * (T{1} - sigmoid_val);
             input.grad(i) += output.grad(i) * sigmoid_derivative;
         }
     }

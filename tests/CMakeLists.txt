@@ -63,6 +63,15 @@ set_target_properties(test_unary_operations PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# MathDispatcher テスト
+add_executable(test_math_dispatcher test_math_dispatcher.cu)
+target_link_libraries(test_math_dispatcher xyz_autodiff gtest gtest_main)
+target_include_directories(test_math_dispatcher PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_math_dispatcher PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
@@ -70,3 +79,4 @@ add_test(NAME DiagonalMatrixTest COMMAND test_diagonal_matrix)
 add_test(NAME MatrixTransposeTest COMMAND test_matrix_transpose)
 add_test(NAME SymmetricMatrixTest COMMAND test_symmetric_matrix)
 add_test(NAME UnaryOperationsTest COMMAND test_unary_operations)
+add_test(NAME MathDispatcherTest COMMAND test_math_dispatcher)
