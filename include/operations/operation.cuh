@@ -55,8 +55,8 @@ public:
         logic_.backward(output_, const_cast<Input&>(input_));
     }
     
-    // 数値微分（デバッグ用）
-    __device__ void numerical_backward(const value_type delta = value_type(1e-5)) {
+    // 数値微分による backward pass
+    __device__ void backward_numerical(const value_type delta = value_type(1e-5)) {
         // forward の結果を退避
         output_type original_output = output_;
 
@@ -165,6 +165,63 @@ public:
         logic_.backward(output_, const_cast<Input1&>(input1_), const_cast<Input2&>(input2_));
     }
     
+    // 数値微分による backward pass
+    __device__ void backward_numerical(const value_type delta = value_type(1e-5)) {
+        // forward の結果を退避
+        output_type original_output = output_;
+
+        const_cast<Input1&>(input1_).zero_grad();
+        const_cast<Input2&>(input2_).zero_grad();
+        
+        // Input1 に対する数値微分
+        for (std::size_t i = 0; i < Input1::size; i++) {
+            const auto orig = input1_[i];
+
+            const_cast<Input1&>(input1_)[i] = orig + delta;
+            forward();
+            output_type plus_out = output_;
+
+            const_cast<Input1&>(input1_)[i] = orig - delta;
+            forward();
+            output_type minus_out = output_;
+
+            const_cast<Input1&>(input1_)[i] = orig;
+
+            // 退避した forward の結果を戻す
+            output_ = original_output;
+
+            // 勾配の数値計算
+            for (std::size_t j = 0; j < OutputSize; j++) {
+                const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
+                const_cast<Input1&>(input1_).grad(i) += output_.grad(j) * dj_di;
+            }
+        }
+        
+        // Input2 に対する数値微分
+        for (std::size_t i = 0; i < Input2::size; i++) {
+            const auto orig = input2_[i];
+
+            const_cast<Input2&>(input2_)[i] = orig + delta;
+            forward();
+            output_type plus_out = output_;
+
+            const_cast<Input2&>(input2_)[i] = orig - delta;
+            forward();
+            output_type minus_out = output_;
+
+            const_cast<Input2&>(input2_)[i] = orig;
+
+            // 退避した forward の結果を戻す
+            output_ = original_output;
+
+            // 勾配の数値計算
+            for (std::size_t j = 0; j < OutputSize; j++) {
+                const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
+                const_cast<Input2&>(input2_).grad(i) += output_.grad(j) * dj_di;
+            }
+        }
+    }
+    
     // 出力への参照を取得
     __device__ output_type& output() { return output_; }
     __device__ const output_type& output() const { return output_; }
@@ -246,6 +303,88 @@ public:
     __device__ void backward() {
         logic_.backward(output_, const_cast<Input1&>(input1_), 
                         const_cast<Input2&>(input2_), const_cast<Input3&>(input3_));
+    }
+    
+    // 数値微分による backward pass
+    __device__ void backward_numerical(const value_type delta = value_type(1e-5)) {
+        // forward の結果を退避
+        output_type original_output = output_;
+
+        const_cast<Input1&>(input1_).zero_grad();
+        const_cast<Input2&>(input2_).zero_grad();
+        const_cast<Input3&>(input3_).zero_grad();
+        
+        // Input1 に対する数値微分
+        for (std::size_t i = 0; i < Input1::size; i++) {
+            const auto orig = input1_[i];
+
+            const_cast<Input1&>(input1_)[i] = orig + delta;
+            forward();
+            output_type plus_out = output_;
+
+            const_cast<Input1&>(input1_)[i] = orig - delta;
+            forward();
+            output_type minus_out = output_;
+
+            const_cast<Input1&>(input1_)[i] = orig;
+
+            // 退避した forward の結果を戻す
+            output_ = original_output;
+
+            // 勾配の数値計算
+            for (std::size_t j = 0; j < OutputSize; j++) {
+                const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
+                const_cast<Input1&>(input1_).grad(i) += output_.grad(j) * dj_di;
+            }
+        }
+        
+        // Input2 に対する数値微分
+        for (std::size_t i = 0; i < Input2::size; i++) {
+            const auto orig = input2_[i];
+
+            const_cast<Input2&>(input2_)[i] = orig + delta;
+            forward();
+            output_type plus_out = output_;
+
+            const_cast<Input2&>(input2_)[i] = orig - delta;
+            forward();
+            output_type minus_out = output_;
+
+            const_cast<Input2&>(input2_)[i] = orig;
+
+            // 退避した forward の結果を戻す
+            output_ = original_output;
+
+            // 勾配の数値計算
+            for (std::size_t j = 0; j < OutputSize; j++) {
+                const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
+                const_cast<Input2&>(input2_).grad(i) += output_.grad(j) * dj_di;
+            }
+        }
+        
+        // Input3 に対する数値微分
+        for (std::size_t i = 0; i < Input3::size; i++) {
+            const auto orig = input3_[i];
+
+            const_cast<Input3&>(input3_)[i] = orig + delta;
+            forward();
+            output_type plus_out = output_;
+
+            const_cast<Input3&>(input3_)[i] = orig - delta;
+            forward();
+            output_type minus_out = output_;
+
+            const_cast<Input3&>(input3_)[i] = orig;
+
+            // 退避した forward の結果を戻す
+            output_ = original_output;
+
+            // 勾配の数値計算
+            for (std::size_t j = 0; j < OutputSize; j++) {
+                const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
+                const_cast<Input3&>(input3_).grad(i) += output_.grad(j) * dj_di;
+            }
+        }
     }
     
     // 出力への参照を取得
