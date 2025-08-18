@@ -26,7 +26,8 @@
       "Bash(make:*)",
       "Bash(./tests/test_unary_operations:*)",
       "Bash(cp:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(./tests/test_gradient_verification:*)"
     ],
     "deny": []
   }

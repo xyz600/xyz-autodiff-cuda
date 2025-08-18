@@ -72,6 +72,15 @@ set_target_properties(test_math_dispatcher PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# GradientVerification テスト
+add_executable(test_gradient_verification test_gradient_verification.cu)
+target_link_libraries(test_gradient_verification xyz_autodiff gtest gtest_main)
+target_include_directories(test_gradient_verification PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_gradient_verification PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
@@ -80,3 +89,4 @@ add_test(NAME MatrixTransposeTest COMMAND test_matrix_transpose)
 add_test(NAME SymmetricMatrixTest COMMAND test_symmetric_matrix)
 add_test(NAME UnaryOperationsTest COMMAND test_unary_operations)
 add_test(NAME MathDispatcherTest COMMAND test_math_dispatcher)
+add_test(NAME GradientVerificationTest COMMAND test_gradient_verification)
