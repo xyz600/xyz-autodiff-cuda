@@ -40,8 +40,6 @@ __global__ void test_binary_gradient_kernel(
             op.add_grad(i, output_grad[i]);
         }
         
-        input1_var.zero_grad();
-        input2_var.zero_grad();
         op.backward();
         
         // 結果保存
@@ -65,8 +63,6 @@ __global__ void test_binary_gradient_kernel(
             op.add_grad(i, output_grad[i]);
         }
         
-        input1_var.zero_grad();
-        input2_var.zero_grad();
         op.backward_numerical(delta);
         
         // 結果保存

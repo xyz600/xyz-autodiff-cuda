@@ -108,6 +108,24 @@ set_target_properties(test_quaternion_to_rotation_matrix PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# Parallel Gradient Accumulation テスト
+add_executable(test_parallel_gradient_accumulation test_parallel_gradient_accumulation.cu)
+target_link_libraries(test_parallel_gradient_accumulation xyz_autodiff gtest gtest_main)
+target_include_directories(test_parallel_gradient_accumulation PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_parallel_gradient_accumulation PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Shared Memory Atomic テスト
+add_executable(test_shared_memory_atomic test_shared_memory_atomic.cu)
+target_link_libraries(test_shared_memory_atomic xyz_autodiff gtest gtest_main)
+target_include_directories(test_shared_memory_atomic PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_shared_memory_atomic PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
@@ -120,3 +138,5 @@ add_test(NAME GradientVerificationTest COMMAND test_gradient_verification)
 add_test(NAME OperationChainingTest COMMAND test_operation_chaining)
 add_test(NAME OperationConceptsTest COMMAND test_operation_concepts)
 add_test(NAME QuaternionToRotationMatrixTest COMMAND test_quaternion_to_rotation_matrix)
+add_test(NAME ParallelGradientAccumulationTest COMMAND test_parallel_gradient_accumulation)
+add_test(NAME SharedMemoryAtomicTest COMMAND test_shared_memory_atomic)

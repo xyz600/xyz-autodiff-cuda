@@ -31,7 +31,10 @@
       "Bash(./tests/test_operation_chaining)",
       "Bash(./tests/test_operation_concepts)",
       "Bash(./tests/test_quaternion_to_rotation_matrix:*)",
-      "Bash(./debug_quaternion)"
+      "Bash(./debug_quaternion)",
+      "Bash(./tests/test_parallel_gradient_accumulation)",
+      "Bash(./tests/test_parallel_gradient_accumulation:*)",
+      "Bash(./tests/test_shared_memory_atomic:*)"
     ],
     "deny": []
   }

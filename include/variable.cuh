@@ -37,10 +37,15 @@ public:
         return grad_ptr_[i]; 
     }
     
-    // 勾配への加算（一時的にatomicAddを無効化）
+    // 勾配への加算（shared/globalはatomicAdd、純粋ローカルのみ通常加算）
     __device__ __forceinline__ void add_grad(std::size_t i, T value) const noexcept {
-        // TODO: 条件付きatomicAdd実装
-        grad_ptr_[i] += value;
+        // shared memory または global memory の場合はatomicAdd
+        if (__isShared(grad_ptr_ + i) || __isGlobal(grad_ptr_ + i)) {
+            atomicAdd(&grad_ptr_[i], value);
+        } else {
+            // レジスタ・純粋ローカルの場合は通常加算
+            grad_ptr_[i] += value;
+        }
     }
     
     // 勾配をゼロクリア

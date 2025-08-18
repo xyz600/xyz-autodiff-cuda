@@ -45,7 +45,6 @@ __global__ void test_unary_gradient_kernel(
             op.add_grad(i, output_grad[i]);
         }
         
-        input_var.zero_grad();
         op.backward();
         
         // 結果保存
@@ -65,7 +64,6 @@ __global__ void test_unary_gradient_kernel(
             op.add_grad(i, output_grad[i]);
         }
         
-        input_var.zero_grad();
         op.backward_numerical(delta);
         
         // 結果保存
