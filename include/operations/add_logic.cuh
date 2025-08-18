@@ -37,7 +37,7 @@ struct AddLogic {
 // BinaryOperationを返すファクトリ関数
 template <typename Input1, typename Input2>
 requires BinaryLogicParameterConcept<Input1, Input2>
-__host__ __device__ auto add(const Input1& input1, const Input2& input2) {
+__host__ __device__ auto add(Input1& input1, Input2& input2) {
     using LogicType = AddLogic<Input1, Input2>;
     LogicType logic;
     return BinaryOperation<LogicType::outputDim, LogicType, Input1, Input2>(logic, input1, input2);

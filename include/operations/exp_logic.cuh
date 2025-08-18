@@ -35,7 +35,7 @@ struct ExpLogic {
 
 // Exponential関数のファクトリ
 template <std::size_t Dim, DifferentiableVariableConcept Input>
-__host__ __device__ auto exp(const Input& input) {
+__host__ __device__ auto exp(Input& input) {
     ExpLogic<Dim> logic;
     
     auto op = UnaryOperation<Dim, ExpLogic<Dim>, Input>(logic, input);
@@ -45,7 +45,7 @@ __host__ __device__ auto exp(const Input& input) {
 
 // 型推論をサポートする版（入力のサイズから自動的にDimを決定）
 template <DifferentiableVariableConcept Input>
-__host__ __device__ auto exp(const Input& input) {
+__host__ __device__ auto exp(Input& input) {
     constexpr std::size_t Dim = Input::size;
     return exp<Dim>(input);
 }

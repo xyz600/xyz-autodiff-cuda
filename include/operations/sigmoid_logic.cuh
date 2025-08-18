@@ -36,7 +36,7 @@ struct SigmoidLogic {
 
 // Sigmoid関数のファクトリ
 template <std::size_t Dim, DifferentiableVariableConcept Input>
-__host__ __device__ auto sigmoid(const Input& input) {
+__host__ __device__ auto sigmoid(Input& input) {
     SigmoidLogic<Dim> logic;
     
     auto op = UnaryOperation<Dim, SigmoidLogic<Dim>, Input>(logic, input);
@@ -46,7 +46,7 @@ __host__ __device__ auto sigmoid(const Input& input) {
 
 // 型推論をサポートする版（入力のサイズから自動的にDimを決定）
 template <DifferentiableVariableConcept Input>
-__host__ __device__ auto sigmoid(const Input& input) {
+__host__ __device__ auto sigmoid(Input& input) {
     constexpr std::size_t Dim = Input::size;
     return sigmoid<Dim>(input);
 }

@@ -21,7 +21,7 @@ public:
 
 private:
     Logic logic_;
-    const Input& input_;
+    Input& input_;
     output_type output_;  // Variableが自身でバッファを持つ
 
 public:
@@ -41,7 +41,7 @@ public:
     UnaryOperation& operator=(UnaryOperation&&) = delete;
     
     // コアロジックと入力を受け取るコンストラクタ
-    __host__ __device__ UnaryOperation(const Logic& logic, const Input& input)
+    __host__ __device__ UnaryOperation(const Logic& logic, Input& input)
         : logic_(logic), input_(input), output_() {
     }
     
@@ -52,7 +52,7 @@ public:
     
     // Backward pass
     __device__ void backward() {
-        logic_.backward(output_, const_cast<Input&>(input_));
+        logic_.backward(output_, input_);
     }
     
     // 数値微分による backward pass
@@ -60,20 +60,20 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        const_cast<Input&>(input_).zero_grad();
+        input_.zero_grad();
         
         for (std::size_t i = 0; i < Input::size; i++) {
             const auto orig = input_[i];
 
-            const_cast<Input&>(input_)[i] = orig + delta;
+            input_[i] = orig + delta;
             forward();
             output_type plus_out = output_;
 
-            const_cast<Input&>(input_)[i] = orig - delta;
+            input_[i] = orig - delta;
             forward();
             output_type minus_out = output_;
 
-            const_cast<Input&>(input_)[i] = orig;
+            input_[i] = orig;
 
             // 退避した forward の結果を戻す
             output_ = original_output;
@@ -81,7 +81,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                const_cast<Input&>(input_).grad(i) += output_.grad(j) * dj_di;
+                input_.grad(i) += output_.grad(j) * dj_di;
             }
         }
     }
@@ -129,8 +129,8 @@ public:
 
 private:
     Logic logic_;
-    const Input1& input1_;
-    const Input2& input2_;
+    Input1& input1_;
+    Input2& input2_;
     output_type output_;
 
 public:
@@ -151,7 +151,7 @@ public:
     BinaryOperation& operator=(BinaryOperation&&) = delete;
     
     // コアロジックと入力を受け取るコンストラクタ
-    __host__ __device__ BinaryOperation(const Logic& logic, const Input1& input1, const Input2& input2)
+    __host__ __device__ BinaryOperation(const Logic& logic, Input1& input1, Input2& input2)
         : logic_(logic), input1_(input1), input2_(input2), output_() {
     }
     
@@ -162,7 +162,7 @@ public:
     
     // Backward pass
     __device__ void backward() {
-        logic_.backward(output_, const_cast<Input1&>(input1_), const_cast<Input2&>(input2_));
+        logic_.backward(output_, input1_, input2_);
     }
     
     // 数値微分による backward pass
@@ -170,22 +170,22 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        const_cast<Input1&>(input1_).zero_grad();
-        const_cast<Input2&>(input2_).zero_grad();
+        input1_.zero_grad();
+        input2_.zero_grad();
         
         // Input1 に対する数値微分
         for (std::size_t i = 0; i < Input1::size; i++) {
             const auto orig = input1_[i];
 
-            const_cast<Input1&>(input1_)[i] = orig + delta;
+            input1_[i] = orig + delta;
             forward();
             output_type plus_out = output_;
 
-            const_cast<Input1&>(input1_)[i] = orig - delta;
+            input1_[i] = orig - delta;
             forward();
             output_type minus_out = output_;
 
-            const_cast<Input1&>(input1_)[i] = orig;
+            input1_[i] = orig;
 
             // 退避した forward の結果を戻す
             output_ = original_output;
@@ -193,7 +193,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                const_cast<Input1&>(input1_).grad(i) += output_.grad(j) * dj_di;
+                input1_.grad(i) += output_.grad(j) * dj_di;
             }
         }
         
@@ -201,15 +201,15 @@ public:
         for (std::size_t i = 0; i < Input2::size; i++) {
             const auto orig = input2_[i];
 
-            const_cast<Input2&>(input2_)[i] = orig + delta;
+            input2_[i] = orig + delta;
             forward();
             output_type plus_out = output_;
 
-            const_cast<Input2&>(input2_)[i] = orig - delta;
+            input2_[i] = orig - delta;
             forward();
             output_type minus_out = output_;
 
-            const_cast<Input2&>(input2_)[i] = orig;
+            input2_[i] = orig;
 
             // 退避した forward の結果を戻す
             output_ = original_output;
@@ -217,7 +217,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                const_cast<Input2&>(input2_).grad(i) += output_.grad(j) * dj_di;
+                input2_.grad(i) += output_.grad(j) * dj_di;
             }
         }
     }
@@ -266,9 +266,9 @@ public:
 
 private:
     Logic logic_;
-    const Input1& input1_;
-    const Input2& input2_;
-    const Input3& input3_;
+    Input1& input1_;
+    Input2& input2_;
+    Input3& input3_;
     output_type output_;
 
 public:
@@ -289,8 +289,8 @@ public:
     TernaryOperation& operator=(TernaryOperation&&) = delete;
     
     // コアロジックと入力を受け取るコンストラクタ
-    __host__ __device__ TernaryOperation(const Logic& logic, const Input1& input1, 
-                                         const Input2& input2, const Input3& input3)
+    __host__ __device__ TernaryOperation(const Logic& logic, Input1& input1, 
+                                         Input2& input2, Input3& input3)
         : logic_(logic), input1_(input1), input2_(input2), input3_(input3), output_() {
     }
     
@@ -301,8 +301,7 @@ public:
     
     // Backward pass
     __device__ void backward() {
-        logic_.backward(output_, const_cast<Input1&>(input1_), 
-                        const_cast<Input2&>(input2_), const_cast<Input3&>(input3_));
+        logic_.backward(output_, input1_, input2_, input3_);
     }
     
     // 数値微分による backward pass
@@ -310,23 +309,23 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        const_cast<Input1&>(input1_).zero_grad();
-        const_cast<Input2&>(input2_).zero_grad();
-        const_cast<Input3&>(input3_).zero_grad();
+        input1_.zero_grad();
+        input2_.zero_grad();
+        input3_.zero_grad();
         
         // Input1 に対する数値微分
         for (std::size_t i = 0; i < Input1::size; i++) {
             const auto orig = input1_[i];
 
-            const_cast<Input1&>(input1_)[i] = orig + delta;
+            input1_[i] = orig + delta;
             forward();
             output_type plus_out = output_;
 
-            const_cast<Input1&>(input1_)[i] = orig - delta;
+            input1_[i] = orig - delta;
             forward();
             output_type minus_out = output_;
 
-            const_cast<Input1&>(input1_)[i] = orig;
+            input1_[i] = orig;
 
             // 退避した forward の結果を戻す
             output_ = original_output;
@@ -334,7 +333,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                const_cast<Input1&>(input1_).grad(i) += output_.grad(j) * dj_di;
+                input1_.grad(i) += output_.grad(j) * dj_di;
             }
         }
         
@@ -342,15 +341,15 @@ public:
         for (std::size_t i = 0; i < Input2::size; i++) {
             const auto orig = input2_[i];
 
-            const_cast<Input2&>(input2_)[i] = orig + delta;
+            input2_[i] = orig + delta;
             forward();
             output_type plus_out = output_;
 
-            const_cast<Input2&>(input2_)[i] = orig - delta;
+            input2_[i] = orig - delta;
             forward();
             output_type minus_out = output_;
 
-            const_cast<Input2&>(input2_)[i] = orig;
+            input2_[i] = orig;
 
             // 退避した forward の結果を戻す
             output_ = original_output;
@@ -358,7 +357,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                const_cast<Input2&>(input2_).grad(i) += output_.grad(j) * dj_di;
+                input2_.grad(i) += output_.grad(j) * dj_di;
             }
         }
         
@@ -366,15 +365,15 @@ public:
         for (std::size_t i = 0; i < Input3::size; i++) {
             const auto orig = input3_[i];
 
-            const_cast<Input3&>(input3_)[i] = orig + delta;
+            input3_[i] = orig + delta;
             forward();
             output_type plus_out = output_;
 
-            const_cast<Input3&>(input3_)[i] = orig - delta;
+            input3_[i] = orig - delta;
             forward();
             output_type minus_out = output_;
 
-            const_cast<Input3&>(input3_)[i] = orig;
+            input3_[i] = orig;
 
             // 退避した forward の結果を戻す
             output_ = original_output;
@@ -382,7 +381,7 @@ public:
             // 勾配の数値計算
             for (std::size_t j = 0; j < OutputSize; j++) {
                 const auto dj_di = (plus_out[j] - minus_out[j]) / (value_type(2.0) * delta);
-                const_cast<Input3&>(input3_).grad(i) += output_.grad(j) * dj_di;
+                input3_.grad(i) += output_.grad(j) * dj_di;
             }
         }
     }
