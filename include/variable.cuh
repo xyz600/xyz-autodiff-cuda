@@ -2,15 +2,20 @@
 
 #include <cstddef>
 #include <cuda_runtime.h>
+#include "concept/variable.cuh"
 
 namespace xyz_autodiff {
 
 // VariableRef - 外部バッファへの参照版 (現在のVariableの設計)
 template <typename T, std::size_t N>
+requires FloatingPointConcept<T>
 class VariableRef {
 public:
     using value_type = T;
     static constexpr std::size_t size = N;
+    
+    // static_assert for type validation
+    static_assert(FloatingPointConcept<T>, "VariableRef requires T to be float or double");
     
 private:
     T* const data_ptr_;
@@ -61,10 +66,14 @@ public:
 
 // Variable - 自身でバッファを持つ版
 template <typename T, std::size_t N>
+requires FloatingPointConcept<T>
 class Variable {
 public:
     using value_type = T;
     static constexpr std::size_t size = N;
+    
+    // static_assert for type validation
+    static_assert(FloatingPointConcept<T>, "Variable requires T to be float or double");
     
 private:
     T data_[N];
