@@ -39,7 +39,9 @@
       "Bash(./tests/test_math_dispatcher)",
       "Bash(./tests/test_diagonal_matrix:*)",
       "Bash(grep:*)",
-      "Bash(./tests/test_symmetric_matrix)"
+      "Bash(./tests/test_symmetric_matrix)",
+      "Bash(./tests/test_dag_backward:*)",
+      "Bash(./debug_dag_simple)"
     ],
     "deny": []
   }

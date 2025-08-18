@@ -24,6 +24,7 @@ private:
     Logic logic_;
     Input& input_;
     output_type output_;  // Variableが自身でバッファを持つ
+    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -48,6 +49,11 @@ public:
     
     // Forward pass
     __device__ void forward() {
+        // inputがOperationの場合、参照カウントを増やす
+        if constexpr (OperationNode<Input>) {
+            input_.increment_ref_count();
+        }
+        
         logic_.forward(output_, input_);
     }
     
@@ -55,10 +61,21 @@ public:
     __device__ void backward() {
         logic_.backward(output_, input_);
         
-        // 入力がOperationNodeの場合のみbackwardを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward
         if constexpr (OperationNode<Input>) {
-            input_.backward();
+            if (input_.decrement_ref_count_and_check()) {
+                input_.backward();
+            }
         }
+    }
+    
+    // 参照カウント管理メソッド
+    __device__ void increment_ref_count() const {
+        ref_count_++;
+    }
+    
+    __device__ bool decrement_ref_count_and_check() const {
+        return --ref_count_ == 0;
     }
     
     // 数値微分による backward pass
@@ -75,11 +92,11 @@ public:
             const auto orig = input_[i];
 
             input_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input_[i] = orig;
@@ -94,9 +111,11 @@ public:
             }
         }
         
-        // 入力がOperationNodeの場合のみbackward_numericalを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward_numerical
         if constexpr (OperationNode<Input>) {
-            input_.backward_numerical(delta);
+            if (input_.decrement_ref_count_and_check()) {
+                input_.backward_numerical(delta);
+            }
         }
     }
     
@@ -152,6 +171,7 @@ private:
     Input1& input1_;
     Input2& input2_;
     output_type output_;
+    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -177,6 +197,14 @@ public:
     
     // Forward pass
     __device__ void forward() {
+        // inputがOperationの場合、参照カウントを増やす
+        if constexpr (OperationNode<Input1>) {
+            input1_.increment_ref_count();
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.increment_ref_count();
+        }
+        
         logic_.forward(output_, input1_, input2_);
     }
     
@@ -184,13 +212,26 @@ public:
     __device__ void backward() {
         logic_.backward(output_, input1_, input2_);
         
-        // 入力がOperationNodeの場合のみbackwardを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward
         if constexpr (OperationNode<Input1>) {
-            input1_.backward();
+            if (input1_.decrement_ref_count_and_check()) {
+                input1_.backward();
+            }
         }
         if constexpr (OperationNode<Input2>) {
-            input2_.backward();
+            if (input2_.decrement_ref_count_and_check()) {
+                input2_.backward();
+            }
         }
+    }
+    
+    // 参照カウント管理メソッド
+    __device__ void increment_ref_count() const {
+        ref_count_++;
+    }
+    
+    __device__ bool decrement_ref_count_and_check() const {
+        return --ref_count_ == 0;
     }
     
     // 数値微分による backward pass
@@ -211,11 +252,11 @@ public:
             const auto orig = input1_[i];
 
             input1_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input1_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input1_[i] = orig;
@@ -235,11 +276,11 @@ public:
             const auto orig = input2_[i];
 
             input2_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input2_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input2_[i] = orig;
@@ -254,12 +295,16 @@ public:
             }
         }
         
-        // 入力がOperationNodeの場合のみbackward_numericalを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward_numerical
         if constexpr (OperationNode<Input1>) {
-            input1_.backward_numerical(delta);
+            if (input1_.decrement_ref_count_and_check()) {
+                input1_.backward_numerical(delta);
+            }
         }
         if constexpr (OperationNode<Input2>) {
-            input2_.backward_numerical(delta);
+            if (input2_.decrement_ref_count_and_check()) {
+                input2_.backward_numerical(delta);
+            }
         }
     }
     
@@ -318,6 +363,7 @@ private:
     Input2& input2_;
     Input3& input3_;
     output_type output_;
+    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -344,6 +390,17 @@ public:
     
     // Forward pass
     __device__ void forward() {
+        // inputがOperationの場合、参照カウントを増やす
+        if constexpr (OperationNode<Input1>) {
+            input1_.increment_ref_count();
+        }
+        if constexpr (OperationNode<Input2>) {
+            input2_.increment_ref_count();
+        }
+        if constexpr (OperationNode<Input3>) {
+            input3_.increment_ref_count();
+        }
+        
         logic_.forward(output_, input1_, input2_, input3_);
     }
     
@@ -351,16 +408,31 @@ public:
     __device__ void backward() {
         logic_.backward(output_, input1_, input2_, input3_);
         
-        // 入力がOperationNodeの場合のみbackwardを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward
         if constexpr (OperationNode<Input1>) {
-            input1_.backward();
+            if (input1_.decrement_ref_count_and_check()) {
+                input1_.backward();
+            }
         }
         if constexpr (OperationNode<Input2>) {
-            input2_.backward();
+            if (input2_.decrement_ref_count_and_check()) {
+                input2_.backward();
+            }
         }
         if constexpr (OperationNode<Input3>) {
-            input3_.backward();
+            if (input3_.decrement_ref_count_and_check()) {
+                input3_.backward();
+            }
         }
+    }
+    
+    // 参照カウント管理メソッド
+    __device__ void increment_ref_count() const {
+        ref_count_++;
+    }
+    
+    __device__ bool decrement_ref_count_and_check() const {
+        return --ref_count_ == 0;
     }
     
     // 数値微分による backward pass
@@ -384,11 +456,11 @@ public:
             const auto orig = input1_[i];
 
             input1_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input1_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input1_[i] = orig;
@@ -408,11 +480,11 @@ public:
             const auto orig = input2_[i];
 
             input2_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input2_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input2_[i] = orig;
@@ -432,11 +504,11 @@ public:
             const auto orig = input3_[i];
 
             input3_[i] = orig + delta;
-            forward();
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input3_[i] = orig - delta;
-            forward();
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input3_[i] = orig;
@@ -451,15 +523,21 @@ public:
             }
         }
         
-        // 入力がOperationNodeの場合のみbackward_numericalを呼ぶ
+        // 入力がOperationNodeの場合、参照カウントを減らしてから条件付きbackward_numerical
         if constexpr (OperationNode<Input1>) {
-            input1_.backward_numerical(delta);
+            if (input1_.decrement_ref_count_and_check()) {
+                input1_.backward_numerical(delta);
+            }
         }
         if constexpr (OperationNode<Input2>) {
-            input2_.backward_numerical(delta);
+            if (input2_.decrement_ref_count_and_check()) {
+                input2_.backward_numerical(delta);
+            }
         }
         if constexpr (OperationNode<Input3>) {
-            input3_.backward_numerical(delta);
+            if (input3_.decrement_ref_count_and_check()) {
+                input3_.backward_numerical(delta);
+            }
         }
     }
     
