@@ -41,7 +41,9 @@
       "Bash(grep:*)",
       "Bash(./tests/test_symmetric_matrix)",
       "Bash(./tests/test_dag_backward:*)",
-      "Bash(./debug_dag_simple)"
+      "Bash(./debug_dag_simple)",
+      "Bash(./debug_simple_add)",
+      "Bash(nvidia-smi:*)"
     ],
     "deny": []
   }

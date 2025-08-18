@@ -42,7 +42,10 @@ __global__ void test_chaining_analytical_kernel(
     auto mul_result = op::mul(x_var, z_var);
     auto final_result = op::add(mul_result, y_var);
     
-    final_result.run();
+    final_result.forward();
+    final_result.zero_grad();
+    final_result.add_grad(0, output_grad[0]); // 指定された上流勾配を使用
+    final_result.backward();
 }
 
 // f(x, y, z) = xz + y を数値微分で計算するカーネル
@@ -59,7 +62,10 @@ __global__ void test_chaining_numerical_kernel(
     auto mul_result = op::mul(x_var, z_var);
     auto final_result = op::add(mul_result, y_var);
     
-    final_result.run();
+    final_result.forward();
+    final_result.zero_grad();
+    final_result.add_grad(0, output_grad[0]); // 指定された上流勾配を使用
+    final_result.backward_numerical(delta);
 }
 
 // 直接数値微分による勾配計算（検証用）

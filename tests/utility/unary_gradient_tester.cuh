@@ -98,7 +98,7 @@ class UnaryGradientTester {
 private:
     static constexpr std::size_t NUM_TESTS = 100;
     static constexpr double TOLERANCE = 1e-5;
-    static constexpr double DELTA = 1e-7;
+    static constexpr double DELTA = 1e-5;
     
 public:
     static void test(const std::string& operation_name) {

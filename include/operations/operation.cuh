@@ -86,9 +86,14 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力がOperationNodeの場合のみzero_gradを呼ぶ
+        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
         if constexpr (OperationNode<Input>) {
             input_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input::size; ++i) {
+                input_.grad()[i] = value_type(0);
+            }
         }
         
         for (std::size_t i = 0; i < Input::size; i++) {
@@ -161,6 +166,17 @@ public:
             add_grad(i, value_type(1.0));
         }
         backward();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward_numerical の定型処理
+    __device__ void run_numerical(const value_type delta = value_type(1e-5)) {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward_numerical(delta);
     }
     
     
@@ -255,12 +271,22 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力がOperationNodeの場合のみzero_gradを呼ぶ
+        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
         if constexpr (OperationNode<Input1>) {
             input1_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input1::size; ++i) {
+                input1_.grad()[i] = value_type(0);
+            }
         }
         if constexpr (OperationNode<Input2>) {
             input2_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input2::size; ++i) {
+                input2_.grad()[i] = value_type(0);
+            }
         }
         
         // Input1 に対する数値微分
@@ -363,6 +389,17 @@ public:
             add_grad(i, value_type(1.0));
         }
         backward();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward_numerical の定型処理
+    __device__ void run_numerical(const value_type delta = value_type(1e-5)) {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward_numerical(delta);
     }
     
     
@@ -469,15 +506,30 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力がOperationNodeの場合のみzero_gradを呼ぶ
+        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
         if constexpr (OperationNode<Input1>) {
             input1_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input1::size; ++i) {
+                input1_.grad()[i] = value_type(0);
+            }
         }
         if constexpr (OperationNode<Input2>) {
             input2_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input2::size; ++i) {
+                input2_.grad()[i] = value_type(0);
+            }
         }
         if constexpr (OperationNode<Input3>) {
             input3_.zero_grad();
+        } else {
+            // VariableRefなどの場合は直接勾配をクリア
+            for (std::size_t i = 0; i < Input3::size; ++i) {
+                input3_.grad()[i] = value_type(0);
+            }
         }
         
         // Input1 に対する数値微分
@@ -509,11 +561,11 @@ public:
             const auto orig = input2_[i];
 
             input2_[i] = orig + delta;
-            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input2_[i] = orig - delta;
-            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input2_[i] = orig;
@@ -609,6 +661,17 @@ public:
             add_grad(i, value_type(1.0));
         }
         backward();
+    }
+    
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward_numerical の定型処理
+    __device__ void run_numerical(const value_type delta = value_type(1e-5)) {
+        forward();
+        zero_grad();
+        // 全ての出力次元に対して1.0の勾配を設定
+        for (std::size_t i = 0; i < OutputSize; ++i) {
+            add_grad(i, value_type(1.0));
+        }
+        backward_numerical(delta);
     }
     
     

@@ -149,13 +149,9 @@ __global__ void test_quaternion_gradient_verification_kernel(float* result) {
     for (int i = 0; i < 4; i++) {
         quat_grad[i] = 0.0;
     }
-    rotation_matrix.zero_grad();
-    for (int i = 0; i < 9; i++) {
-        rotation_matrix.add_grad(i, 1.0);
-    }
     
-    // Compute numerical gradients with smaller step for double precision
-    rotation_matrix.backward_numerical(1e-8);
+    // forward -> zero_grad -> add_grad(all 1.0) -> backward_numerical の定型処理
+    rotation_matrix.run_numerical(1e-8);
     
     // Compare analytical vs numerical gradients with strict tolerance
     double tolerance = 1e-5; // Strict tolerance for double precision
@@ -233,16 +229,8 @@ __global__ void test_quaternion_operation_chaining_kernel(float* result) {
     // Create quaternion to rotation matrix operation
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
     
-    // Test automatic backward propagation
-    rotation_matrix.zero_grad();  // Should propagate to quaternion
-    
-    // Set gradients on multiple outputs to ensure non-zero gradient flow
-    for (int i = 0; i < 9; i++) {
-        rotation_matrix.add_grad(i, 1.0f);
-    }
-    
-    // Backward should automatically propagate
-    rotation_matrix.backward();
+    // Test automatic backward propagation - forward -> zero_grad -> add_grad(all 1.0) -> backward の定型処理
+    rotation_matrix.run();
     
     // Check that gradient propagated to quaternion
     bool gradient_propagated = false;

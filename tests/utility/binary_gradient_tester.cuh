@@ -53,7 +53,15 @@ __global__ void test_binary_gradient_kernel(
         auto op = BinaryOperation<OutDim, LogicType, VariableRef<T, In1Dim>, VariableRef<T, In2Dim>>(
             logic, input1_var, input2_var);
 
-        op.run();
+        op.forward();
+        
+        // 上流勾配設定（数値勾配と同じ）
+        op.zero_grad();
+        for (std::size_t i = 0; i < OutDim; ++i) {
+            op.add_grad(i, buffers->output_grad[i]);
+        }
+        
+        op.backward();
         
         // 結果保存
         for (std::size_t i = 0; i < In1Dim; ++i) {
@@ -103,7 +111,7 @@ class BinaryGradientTester {
 private:
     static constexpr std::size_t NUM_TESTS = 100;
     static constexpr double TOLERANCE = 1e-5;
-    static constexpr double DELTA = 1e-7;
+    static constexpr double DELTA = 1e-5;
     
     // 相対誤差と絶対誤差の最小値を計算するヘルパー関数
     static double compute_error_min(double analytical, double numerical) {
