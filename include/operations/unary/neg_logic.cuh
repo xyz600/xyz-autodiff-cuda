@@ -7,6 +7,7 @@
 #include "../../concept/variable.cuh"
 
 namespace xyz_autodiff {
+namespace op {
 
 // Negation関数のロジック実装
 template <std::size_t Dim>
@@ -47,4 +48,5 @@ __host__ __device__ auto neg(Input& input) {
     return neg<Dim>(input);
 }
 
+} // namespace op
 } // namespace xyz_autodiff

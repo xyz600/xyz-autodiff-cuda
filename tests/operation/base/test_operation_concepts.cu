@@ -13,12 +13,12 @@ using namespace xyz_autodiff;
 
 // テスト用のOperation型を定義  
 using TestVariable = VariableRef<float, 2>;
-using TestUnaryOp = UnaryOperation<2, ExpLogic<2>, TestVariable>;
+using TestUnaryOp = UnaryOperation<2, op::ExpLogic<2>, TestVariable>;
 using TestBinaryOp = BinaryOperation<2, op::MulLogic<TestVariable, TestVariable>, TestVariable, TestVariable>;
 
 // QuaternionToRotationMatrix用のテスト型
 using TestQuaternion = Variable<float, 4>;
-using TestQuatToMatOp = UnaryOperation<9, QuaternionToRotationMatrixLogic<4>, TestQuaternion>;
+using TestQuatToMatOp = UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternion>;
 
 class OperationConceptTest : public ::testing::Test {
 protected:
@@ -66,7 +66,7 @@ static_assert(!OperationNode<VariableRef<double, 5>>,
 // 具体的な型でのテスト
 using TestVariable4d = Variable<double, 4>;
 using TestVariable2f = Variable<float, 2>;
-static_assert(VariableConcept<UnaryOperation<4, ExpLogic<4>, TestVariable4d>>, 
+static_assert(VariableConcept<UnaryOperation<4, op::ExpLogic<4>, TestVariable4d>>, 
     "Specific UnaryOperation should satisfy VariableConcept");
 static_assert(VariableConcept<BinaryOperation<2, op::MulLogic<TestVariable2f, TestVariable2f>, TestVariable2f, TestVariable2f>>, 
     "Specific BinaryOperation should satisfy VariableConcept");
@@ -82,17 +82,17 @@ static_assert(OperationNode<TestQuatToMatOp>,
 // 具体的なQuaternionToRotationMatrix型でのテスト
 using TestQuaternionFloat = Variable<float, 4>;
 using TestQuaternionDouble = Variable<double, 4>;
-static_assert(VariableConcept<UnaryOperation<9, QuaternionToRotationMatrixLogic<4>, TestQuaternionFloat>>, 
+static_assert(VariableConcept<UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternionFloat>>, 
     "Float QuaternionToRotationMatrix Operation should satisfy VariableConcept");
-static_assert(VariableConcept<UnaryOperation<9, QuaternionToRotationMatrixLogic<4>, TestQuaternionDouble>>, 
+static_assert(VariableConcept<UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternionDouble>>, 
     "Double QuaternionToRotationMatrix Operation should satisfy VariableConcept");
-static_assert(OperationNode<UnaryOperation<9, QuaternionToRotationMatrixLogic<4>, TestQuaternionFloat>>, 
+static_assert(OperationNode<UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternionFloat>>, 
     "Float QuaternionToRotationMatrix Operation should satisfy OperationNode");
-static_assert(OperationNode<UnaryOperation<9, QuaternionToRotationMatrixLogic<4>, TestQuaternionDouble>>, 
+static_assert(OperationNode<UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternionDouble>>, 
     "Double QuaternionToRotationMatrix Operation should satisfy OperationNode");
 
 // QuaternionToRotationMatrixLogic自体のテスト（型チェック）
-static_assert(QuaternionToRotationMatrixLogic<4>::outputDim == 9, 
+static_assert(op::QuaternionToRotationMatrixLogic<4>::outputDim == 9, 
     "QuaternionToRotationMatrixLogic should have outputDim = 9");
 
 // Quaternion変数は OperationNode ではないことを再確認
@@ -141,8 +141,8 @@ __global__ void test_operation_interface_kernel(float* result) {
     VariableRef<float, 2> var2(data2, grad2);
     
     // UnaryOperationを作成（ExpLogicを使用）
-    ExpLogic<2> logic;
-    UnaryOperation<2, ExpLogic<2>, VariableRef<float, 2>> op(logic, var1);
+    op::ExpLogic<2> logic;
+    UnaryOperation<2, op::ExpLogic<2>, VariableRef<float, 2>> op(logic, var1);
     
     // VariableConceptのインターフェースが使えることを確認
     op.zero_grad();  // zero_grad

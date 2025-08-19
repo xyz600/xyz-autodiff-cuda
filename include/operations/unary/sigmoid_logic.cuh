@@ -7,6 +7,7 @@
 #include "../../concept/variable.cuh"
 
 namespace xyz_autodiff {
+namespace op {
 
 // Sigmoid関数のロジック実装
 template <std::size_t Dim>
@@ -50,4 +51,5 @@ __host__ __device__ auto sigmoid(Input& input) {
     return sigmoid<Dim>(input);
 }
 
+} // namespace op
 } // namespace xyz_autodiff

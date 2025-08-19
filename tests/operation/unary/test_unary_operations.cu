@@ -20,7 +20,7 @@ __global__ void test_sigmoid_factory_kernel(T* input_data, T* output_data) {
     VariableRef<T, 3> input(input_data, input_data + 3);
     
     // Test factory function from sigmoid_logic.cuh
-    auto result = sigmoid(input);
+    auto result = op::sigmoid(input);
     result.forward();
     
     for (int i = 0; i < 3; ++i) {
@@ -34,7 +34,7 @@ __global__ void test_exp_factory_kernel(T* input_data, T* output_data) {
     VariableRef<T, 3> input(input_data, input_data + 3);
     
     // Test factory function from exp_logic.cuh
-    auto result = exp(input);
+    auto result = op::exp(input);
     result.forward();
     
     for (int i = 0; i < 3; ++i) {

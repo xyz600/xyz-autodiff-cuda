@@ -6,6 +6,7 @@
 #include "../../concept/variable.cuh"
 
 namespace xyz_autodiff {
+namespace op {
 
 // Quaternion (x,y,z,w) から Rotation Matrix (3x3 = 9要素) への変換ロジック
 template <std::size_t InputDim>
@@ -114,14 +115,13 @@ struct QuaternionToRotationMatrixLogic {
 };
 
 // ヘルパー関数
-namespace op {
-    template <DifferentiableVariableConcept Input>
-    requires (Input::size == 4)
-    __device__ auto quaternion_to_rotation_matrix(Input& quaternion) {
-        QuaternionToRotationMatrixLogic<4> logic;
-        auto op = UnaryOperation<9, QuaternionToRotationMatrixLogic<4>, Input>(logic, quaternion);
-        return op;
-    }
+template <DifferentiableVariableConcept Input>
+requires (Input::size == 4)
+__device__ auto quaternion_to_rotation_matrix(Input& quaternion) {
+    QuaternionToRotationMatrixLogic<4> logic;
+    auto op = UnaryOperation<9, QuaternionToRotationMatrixLogic<4>, Input>(logic, quaternion);
+    return op;
 }
 
+} // namespace op
 } // namespace xyz_autodiff

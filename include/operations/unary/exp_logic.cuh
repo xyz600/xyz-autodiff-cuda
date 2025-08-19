@@ -7,6 +7,7 @@
 #include "../../concept/variable.cuh"
 
 namespace xyz_autodiff {
+namespace op {
 
 // Exponential関数のロジック実装
 template <std::size_t Dim>
@@ -49,4 +50,5 @@ __host__ __device__ auto exp(Input& input) {
     return exp<Dim>(input);
 }
 
+} // namespace op
 } // namespace xyz_autodiff

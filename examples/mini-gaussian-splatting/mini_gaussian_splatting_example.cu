@@ -17,7 +17,7 @@
 #include "../../include/operations/unary/l2_norm_logic.cuh"
 // Using standard operations for l1_norm + l2_norm + add
 #include "../../include/operations/unary/to_rotation_matrix_logic.cuh"
-#include "../../include/operations/unary/broadcast_logic.cuh"
+#include "../../include/operations/unary/broadcast.cuh"
 
 using namespace xyz_autodiff;
 
@@ -51,7 +51,7 @@ struct GaussianSplattingBuffers {
 // Mini Gaussian splatting evaluation kernel
 __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers) {
     // Create Variable references from buffer data
-    VariableRef<float, 2> center(buffers->gaussian_center, buffers->gaussian_center_grad);
+    auto center = VariableRef<float, 2>(buffers->gaussian_center, buffers->gaussian_center_grad);
     VariableRef<float, 2> scale(buffers->gaussian_scale, buffers->gaussian_scale_grad);
     VariableRef<float, 1> rotation(buffers->gaussian_rotation, buffers->gaussian_rotation_grad);
     VariableRef<float, 3> color(buffers->gaussian_color, buffers->gaussian_color_grad);
@@ -68,19 +68,16 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point, center, inv_covariance);
     
     // Step 4: Compute Gaussian value: exp(-0.5 * distance^2)
-    // Create scalar 0.5 as 1-element variable
-    float scalar_data[1] = {0.5f};
-    float scalar_grad[1] = {0.0f};
-    VariableRef<float, 1> scalar_half(scalar_data, scalar_grad);
-    auto scaled_distance = op::mul(mahalanobis_dist_sq, scalar_half);
+    // Use constant operator for multiplication
+    auto scaled_distance = mahalanobis_dist_sq * 0.5f;
     
     // Apply negation and then exponential using standard operations
-    auto neg_scaled = neg(scaled_distance);
-    auto gaussian_value = exp(neg_scaled);
+    auto neg_scaled = op::neg(scaled_distance);
+    auto gaussian_value = op::exp(neg_scaled);
     
     // Step 5: Apply opacity to color (element-wise multiplication with opacity broadcast)
     // Use broadcast operation to efficiently broadcast size-1 opacity to size-3
-    auto opacity_broadcast = broadcast<3>(opacity);
+    auto opacity_broadcast = op::broadcast<3>(opacity);
     auto color_with_opacity = op::mul(color, opacity_broadcast);
     
     // Step 6: Multiply Gaussian value with color
@@ -90,9 +87,9 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     
     // Step 7: Compute L1 + L2 norm of the weighted color as final result
     // Use standard operations: l1_norm + l2_norm + add
-    auto l1_result = l1_norm(weighted_color);
-    auto l2_result = l2_norm(weighted_color);
-    auto final_result = add(l1_result, l2_result);
+    auto l1_result = op::l1_norm(weighted_color);
+    auto l2_result = op::l2_norm(weighted_color);
+    auto final_result = op::add(l1_result, l2_result);
     
     // Step 8: Compute gradients by running forward and backward pass
     final_result.run();

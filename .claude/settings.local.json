@@ -57,6 +57,20 @@
       "Bash(true)",
       "Bash(./tests/test_norm_operations)",
       "Bash(./tests/test_sym_matrix2_inv:*)",
+<<<<<<< HEAD
+      "Bash(./examples/optimization/test_linear_regression_gradient:*)",
+      "Bash(./tests/test_linear_regression_network:*)",
+      "Bash(./tests/test_variable_operators)",
+      "Bash(for file in include/operations/unary/sin_logic.cuh include/operations/unary/cos_logic.cuh include/operations/unary/sigmoid_logic.cuh include/operations/unary/sym_matrix2_inv_logic.cuh include/operations/unary/sym_matrix3_inv_logic.cuh)",
+      "Bash(do)",
+      "Bash(done)",
+      "Bash(./build/debug/tests/test_variable_operators:*)",
+      "Bash(/workspaces/xyz-autodiff-cuda/build/debug/tests/test_variable_operators)",
+      "Bash(/workspaces/xyz-autodiff-cuda/build/debug/tests/test_binary_variable_operators)",
+      "Bash(./tests/test_binary_variable_operators:*)",
+      "Bash(./test_universal_operators)",
+=======
+>>>>>>> main
       "Bash(./tests/test_broadcast:*)"
     ],
     "deny": []

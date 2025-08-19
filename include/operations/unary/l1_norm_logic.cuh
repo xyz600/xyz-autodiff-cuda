@@ -7,6 +7,7 @@
 #include "../../concept/variable.cuh"
 
 namespace xyz_autodiff {
+namespace op {
 
 // L1 norm operation: output = sum(|input[i]|)
 template <std::size_t InputDim>
@@ -52,4 +53,5 @@ __host__ __device__ auto l1_norm(Input& input) {
     return l1_norm<Dim>(input);
 }
 
+} // namespace op
 } // namespace xyz_autodiff

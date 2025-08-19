@@ -22,4 +22,4 @@ tasks:
     desc: "Build and run all tests"
     cmds:
       - task: build:debug
-      - cd build/debug && ctest --output-on-failure -j4
+      - cd build/debug && ctest --output-on-failure -j16

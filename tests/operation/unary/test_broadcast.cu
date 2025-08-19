@@ -1,54 +1,12 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
-#include <cmath>
 #include "../../../include/variable.cuh"
-#include "../../../include/concept/variable.cuh"
-#include "../../../include/concept/operation_node.cuh"
-#include "../../../include/operations/unary/broadcast_logic.cuh"
+#include "../../../include/operations/unary/broadcast.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
-#include "../../utility/unary_gradient_tester.cuh"
 
 using namespace xyz_autodiff;
 
-// ===========================================
-// Static Assert Tests for Concept Compliance
-// ===========================================
-
-// Test types
-using TestScalar = Variable<float, 1>;
-using TestScalarRef = VariableRef<float, 1>;
-using BroadcastOp3 = UnaryOperation<3, BroadcastLogic<3>, TestScalarRef>;
-using BroadcastOp5 = UnaryOperation<5, BroadcastLogic<5>, TestScalarRef>;
-
-// Static assertions for concept compliance
-static_assert(VariableConcept<TestScalar>, 
-    "Variable<float, 1> should satisfy VariableConcept");
-static_assert(DifferentiableVariableConcept<TestScalar>, 
-    "Variable<float, 1> should satisfy DifferentiableVariableConcept");
-
-static_assert(VariableConcept<BroadcastOp3>, 
-    "Broadcast<3> Operation should satisfy VariableConcept");
-static_assert(DifferentiableVariableConcept<BroadcastOp3>, 
-    "Broadcast<3> Operation should satisfy DifferentiableVariableConcept");
-static_assert(OperationNode<BroadcastOp3>, 
-    "Broadcast<3> Operation should satisfy OperationNode");
-
-static_assert(VariableConcept<BroadcastOp5>, 
-    "Broadcast<5> Operation should satisfy VariableConcept");
-static_assert(DifferentiableVariableConcept<BroadcastOp5>, 
-    "Broadcast<5> Operation should satisfy DifferentiableVariableConcept");
-static_assert(OperationNode<BroadcastOp5>, 
-    "Broadcast<5> Operation should satisfy OperationNode");
-
-// Ensure Variable is not an OperationNode
-static_assert(!OperationNode<TestScalar>, 
-    "Variable should NOT satisfy OperationNode");
-
-// ===========================================
-// Test Class
-// ===========================================
-
-class BroadcastTest : public ::testing::Test {
+class BroadcastOperatorTest : public ::testing::Test {
 protected:
     void SetUp() override {
         int device_count;
@@ -59,226 +17,250 @@ protected:
     }
 };
 
-// ===========================================
-// Forward Pass Tests
-// ===========================================
+// Test buffer for broadcast operator
+struct BroadcastTestBuffer {
+    float input_data[1];      // Single input value
+    float input_grad[1];      // Input gradient
+    float output_data[4];     // Broadcasted output (1 -> 4)
+    float output_grad[4];     // Output gradients
+    float final_grad[4];      // Final output gradients for backward pass
+};
 
-__global__ void test_broadcast_forward_kernel(float* result) {
-    // Test broadcast from size 1 to size 3: input = 2.5 -> output = (2.5, 2.5, 2.5)
-    float input_data[1] = {2.5f};
-    float input_grad[1] = {0.0f};
+// CUDA kernel to test broadcast operation: 1 -> 4
+__global__ void test_broadcast_1_to_4_kernel(BroadcastTestBuffer* buffer) {
+    VariableRef<float, 1> input(buffer->input_data, buffer->input_grad);
     
-    VariableRef<float, 1> input(input_data, input_grad);
+    input.zero_grad();
     
-    auto broadcast_result = broadcast<3>(input);
-    broadcast_result.forward();
+    // Broadcast from length 1 to length 4
+    auto broadcasted = op::broadcast<4>(input);
+    broadcasted.forward();
     
-    // Check that all output elements equal input value
-    bool success = true;
-    float tolerance = 1e-6f;
-    for (int i = 0; i < 3; ++i) {
-        if (fabsf(broadcast_result[i] - 2.5f) > tolerance) {
-            success = false;
-            break;
-        }
+    // Copy result to output
+    for (std::size_t i = 0; i < 4; ++i) {
+        buffer->output_data[i] = broadcasted[i];
     }
     
-    *result = success ? 1.0f : 0.0f;
-}
-
-TEST_F(BroadcastTest, ForwardPassSize3) {
-    auto device_result = makeCudaUnique<float>();
-    
-    test_broadcast_forward_kernel<<<1, 1>>>(device_result.get());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
-    EXPECT_EQ(host_result, 1.0f);
-}
-
-__global__ void test_broadcast_forward_size5_kernel(float* result) {
-    // Test broadcast from size 1 to size 5: input = 1.5 -> output = (1.5, 1.5, 1.5, 1.5, 1.5)
-    float input_data[1] = {1.5f};
-    float input_grad[1] = {0.0f};
-    
-    VariableRef<float, 1> input(input_data, input_grad);
-    
-    auto broadcast_result = broadcast<5>(input);
-    broadcast_result.forward();
-    
-    // Check that all output elements equal input value
-    bool success = true;
-    float tolerance = 1e-6f;
-    for (int i = 0; i < 5; ++i) {
-        if (fabsf(broadcast_result[i] - 1.5f) > tolerance) {
-            success = false;
-            break;
-        }
+    // Set gradients on output
+    for (std::size_t i = 0; i < 4; ++i) {
+        broadcasted.add_grad(i, buffer->final_grad[i]);
     }
-    
-    *result = success ? 1.0f : 0.0f;
-}
-
-TEST_F(BroadcastTest, ForwardPassSize5) {
-    auto device_result = makeCudaUnique<float>();
-    
-    test_broadcast_forward_size5_kernel<<<1, 1>>>(device_result.get());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
-    EXPECT_EQ(host_result, 1.0f);
-}
-
-// ===========================================
-// Backward Pass Tests
-// ===========================================
-
-__global__ void test_broadcast_backward_kernel(double* result) {
-    // Test broadcast backward: gradient should sum from all output elements to input
-    double input_data[1] = {3.0};
-    double input_grad[1] = {0.0};
-    
-    VariableRef<double, 1> input(input_data, input_grad);
-    
-    auto broadcast_op = broadcast<3>(input);
-    
-    // Forward pass
-    broadcast_op.forward();
-    
-    // Set different gradients for each output element
-    broadcast_op.zero_grad();
-    broadcast_op.add_grad(0, 1.0);  // grad = 1.0
-    broadcast_op.add_grad(1, 2.0);  // grad = 2.0
-    broadcast_op.add_grad(2, 3.0);  // grad = 3.0
     
     // Backward pass
-    broadcast_op.backward();
-    
-    // Expected input gradient: sum of all output gradients = 1.0 + 2.0 + 3.0 = 6.0
-    double expected_grad = 6.0;
-    double tolerance = 1e-10;
-    bool success = (fabs(input.grad(0) - expected_grad) < tolerance);
-    
-    *result = success ? 1.0 : 0.0;
+    broadcasted.backward();
 }
 
-TEST_F(BroadcastTest, BackwardPassGradientSum) {
-    auto device_result = makeCudaUnique<double>();
-    
-    test_broadcast_backward_kernel<<<1, 1>>>(device_result.get());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    double host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(double), cudaMemcpyDeviceToHost), cudaSuccess);
-    EXPECT_EQ(host_result, 1.0);
-}
+// Test buffer for larger broadcast: 1 -> 8
+struct LargeBroadcastTestBuffer {
+    double input_data[1];
+    double input_grad[1];
+    double output_data[8];
+    double output_grad[8];
+    double final_grad[8];
+};
 
-// ===========================================
-// Gradient Verification Tests
-// ===========================================
-
-TEST_F(BroadcastTest, BroadcastSize3GradientVerification) {
-    using Logic = BroadcastLogic<3>;
-    test::UnaryGradientTester<Logic, 1, 3>::test_custom(
-        "Broadcast<3>", 
-        50,      // num_tests
-        1e-5,    // tolerance
-        1e-7,    // delta
-        -5.0,    // input_min
-        5.0      // input_max
-    );
-}
-
-TEST_F(BroadcastTest, BroadcastSize5GradientVerification) {
-    using Logic = BroadcastLogic<5>;
-    test::UnaryGradientTester<Logic, 1, 5>::test_custom(
-        "Broadcast<5>", 
-        50,      // num_tests
-        1e-5,    // tolerance
-        1e-7,    // delta
-        -5.0,    // input_min
-        5.0      // input_max
-    );
-}
-
-// ===========================================
-// Interface Tests
-// ===========================================
-
-__global__ void test_broadcast_interface_kernel(float* result) {
-    float input_data[1] = {2.0f};
-    float input_grad[1] = {0.0f};
+// CUDA kernel to test larger broadcast operation: 1 -> 8
+__global__ void test_broadcast_1_to_8_kernel(LargeBroadcastTestBuffer* buffer) {
+    VariableRef<double, 1> input(buffer->input_data, buffer->input_grad);
     
-    VariableRef<float, 1> input(input_data, input_grad);
+    input.zero_grad();
     
-    // Test broadcast operation interface
-    auto broadcast_op = broadcast<4>(input);
+    // Broadcast from length 1 to length 8
+    auto broadcasted = op::broadcast<8>(input);
+    broadcasted.forward();
     
-    // Test VariableConcept interface
-    broadcast_op.zero_grad();
-    constexpr auto size = decltype(broadcast_op)::size;
-    auto* data = broadcast_op.data();
-    auto* grad = broadcast_op.grad();
-    auto value = broadcast_op[0];
-    auto grad_value = broadcast_op.grad(0);
-    
-    bool success = (size == 4) && 
-                   (data != nullptr) && 
-                   (grad != nullptr) &&
-                   (grad_value == 0.0f);
-    
-    *result = success ? 1.0f : 0.0f;
-}
-
-TEST_F(BroadcastTest, InterfaceTest) {
-    auto device_result = makeCudaUnique<float>();
-    
-    test_broadcast_interface_kernel<<<1, 1>>>(device_result.get());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
-    EXPECT_EQ(host_result, 1.0f);
-}
-
-// ===========================================
-// Use Case Tests (Mini Gaussian Splatting Pattern)
-// ===========================================
-
-__global__ void test_broadcast_opacity_pattern_kernel(float* result) {
-    // Test the exact pattern used in mini Gaussian splatting: opacity broadcasting
-    float opacity_value = 0.8f;
-    float opacity_data[1] = {opacity_value};
-    float opacity_grad[1] = {0.0f};
-    
-    VariableRef<float, 1> opacity(opacity_data, opacity_grad);
-    
-    // Use broadcast instead of manual array creation
-    auto opacity_broadcast = broadcast<3>(opacity);
-    opacity_broadcast.forward();
-    
-    // Verify all elements are the same as input
-    bool success = true;
-    float tolerance = 1e-6f;
-    for (int i = 0; i < 3; ++i) {
-        if (fabsf(opacity_broadcast[i] - opacity_value) > tolerance) {
-            success = false;
-            break;
-        }
+    // Copy result to output
+    for (std::size_t i = 0; i < 8; ++i) {
+        buffer->output_data[i] = broadcasted[i];
     }
     
-    *result = success ? 1.0f : 0.0f;
+    // Set gradients on output
+    for (std::size_t i = 0; i < 8; ++i) {
+        broadcasted.add_grad(i, buffer->final_grad[i]);
+    }
+    
+    // Backward pass
+    broadcasted.backward();
 }
 
-TEST_F(BroadcastTest, OpacityBroadcastPattern) {
-    auto device_result = makeCudaUnique<float>();
+TEST_F(BroadcastOperatorTest, Broadcast1To4Float) {
+    BroadcastTestBuffer host_buffer;
     
-    test_broadcast_opacity_pattern_kernel<<<1, 1>>>(device_result.get());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
+    // Initialize input: single value = 3.5
+    host_buffer.input_data[0] = 3.5f;
+    host_buffer.input_grad[0] = 0.0f;
     
-    float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
-    EXPECT_EQ(host_result, 1.0f);
+    // Set output gradients: [1, 2, 3, 4]
+    host_buffer.final_grad[0] = 1.0f;
+    host_buffer.final_grad[1] = 2.0f;
+    host_buffer.final_grad[2] = 3.0f;
+    host_buffer.final_grad[3] = 4.0f;
+    
+    // Copy to device and run
+    auto device_buffer = makeCudaUnique<BroadcastTestBuffer>();
+    cudaMemcpy(device_buffer.get(), &host_buffer, sizeof(BroadcastTestBuffer), cudaMemcpyHostToDevice);
+    
+    test_broadcast_1_to_4_kernel<<<1, 1>>>(device_buffer.get());
+    cudaDeviceSynchronize();
+    
+    cudaMemcpy(&host_buffer, device_buffer.get(), sizeof(BroadcastTestBuffer), cudaMemcpyDeviceToHost);
+    
+    // Verify forward pass: all output elements should equal input value
+    for (std::size_t i = 0; i < 4; ++i) {
+        EXPECT_NEAR(host_buffer.output_data[i], 3.5f, 1e-6f) 
+            << "Forward pass failed at index " << i;
+    }
+    
+    // Verify backward pass: input gradient should be sum of all output gradients
+    float expected_input_grad = 1.0f + 2.0f + 3.0f + 4.0f; // = 10.0f
+    EXPECT_NEAR(host_buffer.input_grad[0], expected_input_grad, 1e-6f)
+        << "Backward pass failed: expected " << expected_input_grad 
+        << " but got " << host_buffer.input_grad[0];
+}
+
+TEST_F(BroadcastOperatorTest, Broadcast1To8Double) {
+    LargeBroadcastTestBuffer host_buffer;
+    
+    // Initialize input: single value = -2.25
+    host_buffer.input_data[0] = -2.25;
+    host_buffer.input_grad[0] = 0.0;
+    
+    // Set output gradients: all equal to 0.5
+    for (std::size_t i = 0; i < 8; ++i) {
+        host_buffer.final_grad[i] = 0.5;
+    }
+    
+    // Copy to device and run
+    auto device_buffer = makeCudaUnique<LargeBroadcastTestBuffer>();
+    cudaMemcpy(device_buffer.get(), &host_buffer, sizeof(LargeBroadcastTestBuffer), cudaMemcpyHostToDevice);
+    
+    test_broadcast_1_to_8_kernel<<<1, 1>>>(device_buffer.get());
+    cudaDeviceSynchronize();
+    
+    cudaMemcpy(&host_buffer, device_buffer.get(), sizeof(LargeBroadcastTestBuffer), cudaMemcpyDeviceToHost);
+    
+    // Verify forward pass: all output elements should equal input value
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_NEAR(host_buffer.output_data[i], -2.25, 1e-10) 
+            << "Forward pass failed at index " << i;
+    }
+    
+    // Verify backward pass: input gradient should be sum of all output gradients
+    double expected_input_grad = 8 * 0.5; // = 4.0
+    EXPECT_NEAR(host_buffer.input_grad[0], expected_input_grad, 1e-10)
+        << "Backward pass failed: expected " << expected_input_grad 
+        << " but got " << host_buffer.input_grad[0];
+}
+
+// Test with zero input value
+TEST_F(BroadcastOperatorTest, BroadcastZeroValue) {
+    BroadcastTestBuffer host_buffer;
+    
+    // Initialize input: zero value
+    host_buffer.input_data[0] = 0.0f;
+    host_buffer.input_grad[0] = 0.0f;
+    
+    // Set non-zero output gradients
+    for (std::size_t i = 0; i < 4; ++i) {
+        host_buffer.final_grad[i] = static_cast<float>(i + 1); // [1, 2, 3, 4]
+    }
+    
+    // Copy to device and run
+    auto device_buffer = makeCudaUnique<BroadcastTestBuffer>();
+    cudaMemcpy(device_buffer.get(), &host_buffer, sizeof(BroadcastTestBuffer), cudaMemcpyHostToDevice);
+    
+    test_broadcast_1_to_4_kernel<<<1, 1>>>(device_buffer.get());
+    cudaDeviceSynchronize();
+    
+    cudaMemcpy(&host_buffer, device_buffer.get(), sizeof(BroadcastTestBuffer), cudaMemcpyDeviceToHost);
+    
+    // Verify forward pass: all output elements should be zero
+    for (std::size_t i = 0; i < 4; ++i) {
+        EXPECT_NEAR(host_buffer.output_data[i], 0.0f, 1e-6f) 
+            << "Forward pass failed at index " << i;
+    }
+    
+    // Verify backward pass: input gradient should still be sum of output gradients
+    float expected_input_grad = 1.0f + 2.0f + 3.0f + 4.0f; // = 10.0f
+    EXPECT_NEAR(host_buffer.input_grad[0], expected_input_grad, 1e-6f)
+        << "Backward pass failed with zero input value";
+}
+
+// Test chained operations with broadcast
+struct ChainedBroadcastTestBuffer {
+    float scalar_data[1];
+    float scalar_grad[1];
+    float vector_data[3];
+    float vector_grad[3];
+    float result_data[3];
+    float result_grad[3];
+    float final_grad[3];
+};
+
+__global__ void test_chained_broadcast_kernel(ChainedBroadcastTestBuffer* buffer) {
+    VariableRef<float, 1> scalar(buffer->scalar_data, buffer->scalar_grad);
+    VariableRef<float, 3> vector(buffer->vector_data, buffer->vector_grad);
+    
+    scalar.zero_grad();
+    vector.zero_grad();
+    
+    // Chain: broadcast scalar to 3D, then add with vector
+    auto broadcasted_scalar = op::broadcast<3>(scalar);
+    auto result = broadcasted_scalar + vector;  // Using universal operators
+    
+    result.forward();
+    
+    // Copy result
+    for (std::size_t i = 0; i < 3; ++i) {
+        buffer->result_data[i] = result[i];
+    }
+    
+    // Set gradients and backward
+    for (std::size_t i = 0; i < 3; ++i) {
+        result.add_grad(i, buffer->final_grad[i]);
+    }
+    result.backward();
+}
+
+TEST_F(BroadcastOperatorTest, ChainedBroadcastWithAddition) {
+    ChainedBroadcastTestBuffer host_buffer;
+    
+    // Initialize: scalar = 2.0, vector = [1.0, 3.0, 5.0]
+    host_buffer.scalar_data[0] = 2.0f;
+    host_buffer.scalar_grad[0] = 0.0f;
+    
+    host_buffer.vector_data[0] = 1.0f;
+    host_buffer.vector_data[1] = 3.0f;
+    host_buffer.vector_data[2] = 5.0f;
+    for (std::size_t i = 0; i < 3; ++i) {
+        host_buffer.vector_grad[i] = 0.0f;
+        host_buffer.final_grad[i] = 1.0f; // All output gradients = 1
+    }
+    
+    // Copy to device and run
+    auto device_buffer = makeCudaUnique<ChainedBroadcastTestBuffer>();
+    cudaMemcpy(device_buffer.get(), &host_buffer, sizeof(ChainedBroadcastTestBuffer), cudaMemcpyHostToDevice);
+    
+    test_chained_broadcast_kernel<<<1, 1>>>(device_buffer.get());
+    cudaDeviceSynchronize();
+    
+    cudaMemcpy(&host_buffer, device_buffer.get(), sizeof(ChainedBroadcastTestBuffer), cudaMemcpyDeviceToHost);
+    
+    // Verify forward pass: broadcast(2.0) + [1.0, 3.0, 5.0] = [3.0, 5.0, 7.0]
+    float expected_results[3] = {3.0f, 5.0f, 7.0f};
+    for (std::size_t i = 0; i < 3; ++i) {
+        EXPECT_NEAR(host_buffer.result_data[i], expected_results[i], 1e-6f)
+            << "Chained operation forward pass failed at index " << i;
+    }
+    
+    // Verify backward pass:
+    // Scalar gradient should be sum of all output gradients = 3.0
+    EXPECT_NEAR(host_buffer.scalar_grad[0], 3.0f, 1e-6f)
+        << "Scalar gradient incorrect in chained operation";
+    
+    // Vector gradients should each be 1.0 (direct passthrough from output)
+    for (std::size_t i = 0; i < 3; ++i) {
+        EXPECT_NEAR(host_buffer.vector_grad[i], 1.0f, 1e-6f)
+            << "Vector gradient incorrect at index " << i;
+    }
 }
