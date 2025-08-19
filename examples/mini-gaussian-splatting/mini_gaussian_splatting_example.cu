@@ -8,7 +8,6 @@
 #include "operations/matrix_multiplication.cuh"
 #include "../../include/operations/unary/neg_logic.cuh"
 #include "../../include/operations/unary/exp_logic.cuh"
-#include "operations/norm_operations.cuh"
 #include "operations/symmetric_matrix.cuh"
 #include "operations/mahalanobis_distance.cuh"
 #include "operations/covariance_generation.cuh"

@@ -55,7 +55,7 @@ set_target_properties(test_symmetric_matrix PROPERTIES
 )
 
 # UnaryOperations テスト
-add_executable(test_unary_operations test_unary_operations.cu)
+add_executable(test_unary_operations operation/unary/test_unary_operations.cu)
 target_link_libraries(test_unary_operations xyz_autodiff gtest gtest_main)
 target_include_directories(test_unary_operations PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_unary_operations PROPERTIES
@@ -73,7 +73,7 @@ set_target_properties(test_math_dispatcher PROPERTIES
 )
 
 # GradientVerification テスト
-add_executable(test_gradient_verification test_gradient_verification.cu)
+add_executable(test_gradient_verification operation/base/test_gradient_verification.cu)
 target_link_libraries(test_gradient_verification xyz_autodiff gtest gtest_main)
 target_include_directories(test_gradient_verification PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_gradient_verification PROPERTIES
@@ -82,7 +82,7 @@ set_target_properties(test_gradient_verification PROPERTIES
 )
 
 # OperationChaining テスト
-add_executable(test_operation_chaining test_operation_chaining.cu)
+add_executable(test_operation_chaining operation/base/test_operation_chaining.cu)
 target_link_libraries(test_operation_chaining xyz_autodiff gtest gtest_main)
 target_include_directories(test_operation_chaining PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_operation_chaining PROPERTIES
@@ -91,7 +91,7 @@ set_target_properties(test_operation_chaining PROPERTIES
 )
 
 # OperationConcepts テスト
-add_executable(test_operation_concepts test_operation_concepts.cu)
+add_executable(test_operation_concepts operation/base/test_operation_concepts.cu)
 target_link_libraries(test_operation_concepts xyz_autodiff gtest gtest_main)
 target_include_directories(test_operation_concepts PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_operation_concepts PROPERTIES
@@ -100,7 +100,7 @@ set_target_properties(test_operation_concepts PROPERTIES
 )
 
 # QuaternionToRotationMatrix テスト
-add_executable(test_quaternion_to_rotation_matrix test_quaternion_to_rotation_matrix.cu)
+add_executable(test_quaternion_to_rotation_matrix operation/unary/test_quaternion_to_rotation_matrix.cu)
 target_link_libraries(test_quaternion_to_rotation_matrix xyz_autodiff gtest gtest_main)
 target_include_directories(test_quaternion_to_rotation_matrix PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_quaternion_to_rotation_matrix PROPERTIES
@@ -136,7 +136,7 @@ set_target_properties(test_dag_backward PROPERTIES
 )
 
 # Standard Norm Operations テスト
-add_executable(test_norm_operations test_norm_operations.cu)
+add_executable(test_norm_operations operation/unary/test_norm_operations.cu)
 target_link_libraries(test_norm_operations xyz_autodiff gtest gtest_main)
 target_include_directories(test_norm_operations PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_norm_operations PROPERTIES
@@ -145,7 +145,7 @@ set_target_properties(test_norm_operations PROPERTIES
 )
 
 # Standard Symmetric Matrix 2x2 Inverse テスト
-add_executable(test_sym_matrix2_inv test_sym_matrix2_inv.cu)
+add_executable(test_sym_matrix2_inv operation/unary/test_sym_matrix2_inv.cu)
 target_link_libraries(test_sym_matrix2_inv xyz_autodiff gtest gtest_main)
 target_include_directories(test_sym_matrix2_inv PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_sym_matrix2_inv PROPERTIES

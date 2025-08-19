@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
 #include <cmath>
-#include "../include/variable.cuh"
-#include "../include/concept/variable.cuh"
-#include "../include/concept/operation_node.cuh"
-#include "../include/operations/unary/sym_matrix2_inv_logic.cuh"
-#include "../include/util/cuda_unique_ptr.cuh"
-#include "utility/unary_gradient_tester.cuh"
+#include "../../../include/variable.cuh"
+#include "../../../include/concept/variable.cuh"
+#include "../../../include/concept/operation_node.cuh"
+#include "../../../include/operations/unary/sym_matrix2_inv_logic.cuh"
+#include "../../../include/util/cuda_unique_ptr.cuh"
+#include "../../utility/unary_gradient_tester.cuh"
 
 using namespace xyz_autodiff;
 
