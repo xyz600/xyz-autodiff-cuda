@@ -5,14 +5,14 @@
 #include "../../include/util/cuda_unique_ptr.cuh"
 
 // Include all Gaussian splatting operations
-#include "matrix_multiplication.cuh"
-#include "element_wise_exp.cuh"
-#include "norm_operations.cuh"
-#include "norm_addition.cuh"
-#include "symmetric_matrix.cuh"
-#include "mahalanobis_distance.cuh"
-#include "covariance_generation.cuh"
-#include "element_wise_multiply.cuh"
+#include "operations/matrix_multiplication.cuh"
+#include "operations/element_wise_exp.cuh"
+#include "operations/norm_operations.cuh"
+#include "operations/norm_addition.cuh"
+#include "operations/symmetric_matrix.cuh"
+#include "operations/mahalanobis_distance.cuh"
+#include "operations/covariance_generation.cuh"
+#include "operations/element_wise_multiply.cuh"
 #include "../../include/operations/quaternion_to_rotation_matrix_logic.cuh"
 
 using namespace xyz_autodiff;

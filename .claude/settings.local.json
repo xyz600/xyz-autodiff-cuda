@@ -47,7 +47,8 @@
       "Bash(./tests/test_mini_gaussian_matrix_operations)",
       "Bash(./tests/test_mini_gaussian_norm_operations:*)",
       "Bash(./tests/test_mini_gaussian_splatting:*)",
-      "Bash(./examples/mini-gaussian-splatting/mini_gaussian_splatting_example)"
+      "Bash(./examples/mini-gaussian-splatting/mini_gaussian_splatting_example)",
+      "Bash(./tests/test_symmetric_matrix_ops:*)"
     ],
     "deny": []
   }

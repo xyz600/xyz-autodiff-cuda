@@ -155,3 +155,74 @@ task build:debug && cd build/debug && ./examples/linear_regression_sgd
 - 多くのgradient verification testsが失敗（解析的勾配が数値的勾配の約半分）
 - DAGテストのMultiplePathsToSameNodeが失敗（勾配が1.0、期待値4.0）
 - 参照カウントメカニズムの動作に課題
+
+## Testing Guidelines for Mini Gaussian Splatting Operations
+
+When creating tests for operations in `examples/mini-gaussian-splatting/`, follow these patterns:
+
+### 1. File Structure
+- Create one test file per operation: `test_<operation_name>.cu`
+- Place tests in `examples/mini-gaussian-splatting/tests/`
+
+### 2. Test Categories (Required for each operation)
+
+#### A. Static Assert Tests for Concept Compliance
+```cpp
+// Test that operations satisfy Variable and OperationNode concepts
+static_assert(VariableConcept<OperationType>, "...");
+static_assert(DifferentiableVariableConcept<OperationType>, "...");
+static_assert(OperationNode<OperationType>, "...");
+static_assert(!OperationNode<Variable<T, N>>, "Variable should NOT be OperationNode");
+```
+
+#### B. Forward Pass Tests
+```cpp
+// Test correctness of forward computation with known inputs/outputs
+__global__ void test_operation_forward_kernel(float* result) { /* ... */ }
+TEST_F(OperationTest, ForwardPass) { /* ... */ }
+```
+
+#### C. Gradient Verification Tests (Double Precision)
+```cpp
+// Use utility classes from tests/utility/
+TEST_F(OperationTest, GradientVerification) {
+    using Logic = OperationLogic<VariableRef<double, N>>;
+    test::UnaryGradientTester<Logic, InputDim, OutputDim>::test_custom(
+        "OperationName", 
+        50,      // num_tests
+        1e-5,    // tolerance
+        1e-7,    // delta
+        -2.0,    // input_min
+        2.0      // input_max
+    );
+}
+```
+
+#### D. Specific Gradient Tests
+```cpp
+// Test specific mathematical properties of gradients
+__global__ void test_operation_gradient_kernel(double* result) {
+    // Test analytical vs numerical gradients
+    // Compare with known mathematical derivatives
+}
+```
+
+#### E. Interface Compliance Tests
+```cpp
+// Test that all Variable and OperationNode methods work correctly
+__global__ void test_operation_interface_kernel(float* result) {
+    // Test: forward(), backward(), zero_grad(), data(), grad(), etc.
+}
+```
+
+### 3. Utility Usage
+- **Unary operations**: Use `test::UnaryGradientTester` from `tests/utility/unary_gradient_tester.cuh`
+- **Binary operations**: Use `test::BinaryGradientTester` from `tests/utility/binary_gradient_tester.cuh`  
+- **Ternary operations**: Create operations and test manually or extend utilities
+
+### 4. Precision Guidelines
+- Use **double precision** for gradient verification tests
+- Use appropriate tolerance values:
+  - Smooth operations: `1e-5` tolerance, `1e-7` delta
+  - Non-smooth operations (L1 norm): `1e-4` tolerance, `1e-6` delta
+  - Avoid problematic inputs (e.g., zero for L2 norm)

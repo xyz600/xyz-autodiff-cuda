@@ -2,8 +2,8 @@
 #include <cuda_runtime.h>
 #include <cmath>
 #include "../../../include/variable.cuh"
-#include "../covariance_generation.cuh"
-#include "../mahalanobis_distance.cuh"
+#include "../operations/covariance_generation.cuh"
+#include "../operations/mahalanobis_distance.cuh"
 #include "../../../include/operations/quaternion_to_rotation_matrix_logic.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
 
