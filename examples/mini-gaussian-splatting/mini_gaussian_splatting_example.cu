@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include <iomanip>
+#include <cstring>
 #include "../../include/variable.cuh"
 #include "../../include/util/cuda_unique_ptr.cuh"
 
@@ -21,42 +22,34 @@
 
 using namespace xyz_autodiff;
 
-// Structure to hold Gaussian splatting parameters
-struct GaussianSplattingBuffers {
+// Structure to hold Gaussian splatting parameter values
+struct GaussianSplattingValues {
     // Input parameters
     float gaussian_center[2];      // 2D center position
-    float gaussian_center_grad[2];
     float gaussian_scale[2];       // 2D scale
-    float gaussian_scale_grad[2];
     float gaussian_rotation[1];    // rotation angle
-    float gaussian_rotation_grad[1];
     float gaussian_color[3];       // RGB color
-    float gaussian_color_grad[3];
     float gaussian_opacity[1];     // opacity
-    float gaussian_opacity_grad[1];
     
     // Query point
     float query_point[2];
-    float query_point_grad[2];
     
-    // Intermediate results
-    float covariance_3param[3];
-    float inv_covariance_3param[3];
-    float mahalanobis_dist_sq[1];
-    float gaussian_value[1];
-    float color_with_opacity[3];
-    float final_result[1];  // scalar result combining all operations
+    // Output storage for final result
+    float final_result[1];         // scalar result combining all operations
 };
 
 // Mini Gaussian splatting evaluation kernel
-__global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers) {
-    // Create Variable references from buffer data
-    auto center = VariableRef<float, 2>(buffers->gaussian_center, buffers->gaussian_center_grad);
-    VariableRef<float, 2> scale(buffers->gaussian_scale, buffers->gaussian_scale_grad);
-    VariableRef<float, 1> rotation(buffers->gaussian_rotation, buffers->gaussian_rotation_grad);
-    VariableRef<float, 3> color(buffers->gaussian_color, buffers->gaussian_color_grad);
-    VariableRef<float, 1> opacity(buffers->gaussian_opacity, buffers->gaussian_opacity_grad);
-    VariableRef<float, 2> query_point(buffers->query_point, buffers->query_point_grad);
+__global__ void mini_gaussian_splatting_kernel(
+    GaussianSplattingValues* values, 
+    GaussianSplattingValues* gradients
+) {
+    // Create Variable references from separate value and gradient buffers
+    auto center = VariableRef<float, 2>(values->gaussian_center, gradients->gaussian_center);
+    VariableRef<float, 2> scale(values->gaussian_scale, gradients->gaussian_scale);
+    VariableRef<float, 1> rotation(values->gaussian_rotation, gradients->gaussian_rotation);
+    VariableRef<float, 3> color(values->gaussian_color, gradients->gaussian_color);
+    VariableRef<float, 1> opacity(values->gaussian_opacity, gradients->gaussian_opacity);
+    VariableRef<float, 2> query_point(values->query_point, gradients->query_point);
     
     // Step 1: Generate covariance matrix from scale and rotation
     auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
@@ -82,81 +75,84 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     
     // Step 6: Multiply Gaussian value with color
     // Use broadcast operation to efficiently broadcast size-1 gaussian_value to size-3
-    auto gauss_broadcast = broadcast<3>(gaussian_value);
+    auto gauss_broadcast = op::broadcast<3>(gaussian_value);
     auto weighted_color = color_with_opacity * gauss_broadcast;
     
     // Step 7: Compute L1 + L2 norm of the weighted color as final result
     // Use standard operations: l1_norm + l2_norm + add
     auto l1_result = op::l1_norm(weighted_color);
     auto l2_result = op::l2_norm(weighted_color);
-    auto final_result = l1_result + l2_result;
+    auto final_result_op = l1_result + l2_result;
     
     // Step 8: Compute gradients by running forward and backward pass
-    final_result.run();
+    final_result_op.run();
+    
+    // Store the final result
+    values->final_result[0] = final_result_op[0];
 }
 
 // Host function to run mini Gaussian splatting example
 void run_mini_gaussian_splatting_example() {
     std::cout << "\n=== Mini Gaussian Splatting Example ===" << std::endl;
     
-    // Allocate device memory
-    auto device_buffers = makeCudaUnique<GaussianSplattingBuffers>();
+    // Allocate device memory for separate value and gradient structures
+    auto device_values = makeCudaUnique<GaussianSplattingValues>();
+    auto device_gradients = makeCudaUnique<GaussianSplattingValues>();
     
-    // Initialize host data
-    GaussianSplattingBuffers host_buffers = {};
+    // Initialize host data structures
+    GaussianSplattingValues host_values = {};
+    GaussianSplattingValues host_gradients = {};
     
     // Set Gaussian parameters
-    host_buffers.gaussian_center[0] = 0.0f;     // center x
-    host_buffers.gaussian_center[1] = 0.0f;     // center y
-    host_buffers.gaussian_scale[0] = 1.0f;      // scale x
-    host_buffers.gaussian_scale[1] = 0.5f;      // scale y
-    host_buffers.gaussian_rotation[0] = 0.1f;   // rotation angle (radians)
-    host_buffers.gaussian_color[0] = 1.0f;      // red
-    host_buffers.gaussian_color[1] = 0.5f;      // green
-    host_buffers.gaussian_color[2] = 0.2f;      // blue
-    host_buffers.gaussian_opacity[0] = 0.8f;    // opacity
+    host_values.gaussian_center[0] = 0.0f;     // center x
+    host_values.gaussian_center[1] = 0.0f;     // center y
+    host_values.gaussian_scale[0] = 1.0f;      // scale x
+    host_values.gaussian_scale[1] = 0.5f;      // scale y
+    host_values.gaussian_rotation[0] = 0.1f;   // rotation angle (radians)
+    host_values.gaussian_color[0] = 1.0f;      // red
+    host_values.gaussian_color[1] = 0.5f;      // green
+    host_values.gaussian_color[2] = 0.2f;      // blue
+    host_values.gaussian_opacity[0] = 0.8f;    // opacity
     
     // Set query point
-    host_buffers.query_point[0] = 0.5f;         // query x
-    host_buffers.query_point[1] = 0.3f;         // query y
+    host_values.query_point[0] = 0.5f;         // query x
+    host_values.query_point[1] = 0.3f;         // query y
+    
+    // Initialize gradients to zero
+    memset(&host_gradients, 0, sizeof(GaussianSplattingValues));
     
     // Copy to device
-    cudaMemcpy(device_buffers.get(), &host_buffers, sizeof(GaussianSplattingBuffers), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_values.get(), &host_values, sizeof(GaussianSplattingValues), cudaMemcpyHostToDevice);
+    cudaMemcpy(device_gradients.get(), &host_gradients, sizeof(GaussianSplattingValues), cudaMemcpyHostToDevice);
     
     // Run the kernel
-    mini_gaussian_splatting_kernel<<<1, 1>>>(device_buffers.get());
+    mini_gaussian_splatting_kernel<<<1, 1>>>(device_values.get(), device_gradients.get());
     cudaDeviceSynchronize();
     
     // Copy results back to host
-    cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(GaussianSplattingBuffers), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&host_values, device_values.get(), sizeof(GaussianSplattingValues), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&host_gradients, device_gradients.get(), sizeof(GaussianSplattingValues), cudaMemcpyDeviceToHost);
     
     // Print results
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "\nGaussian Parameters:" << std::endl;
-    std::cout << "  Center: (" << host_buffers.gaussian_center[0] << ", " << host_buffers.gaussian_center[1] << ")" << std::endl;
-    std::cout << "  Scale: (" << host_buffers.gaussian_scale[0] << ", " << host_buffers.gaussian_scale[1] << ")" << std::endl;
-    std::cout << "  Rotation: " << host_buffers.gaussian_rotation[0] << " radians" << std::endl;
-    std::cout << "  Color: (" << host_buffers.gaussian_color[0] << ", " << host_buffers.gaussian_color[1] << ", " << host_buffers.gaussian_color[2] << ")" << std::endl;
-    std::cout << "  Opacity: " << host_buffers.gaussian_opacity[0] << std::endl;
+    std::cout << "  Center: (" << host_values.gaussian_center[0] << ", " << host_values.gaussian_center[1] << ")" << std::endl;
+    std::cout << "  Scale: (" << host_values.gaussian_scale[0] << ", " << host_values.gaussian_scale[1] << ")" << std::endl;
+    std::cout << "  Rotation: " << host_values.gaussian_rotation[0] << " radians" << std::endl;
+    std::cout << "  Color: (" << host_values.gaussian_color[0] << ", " << host_values.gaussian_color[1] << ", " << host_values.gaussian_color[2] << ")" << std::endl;
+    std::cout << "  Opacity: " << host_values.gaussian_opacity[0] << std::endl;
     
-    std::cout << "\nQuery Point: (" << host_buffers.query_point[0] << ", " << host_buffers.query_point[1] << ")" << std::endl;
+    std::cout << "\nQuery Point: (" << host_values.query_point[0] << ", " << host_values.query_point[1] << ")" << std::endl;
     
-    std::cout << "\nIntermediate Results:" << std::endl;
-    std::cout << "  Covariance (3-param): (" << host_buffers.covariance_3param[0] << ", " << host_buffers.covariance_3param[1] << ", " << host_buffers.covariance_3param[2] << ")" << std::endl;
-    std::cout << "  Inverse Covariance: (" << host_buffers.inv_covariance_3param[0] << ", " << host_buffers.inv_covariance_3param[1] << ", " << host_buffers.inv_covariance_3param[2] << ")" << std::endl;
-    std::cout << "  Mahalanobis Distance²: " << host_buffers.mahalanobis_dist_sq[0] << std::endl;
-    std::cout << "  Gaussian Value: " << host_buffers.gaussian_value[0] << std::endl;
-    std::cout << "  Color with Opacity: (" << host_buffers.color_with_opacity[0] << ", " << host_buffers.color_with_opacity[1] << ", " << host_buffers.color_with_opacity[2] << ")" << std::endl;
-    
-    std::cout << "\nFinal Result (L1+L2 norm): " << host_buffers.final_result[0] << std::endl;
+    std::cout << "\nFinal Result (L1+L2 norm): " << host_values.final_result[0] << std::endl;
     
     std::cout << "\nGradients:" << std::endl;
-    std::cout << "  Center grad: (" << host_buffers.gaussian_center_grad[0] << ", " << host_buffers.gaussian_center_grad[1] << ")" << std::endl;
-    std::cout << "  Scale grad: (" << host_buffers.gaussian_scale_grad[0] << ", " << host_buffers.gaussian_scale_grad[1] << ")" << std::endl;
-    std::cout << "  Rotation grad: " << host_buffers.gaussian_rotation_grad[0] << std::endl;
-    std::cout << "  Color grad: (" << host_buffers.gaussian_color_grad[0] << ", " << host_buffers.gaussian_color_grad[1] << ", " << host_buffers.gaussian_color_grad[2] << ")" << std::endl;
-    std::cout << "  Opacity grad: " << host_buffers.gaussian_opacity_grad[0] << std::endl;
-    std::cout << "  Query point grad: (" << host_buffers.query_point_grad[0] << ", " << host_buffers.query_point_grad[1] << ")" << std::endl;
+    std::cout << "  Center grad: (" << host_gradients.gaussian_center[0] << ", " << host_gradients.gaussian_center[1] << ")" << std::endl;
+    std::cout << "  Scale grad: (" << host_gradients.gaussian_scale[0] << ", " << host_gradients.gaussian_scale[1] << ")" << std::endl;
+    std::cout << "  Rotation grad: " << host_gradients.gaussian_rotation[0] << std::endl;
+    std::cout << "  Color grad: (" << host_gradients.gaussian_color[0] << ", " << host_gradients.gaussian_color[1] << ", " << host_gradients.gaussian_color[2] << ")" << std::endl;
+    std::cout << "  Opacity grad: " << host_gradients.gaussian_opacity[0] << std::endl;
+    std::cout << "  Query point grad: (" << host_gradients.query_point[0] << ", " << host_gradients.query_point[1] << ")" << std::endl;
 }
 
 int main() {
