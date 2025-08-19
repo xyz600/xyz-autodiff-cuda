@@ -44,12 +44,12 @@ __global__ void mini_gaussian_splatting_kernel(
     GaussianSplattingValues* gradients
 ) {
     // Create Variable references from separate value and gradient buffers
-    auto center = VariableRef<float, 2>(values->gaussian_center, gradients->gaussian_center);
-    VariableRef<float, 2> scale(values->gaussian_scale, gradients->gaussian_scale);
-    VariableRef<float, 1> rotation(values->gaussian_rotation, gradients->gaussian_rotation);
-    VariableRef<float, 3> color(values->gaussian_color, gradients->gaussian_color);
-    VariableRef<float, 1> opacity(values->gaussian_opacity, gradients->gaussian_opacity);
-    VariableRef<float, 2> query_point(values->query_point, gradients->query_point);
+    auto center = VariableRef<2, float>(values->gaussian_center, gradients->gaussian_center);
+    VariableRef<2, float> scale(values->gaussian_scale, gradients->gaussian_scale);
+    VariableRef<1, float> rotation(values->gaussian_rotation, gradients->gaussian_rotation);
+    VariableRef<3, float> color(values->gaussian_color, gradients->gaussian_color);
+    VariableRef<1, float> opacity(values->gaussian_opacity, gradients->gaussian_opacity);
+    VariableRef<2, float> query_point(values->query_point, gradients->query_point);
     
     // Step 1: Generate covariance matrix from scale and rotation
     auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);

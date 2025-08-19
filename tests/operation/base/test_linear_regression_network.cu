@@ -44,10 +44,10 @@ struct SimpleLinearRegressionNetwork {
         double delta = 1e-7
     ) const {
         // Create VariableRef for parameters
-        VariableRef<float, 1> a_var(&value->a, &diff->a);
-        VariableRef<float, 1> b_var(&value->b, &diff->b);
-        VariableRef<float, 1> c_var(&value->c, &diff->c);
-        VariableRef<float, 1> d_var(&value->d, &diff->d);
+        VariableRef<1, float> a_var(&value->a, &diff->a);
+        VariableRef<1, float> b_var(&value->b, &diff->b);
+        VariableRef<1, float> c_var(&value->c, &diff->c);
+        VariableRef<1, float> d_var(&value->d, &diff->d);
         
         // Compute (x1 - a)^2 using sub and squared operations
         auto x1_minus_a = op::sub_constant(a_var, value->x1);
@@ -89,10 +89,10 @@ struct RegularizedLinearRegressionNetwork {
         double delta = 1e-7
     ) const {
         // Create VariableRef for parameters
-        VariableRef<float, 1> a_var(&value->a, &diff->a);
-        VariableRef<float, 1> b_var(&value->b, &diff->b);
-        VariableRef<float, 1> c_var(&value->c, &diff->c);
-        VariableRef<float, 1> d_var(&value->d, &diff->d);
+        VariableRef<1, float> a_var(&value->a, &diff->a);
+        VariableRef<1, float> b_var(&value->b, &diff->b);
+        VariableRef<1, float> c_var(&value->c, &diff->c);
+        VariableRef<1, float> d_var(&value->d, &diff->d);
         
         // Compute prediction terms
         auto x1_minus_a = op::sub_constant(a_var, value->x1);
@@ -120,7 +120,7 @@ struct RegularizedLinearRegressionNetwork {
         // Scale regularization by 0.01
         float scale_data = 0.01f;
         float scale_grad = 0.0f;
-        VariableRef<float, 1> scale_var(&scale_data, &scale_grad);
+        VariableRef<1, float> scale_var(&scale_data, &scale_grad);
         auto scaled_reg = op::mul(scale_var, reg_sum);
         
         // Total loss = main_loss + regularization
@@ -144,7 +144,7 @@ struct SubtractSquareOnlyNetwork {
         double delta = 1e-7
     ) const {
         // Only test (a - x1)^2 where x1 is treated as a constant
-        VariableRef<float, 1> a_var(&value->a, &diff->a);
+        VariableRef<1, float> a_var(&value->a, &diff->a);
         auto a_minus_x1 = op::sub_constant(a_var, value->x1);
         auto result = op::squared(a_minus_x1);
         
@@ -165,10 +165,10 @@ struct ComplexInteractionNetwork {
         OptimizationParameters* diff,
         double delta = 1e-7
     ) const {
-        VariableRef<float, 1> a_var(&value->a, &diff->a);
-        VariableRef<float, 1> b_var(&value->b, &diff->b);
-        VariableRef<float, 1> c_var(&value->c, &diff->c);
-        VariableRef<float, 1> d_var(&value->d, &diff->d);
+        VariableRef<1, float> a_var(&value->a, &diff->a);
+        VariableRef<1, float> b_var(&value->b, &diff->b);
+        VariableRef<1, float> c_var(&value->c, &diff->c);
+        VariableRef<1, float> d_var(&value->d, &diff->d);
         
         // Complex interactions between parameters
         // Term 1: a * b

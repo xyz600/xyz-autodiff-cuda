@@ -16,16 +16,16 @@ using namespace xyz_autodiff;
 // ===========================================
 
 // Test types
-using TestVector3 = Variable<float, 3>;
-using TestVectorRef3 = VariableRef<float, 3>;
+using TestVector3 = Variable<3, float>;
+using TestVectorRef3 = VariableRef<3, float>;
 using L1NormOp = UnaryOperation<1, op::L1NormLogic<3>, TestVectorRef3>;
 using L2NormOp = UnaryOperation<1, op::L2NormLogic<3>, TestVectorRef3>;
 
 // Static assertions for concept compliance
 static_assert(VariableConcept<TestVector3>, 
-    "Variable<float, 3> should satisfy VariableConcept");
+    "Variable<3, float> should satisfy VariableConcept");
 static_assert(DifferentiableVariableConcept<TestVector3>, 
-    "Variable<float, 3> should satisfy DifferentiableVariableConcept");
+    "Variable<3, float> should satisfy DifferentiableVariableConcept");
 
 static_assert(VariableConcept<L1NormOp>, 
     "L1Norm Operation should satisfy VariableConcept");
@@ -69,7 +69,7 @@ __global__ void test_l1_norm_forward_kernel(float* result) {
     float data[3] = {3.0f, -4.0f, 5.0f};
     float grad[3] = {0,0,0};
     
-    VariableRef<float, 3> vec(data, grad);
+    VariableRef<3, float> vec(data, grad);
     
     auto l1_result = op::l1_norm(vec);
     l1_result.forward();
@@ -101,7 +101,7 @@ __global__ void test_l2_norm_forward_kernel(float* result) {
     float data[2] = {3.0f, 4.0f};
     float grad[2] = {0,0};
     
-    VariableRef<float, 2> vec(data, grad);
+    VariableRef<2, float> vec(data, grad);
     
     auto l2_result = op::l2_norm(vec);
     l2_result.forward();
@@ -164,7 +164,7 @@ __global__ void test_norm_interface_kernel(float* result) {
     float data[3] = {1.0f, 2.0f, 3.0f};
     float grad[3] = {0,0,0};
     
-    VariableRef<float, 3> input(data, grad);
+    VariableRef<3, float> input(data, grad);
     
     // Test all norm operations
     auto l1_op = op::l1_norm(input);

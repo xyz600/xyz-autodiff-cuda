@@ -20,7 +20,7 @@ protected:
 };
 
 // Static assert tests for concept compliance
-using TestQuaternion = Variable<float, 4>;
+using TestQuaternion = Variable<4, float>;
 using QuatToMatOp = UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternion>;
 
 static_assert(VariableConcept<TestQuaternion>, 
@@ -45,7 +45,7 @@ __global__ void test_quaternion_to_rotation_matrix_forward_kernel(float* result)
     float quat_data[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     float quat_grad[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     
-    VariableRef<float, 4> quaternion(quat_data, quat_grad);
+    VariableRef<4, float> quaternion(quat_data, quat_grad);
     
     // Create operation
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
@@ -88,7 +88,7 @@ __global__ void test_quaternion_90_degree_z_rotation_kernel(float* result) {
     float quat_data[4] = {0.0f, 0.0f, sqrt2_2, sqrt2_2};
     float quat_grad[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     
-    VariableRef<float, 4> quaternion(quat_data, quat_grad);
+    VariableRef<4, float> quaternion(quat_data, quat_grad);
     
     // Create operation
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
@@ -130,7 +130,7 @@ __global__ void test_quaternion_gradient_verification_kernel(float* result) {
     double quat_data[4] = {0.1, 0.0, 0.0, 0.995}; // Approximately normalized
     double quat_grad[4] = {0.0, 0.0, 0.0, 0.0};
     
-    VariableRef<double, 4> quaternion(quat_data, quat_grad);
+    VariableRef<4, double> quaternion(quat_data, quat_grad);
     
     // Create operation
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
@@ -184,7 +184,7 @@ __global__ void test_quaternion_operation_interface_kernel(float* result) {
     float quat_data[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     float quat_grad[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     
-    VariableRef<float, 4> quaternion(quat_data, quat_grad);
+    VariableRef<4, float> quaternion(quat_data, quat_grad);
     
     // Create operation using helper function
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
@@ -224,7 +224,7 @@ __global__ void test_quaternion_operation_chaining_kernel(float* result) {
     float quat_data[4] = {0.1f, 0.2f, 0.3f, 0.926f};  // Approximately normalized
     float quat_grad[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     // FIXME: atomic 演算しなくていい部分の修正
-    VariableRef<float, 4> quaternion(quat_data, quat_grad);
+    VariableRef<4, float> quaternion(quat_data, quat_grad);
 
     // Create quaternion to rotation matrix operation
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);

@@ -28,7 +28,7 @@ struct BroadcastTestBuffer {
 
 // CUDA kernel to test broadcast operation: 1 -> 4
 __global__ void test_broadcast_1_to_4_kernel(BroadcastTestBuffer* buffer) {
-    VariableRef<float, 1> input(buffer->input_data, buffer->input_grad);
+    VariableRef<1, float> input(buffer->input_data, buffer->input_grad);
     
     input.zero_grad();
     
@@ -61,7 +61,7 @@ struct LargeBroadcastTestBuffer {
 
 // CUDA kernel to test larger broadcast operation: 1 -> 8
 __global__ void test_broadcast_1_to_8_kernel(LargeBroadcastTestBuffer* buffer) {
-    VariableRef<double, 1> input(buffer->input_data, buffer->input_grad);
+    VariableRef<1, double> input(buffer->input_data, buffer->input_grad);
     
     input.zero_grad();
     
@@ -198,8 +198,8 @@ struct ChainedBroadcastTestBuffer {
 };
 
 __global__ void test_chained_broadcast_kernel(ChainedBroadcastTestBuffer* buffer) {
-    VariableRef<float, 1> scalar(buffer->scalar_data, buffer->scalar_grad);
-    VariableRef<float, 3> vector(buffer->vector_data, buffer->vector_grad);
+    VariableRef<1, float> scalar(buffer->scalar_data, buffer->scalar_grad);
+    VariableRef<3, float> vector(buffer->vector_data, buffer->vector_grad);
     
     scalar.zero_grad();
     vector.zero_grad();

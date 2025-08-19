@@ -13,7 +13,7 @@ requires BinaryLogicParameterConcept<Input1, Input2>
 struct SubLogic {
     using T = typename Input1::value_type;
     static constexpr std::size_t Dim = Input1::size;
-    using Output = Variable<T, Dim>;
+    using Output = Variable<Dim, T>;
     
     // Define output dimension as constexpr
     static constexpr std::size_t outputDim = Dim;

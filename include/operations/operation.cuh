@@ -11,11 +11,11 @@ namespace xyz_autodiff {
 
 // 1入力1出力のOperation
 template <std::size_t OutputSize, typename Logic, typename Input>
-requires UnaryLogicConcept<Logic, Input, Variable<typename Input::value_type, OutputSize>>
+requires UnaryLogicConcept<Logic, Input, Variable<OutputSize, typename Input::value_type>>
 class UnaryOperation {
 public:
     using input_type = Input;
-    using output_type = Variable<typename Input::value_type, OutputSize>;
+    using output_type = Variable<OutputSize, typename Input::value_type>;
     using value_type = typename Input::value_type;
     static constexpr std::size_t output_size = OutputSize;
     static constexpr std::size_t size = OutputSize;
@@ -184,12 +184,12 @@ public:
 
 // 2入力1出力のOperation
 template <std::size_t OutputSize, typename Logic, typename Input1, typename Input2>
-requires BinaryLogicConcept<Logic, Input1, Input2, Variable<typename Input1::value_type, OutputSize>>
+requires BinaryLogicConcept<Logic, Input1, Input2, Variable<OutputSize, typename Input1::value_type>>
 class BinaryOperation {
 public:
     using input1_type = Input1;
     using input2_type = Input2;
-    using output_type = Variable<typename Input1::value_type, OutputSize>;
+    using output_type = Variable<OutputSize, typename Input1::value_type>;
     using value_type = typename Input1::value_type;
     static constexpr std::size_t output_size = OutputSize;
     static constexpr std::size_t size = OutputSize;
@@ -407,13 +407,13 @@ public:
 
 // 3入力1出力のOperation
 template <std::size_t OutputSize, typename Logic, typename Input1, typename Input2, typename Input3>
-requires TernaryLogicConcept<Logic, Input1, Input2, Input3, Variable<typename Input1::value_type, OutputSize>>
+requires TernaryLogicConcept<Logic, Input1, Input2, Input3, Variable<OutputSize, typename Input1::value_type>>
 class TernaryOperation {
 public:
     using input1_type = Input1;
     using input2_type = Input2;
     using input3_type = Input3;
-    using output_type = Variable<typename Input1::value_type, OutputSize>;
+    using output_type = Variable<OutputSize, typename Input1::value_type>;
     using value_type = typename Input1::value_type;
     static constexpr std::size_t output_size = OutputSize;
     static constexpr std::size_t size = OutputSize;

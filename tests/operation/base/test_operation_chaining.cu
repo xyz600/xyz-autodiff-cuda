@@ -34,9 +34,9 @@ __global__ void test_chaining_analytical_kernel(
     TestParameters<T>* params, T* output_data, T* output_grad) {
     
     // Variable作成（ポインタ演算で各パラメータを指定）
-    VariableRef<T, 1> x_var(&params->value[0], &params->grad[0]);  // x
-    VariableRef<T, 1> y_var(&params->value[1], &params->grad[1]);  // y
-    VariableRef<T, 1> z_var(&params->value[2], &params->grad[2]);  // z
+    VariableRef<1, T> x_var(&params->value[0], &params->grad[0]);  // x
+    VariableRef<1, T> y_var(&params->value[1], &params->grad[1]);  // y
+    VariableRef<1, T> z_var(&params->value[2], &params->grad[2]);  // z
     
     // f(x, y, z) = xz + y の計算
     auto mul_result = op::mul(x_var, z_var);
@@ -54,9 +54,9 @@ __global__ void test_chaining_numerical_kernel(
     TestParameters<T>* params, T* output_data, T* output_grad, T delta) {
     
     // Variable作成（ポインタ演算で各パラメータを指定）
-    VariableRef<T, 1> x_var(&params->value[0], &params->grad[0]);  // x
-    VariableRef<T, 1> y_var(&params->value[1], &params->grad[1]);  // y
-    VariableRef<T, 1> z_var(&params->value[2], &params->grad[2]);  // z
+    VariableRef<1, T> x_var(&params->value[0], &params->grad[0]);  // x
+    VariableRef<1, T> y_var(&params->value[1], &params->grad[1]);  // y
+    VariableRef<1, T> z_var(&params->value[2], &params->grad[2]);  // z
     
     // f(x, y, z) = xz + y の計算
     auto mul_result = op::mul(x_var, z_var);

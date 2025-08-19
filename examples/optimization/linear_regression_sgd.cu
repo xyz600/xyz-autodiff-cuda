@@ -89,10 +89,10 @@ __global__ void parallel_gradient_computation_kernel(
     if (idx >= batch_size) return;
     
     // パラメータ変数の作成（ポインタ演算で各パラメータを指定）
-    VariableRef<double, 1> a_var(&params->value[0], &params->grad[0]);  // a
-    VariableRef<double, 1> b_var(&params->value[1], &params->grad[1]);  // b
-    VariableRef<double, 1> c_var(&params->value[2], &params->grad[2]);  // c
-    VariableRef<double, 1> d_var(&params->value[3], &params->grad[3]);  // d
+    VariableRef<1, double> a_var(&params->value[0], &params->grad[0]);  // a
+    VariableRef<1, double> b_var(&params->value[1], &params->grad[1]);  // b
+    VariableRef<1, double> c_var(&params->value[2], &params->grad[2]);  // c
+    VariableRef<1, double> d_var(&params->value[3], &params->grad[3]);  // d
     
     // 現在のスレッドが担当するデータポイント
     const DataPoint& data = batch_data[idx];

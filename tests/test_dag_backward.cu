@@ -49,9 +49,9 @@ __global__ void test_dag_single_shared_node_kernel(DAGTestBuffers<double>* buffe
     buffers->c_grad[0] = 0.0;
     
     // 変数の作成
-    VariableRef<double, 1> a_var(buffers->a_data, buffers->a_grad);
-    VariableRef<double, 1> two_var(buffers->b_data, buffers->b_grad);
-    VariableRef<double, 1> three_var(buffers->c_data, buffers->c_grad);
+    VariableRef<1, double> a_var(buffers->a_data, buffers->a_grad);
+    VariableRef<1, double> two_var(buffers->b_data, buffers->b_grad);
+    VariableRef<1, double> three_var(buffers->c_data, buffers->c_grad);
     
     // DAGの構築: aが共有ノード
     auto b = op::add(a_var, two_var);     // b = a + 2
@@ -98,9 +98,9 @@ __global__ void test_dag_multiple_paths_kernel(DAGTestBuffers<double>* buffers) 
     buffers->c_grad[0] = 0.0;
     
     // 変数の作成
-    VariableRef<double, 1> a_var(buffers->a_data, buffers->a_grad);
-    VariableRef<double, 1> two_var(buffers->b_data, buffers->b_grad);
-    VariableRef<double, 1> one_var(buffers->c_data, buffers->c_grad);
+    VariableRef<1, double> a_var(buffers->a_data, buffers->a_grad);
+    VariableRef<1, double> two_var(buffers->b_data, buffers->b_grad);
+    VariableRef<1, double> one_var(buffers->c_data, buffers->c_grad);
     
     // DAGの構築: aが3つのパスを持つ
     auto b = op::mul(a_var, two_var);     // b = a * 2
@@ -143,7 +143,7 @@ __global__ void test_dag_self_multiplication_kernel(DAGTestBuffers<double>* buff
     buffers->a_grad[0] = 0.0;
     
     // 変数の作成
-    VariableRef<double, 1> a_var(buffers->a_data, buffers->a_grad);
+    VariableRef<1, double> a_var(buffers->a_data, buffers->a_grad);
     
     // DAGの構築: a * a
     auto b = op::mul(a_var, a_var);       // b = a * a

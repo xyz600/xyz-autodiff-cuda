@@ -20,7 +20,7 @@ TEST_UNARY_GRADIENT(op::ExpLogic<1>, 1, 1, ExpLogic1D)
 TEST_UNARY_GRADIENT(op::ExpLogic<5>, 5, 5, ExpLogic5D)
 
 // AddLogicのテスト (BinaryOperation) - 一旦コメントアウト（型推論の問題を解決するため）
-// TEST_BINARY_GRADIENT(xyz_autodiff::op::AddLogic<VariableRef<double, 1>, VariableRef<double, 1>>, 1, 1, 1, AddLogic1D)
+// TEST_BINARY_GRADIENT(xyz_autodiff::op::AddLogic<VariableRef<1, double>, VariableRef<1, double>>, 1, 1, 1, AddLogic1D)
 
 // より大きな次元でのテスト
 TEST_UNARY_GRADIENT(op::SigmoidLogic<10>, 10, 10, SigmoidLogic10D)
@@ -31,7 +31,7 @@ TEST_UNARY_GRADIENT(op::SigmoidLogic<7>, 7, 7, SigmoidLogic7D)
 TEST_UNARY_GRADIENT(op::ExpLogic<8>, 8, 8, ExpLogic8D)
 
 // より複雑なBinaryOperationテスト（将来的にAddLogic以外を追加する際に使用）
-// TEST_BINARY_GRADIENT(xyz_autodiff::op::AddLogic<VariableRef<double, 3>, VariableRef<double, 3>>, 3, 3, 1, AddLogic3D)
+// TEST_BINARY_GRADIENT(xyz_autodiff::op::AddLogic<VariableRef<3, double>, VariableRef<3, double>>, 3, 3, 1, AddLogic3D)
 
 // スケーラビリティテスト
 TEST_UNARY_GRADIENT(op::SigmoidLogic<20>, 20, 20, SigmoidLogicLarge)
@@ -65,12 +65,12 @@ TEST_F(GradientVerificationTest, EdgeCaseSingleDimension) {
 
 // BinaryOperationのテスト（element-wise operations）
 // Type aliases to handle commas in template arguments
-using MulLogic1D_t = xyz_autodiff::op::MulLogic<VariableRef<double, 1>, VariableRef<double, 1>>;
-using AddLogic1D_t = xyz_autodiff::op::AddLogic<VariableRef<double, 1>, VariableRef<double, 1>>;
-using MulLogic3D_t = xyz_autodiff::op::MulLogic<VariableRef<double, 3>, VariableRef<double, 3>>;
-using AddLogic3D_t = xyz_autodiff::op::AddLogic<VariableRef<double, 3>, VariableRef<double, 3>>;
-using MulLogic5D_t = xyz_autodiff::op::MulLogic<VariableRef<double, 5>, VariableRef<double, 5>>;
-using AddLogic5D_t = xyz_autodiff::op::AddLogic<VariableRef<double, 5>, VariableRef<double, 5>>;
+using MulLogic1D_t = xyz_autodiff::op::MulLogic<VariableRef<1, double>, VariableRef<1, double>>;
+using AddLogic1D_t = xyz_autodiff::op::AddLogic<VariableRef<1, double>, VariableRef<1, double>>;
+using MulLogic3D_t = xyz_autodiff::op::MulLogic<VariableRef<3, double>, VariableRef<3, double>>;
+using AddLogic3D_t = xyz_autodiff::op::AddLogic<VariableRef<3, double>, VariableRef<3, double>>;
+using MulLogic5D_t = xyz_autodiff::op::MulLogic<VariableRef<5, double>, VariableRef<5, double>>;
+using AddLogic5D_t = xyz_autodiff::op::AddLogic<VariableRef<5, double>, VariableRef<5, double>>;
 
 // 1次元
 TEST_BINARY_GRADIENT(MulLogic1D_t, 1, 1, 1, MulLogic1D)

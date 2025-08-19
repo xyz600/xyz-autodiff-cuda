@@ -19,7 +19,7 @@ struct VariableTestBuffers {
 template <typename T, std::size_t N>
 __global__ void test_variable_kernel(T* data, T* grad, T* output) {
     // VariableRef作成 (外部バッファへの参照)
-    VariableRef<T, N> var(data, grad);
+    VariableRef<N, T> var(data, grad);
     
     // データアクセステスト
     for (std::size_t i = 0; i < N; ++i) {
@@ -45,7 +45,7 @@ __global__ void test_variable_kernel(T* data, T* grad, T* output) {
 
 template <typename T, std::size_t N>
 __global__ void test_variable_operations_kernel(T* data, T* grad, T* output) {
-    VariableRef<T, N> var(data, grad);
+    VariableRef<N, T> var(data, grad);
     
     // zero_gradテスト
     var.zero_grad();
@@ -60,7 +60,7 @@ __global__ void test_variable_operations_kernel(T* data, T* grad, T* output) {
 template <typename T, std::size_t N>
 __global__ void test_variable_self_buffer_kernel(T* output) {
     // Variable作成 (自己バッファ)
-    Variable<T, N> var;
+    Variable<N, T> var;
     
     // データ設定
     var.zero_grad();
@@ -181,16 +181,16 @@ TEST_F(VariableTest, SelfBufferVariableTest) {
 
 TEST_F(VariableTest, ConceptCheck) {
     // Concept チェック - Variable と VariableRef 両方
-    static_assert(xyz_autodiff::VariableConcept<Variable<float, 4>>);
-    static_assert(xyz_autodiff::DifferentiableVariableConcept<Variable<float, 4>>);
-    static_assert(xyz_autodiff::VariableConcept<VariableRef<float, 4>>);
-    static_assert(xyz_autodiff::DifferentiableVariableConcept<VariableRef<float, 4>>);
+    static_assert(xyz_autodiff::VariableConcept<Variable<4, float>>);
+    static_assert(xyz_autodiff::DifferentiableVariableConcept<Variable<4, float>>);
+    static_assert(xyz_autodiff::VariableConcept<VariableRef<4, float>>);
+    static_assert(xyz_autodiff::DifferentiableVariableConcept<VariableRef<4, float>>);
     
     // サイズチェック
-    EXPECT_EQ((xyz_autodiff::Variable<float, 4>::size), 4);
-    EXPECT_EQ((xyz_autodiff::Variable<double, 10>::size), 10);
-    EXPECT_EQ((xyz_autodiff::VariableRef<float, 4>::size), 4);
-    EXPECT_EQ((xyz_autodiff::VariableRef<double, 10>::size), 10);
+    EXPECT_EQ((xyz_autodiff::Variable<4, float>::size), 4);
+    EXPECT_EQ((xyz_autodiff::Variable<10, double>::size), 10);
+    EXPECT_EQ((xyz_autodiff::VariableRef<4, float>::size), 4);
+    EXPECT_EQ((xyz_autodiff::VariableRef<10, double>::size), 10);
 }
 
 int main(int argc, char** argv) {

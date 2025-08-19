@@ -19,7 +19,7 @@ requires UnaryLogicParameterConcept<Input> && (Input::size == 9)
 struct MatrixToSymmetric3ParamLogic {
     using T = typename Input::value_type;
     static constexpr std::size_t Dim = 3;  // 3 parameters for 2x2 symmetric matrix
-    using Output = Variable<T, Dim>;
+    using Output = Variable<Dim, T>;
     
     static constexpr std::size_t outputDim = Dim;
     
@@ -57,7 +57,7 @@ requires UnaryLogicParameterConcept<Input> && (Input::size == 3)
 struct Symmetric3ParamToMatrixLogic {
     using T = typename Input::value_type;
     static constexpr std::size_t Dim = 4;  // 2x2 matrix
-    using Output = Variable<T, Dim>;
+    using Output = Variable<Dim, T>;
     
     static constexpr std::size_t outputDim = Dim;
     

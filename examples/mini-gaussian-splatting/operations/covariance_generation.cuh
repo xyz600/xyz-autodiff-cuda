@@ -19,7 +19,7 @@ struct CovarianceMatrixGenerationLogic {
     using T = typename Input1::value_type;
     static_assert(std::is_same_v<T, typename Input2::value_type>, "Input types must match");
     static constexpr std::size_t Dim = 4;  // 2x2 matrix
-    using Output = Variable<T, Dim>;
+    using Output = Variable<Dim, T>;
     
     static constexpr std::size_t outputDim = Dim;
     
@@ -83,7 +83,7 @@ requires UnaryLogicParameterConcept<Input> && (Input::size == 4)
 struct MatrixToCovariance3ParamLogic {
     using T = typename Input::value_type;
     static constexpr std::size_t Dim = 3;  // 3 parameters for symmetric 2x2 matrix
-    using Output = Variable<T, Dim>;
+    using Output = Variable<Dim, T>;
     
     static constexpr std::size_t outputDim = Dim;
     
@@ -146,7 +146,7 @@ struct ScaleRotationToCovariance3ParamLogic {
     using T = typename Input1::value_type;
     static_assert(std::is_same_v<T, typename Input2::value_type>, "Input types must match");
     static constexpr std::size_t Dim = 3;  // 3 parameters for symmetric matrix
-    using Output = Variable<T, Dim>;
+    using Output = Variable<Dim, T>;
     
     static constexpr std::size_t outputDim = Dim;
     

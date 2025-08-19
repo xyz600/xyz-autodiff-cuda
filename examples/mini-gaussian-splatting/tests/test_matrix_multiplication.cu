@@ -15,15 +15,15 @@ using namespace xyz_autodiff;
 // ===========================================
 
 // Test types
-using TestMatrix9 = Variable<float, 9>;
-using TestMatrixRef9 = VariableRef<float, 9>;
+using TestMatrix9 = Variable<9, float>;
+using TestMatrixRef9 = VariableRef<9, float>;
 using MatMulOp = BinaryOperation<9, op::MatrixMultiplication3x3Logic<TestMatrixRef9, TestMatrixRef9>, TestMatrixRef9, TestMatrixRef9>;
 
 // Static assertions for concept compliance
 static_assert(VariableConcept<TestMatrix9>, 
-    "Variable<float, 9> should satisfy VariableConcept");
+    "Variable<9, float> should satisfy VariableConcept");
 static_assert(DifferentiableVariableConcept<TestMatrix9>, 
-    "Variable<float, 9> should satisfy DifferentiableVariableConcept");
+    "Variable<9, float> should satisfy DifferentiableVariableConcept");
 
 static_assert(VariableConcept<MatMulOp>, 
     "MatrixMultiplication Operation should satisfy VariableConcept");
@@ -62,8 +62,8 @@ __global__ void test_matrix_multiply_3x3_forward_kernel(float* result) {
     float b_data[9] = {9,8,7,6,5,4,3,2,1};
     float b_grad[9] = {0,0,0,0,0,0,0,0,0};
     
-    VariableRef<float, 9> A(a_data, a_grad);
-    VariableRef<float, 9> B(b_data, b_grad);
+    VariableRef<9, float> A(a_data, a_grad);
+    VariableRef<9, float> B(b_data, b_grad);
     
     auto C = op::matrix_multiply_3x3(A, B);
     C.forward();
@@ -103,8 +103,8 @@ __global__ void test_matrix_multiply_identity_kernel(float* result) {
     float matrix[9] = {2,3,4,5,6,7,8,9,10};
     float matrix_grad[9] = {0,0,0,0,0,0,0,0,0};
     
-    VariableRef<float, 9> I(identity, identity_grad);
-    VariableRef<float, 9> M(matrix, matrix_grad);
+    VariableRef<9, float> I(identity, identity_grad);
+    VariableRef<9, float> M(matrix, matrix_grad);
     
     auto R = op::matrix_multiply_3x3(I, M);
     R.forward();
@@ -140,7 +140,7 @@ TEST_F(MatrixMultiplicationTest, IdentityMatrix) {
 
 // Use the binary gradient tester utility
 TEST_F(MatrixMultiplicationTest, GradientVerification) {
-    using Logic = op::MatrixMultiplication3x3Logic<VariableRef<double, 9>, VariableRef<double, 9>>;
+    using Logic = op::MatrixMultiplication3x3Logic<VariableRef<9, double>, VariableRef<9, double>>;
     test::BinaryGradientTester<Logic, 9, 9, 9>::test_custom(
         "MatrixMultiplication3x3", 
         50,      // num_tests
@@ -163,8 +163,8 @@ __global__ void test_matrix_multiply_gradient_kernel(double* result) {
                         0.1, 0.3, 0.7};
     double b_grad[9] = {0,0,0,0,0,0,0,0,0};
     
-    VariableRef<double, 9> A(a_data, a_grad);
-    VariableRef<double, 9> B(b_data, b_grad);
+    VariableRef<9, double> A(a_data, a_grad);
+    VariableRef<9, double> B(b_data, b_grad);
     
     auto C = op::matrix_multiply_3x3(A, B);
     
@@ -235,8 +235,8 @@ __global__ void test_matrix_multiply_interface_kernel(float* result) {
     float b_data[9] = {9,8,7,6,5,4,3,2,1};
     float b_grad[9] = {0,0,0,0,0,0,0,0,0};
     
-    VariableRef<float, 9> A(a_data, a_grad);
-    VariableRef<float, 9> B(b_data, b_grad);
+    VariableRef<9, float> A(a_data, a_grad);
+    VariableRef<9, float> B(b_data, b_grad);
     
     auto C = op::matrix_multiply_3x3(A, B);
     

@@ -31,8 +31,8 @@ struct VariableAddTestBuffer {
 // CUDA kernel to test Variable + Variable operator
 __global__ void test_variable_add_variable_kernel(VariableAddTestBuffer* buffer) {
     // Create VariableRef from buffer data and gradients
-    VariableRef<float, 3> var1(buffer->var1_data, buffer->var1_grad);
-    VariableRef<float, 3> var2(buffer->var2_data, buffer->var2_grad);
+    VariableRef<3, float> var1(buffer->var1_data, buffer->var1_grad);
+    VariableRef<3, float> var2(buffer->var2_data, buffer->var2_grad);
     
     // Zero gradients
     var1.zero_grad();
@@ -110,8 +110,8 @@ struct VariableSubTestBuffer {
 // CUDA kernel to test Variable - Variable operator
 __global__ void test_variable_sub_variable_kernel(VariableSubTestBuffer* buffer) {
     // Create VariableRef from buffer data and gradients
-    VariableRef<double, 2> var1(buffer->var1_data, buffer->var1_grad);
-    VariableRef<double, 2> var2(buffer->var2_data, buffer->var2_grad);
+    VariableRef<2, double> var1(buffer->var1_data, buffer->var1_grad);
+    VariableRef<2, double> var2(buffer->var2_data, buffer->var2_grad);
     
     // Zero gradients
     var1.zero_grad();
@@ -192,9 +192,9 @@ struct VariableChainTestBuffer {
 // CUDA kernel to test operation chain: (var1 + var2) - var3
 __global__ void test_variable_chain_operations_kernel(VariableChainTestBuffer* buffer) {
     // Create VariableRef from buffer data and gradients
-    VariableRef<float, 2> var1(buffer->var1_data, buffer->var1_grad);
-    VariableRef<float, 2> var2(buffer->var2_data, buffer->var2_grad);
-    VariableRef<float, 2> var3(buffer->var3_data, buffer->var3_grad);
+    VariableRef<2, float> var1(buffer->var1_data, buffer->var1_grad);
+    VariableRef<2, float> var2(buffer->var2_data, buffer->var2_grad);
+    VariableRef<2, float> var3(buffer->var3_data, buffer->var3_grad);
     
     // Zero gradients
     var1.zero_grad();
