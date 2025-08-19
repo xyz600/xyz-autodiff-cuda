@@ -196,3 +196,24 @@ public:
 };
 
 } // namespace xyz_autodiff
+
+// 演算子オーバーロード
+#include "operations/binary/add_constant_logic.cuh"
+
+namespace xyz_autodiff {
+
+// Variable + constant
+template <typename T, std::size_t N>
+requires FloatingPointConcept<T>
+__device__ auto operator+(Variable<T, N>& var, const T& constant) {
+    return op::add_constant(var, constant);
+}
+
+// VariableRef + constant
+template <typename T, std::size_t N>
+requires FloatingPointConcept<T>
+__device__ auto operator+(VariableRef<T, N>& var, const T& constant) {
+    return op::add_constant(var, constant);
+}
+
+} // namespace xyz_autodiff

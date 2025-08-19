@@ -58,7 +58,8 @@
       "Bash(./tests/test_norm_operations)",
       "Bash(./tests/test_sym_matrix2_inv:*)",
       "Bash(./examples/optimization/test_linear_regression_gradient:*)",
-      "Bash(./tests/test_linear_regression_network:*)"
+      "Bash(./tests/test_linear_regression_network:*)",
+      "Bash(./tests/test_variable_operators)"
     ],
     "deny": []
   }
