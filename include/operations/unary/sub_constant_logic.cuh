@@ -13,7 +13,7 @@ requires UnaryLogicParameterConcept<Input>
 struct SubConstantLogic {
     using T = typename Input::value_type;
     static constexpr std::size_t Dim = Input::size;
-    using Output = Variable<T, Dim>;
+    using Output = Variable<Dim, T>;
     
     static constexpr std::size_t outputDim = Dim;
     

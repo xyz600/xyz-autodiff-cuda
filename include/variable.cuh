@@ -7,7 +7,7 @@
 namespace xyz_autodiff {
 
 // VariableRef - 外部バッファへの参照版 (現在のVariableの設計)
-template <typename T, std::size_t N>
+template <std::size_t N, typename T>
 requires FloatingPointConcept<T>
 class VariableRef {
 public:
@@ -63,7 +63,7 @@ public:
 };
 
 // Variable - 自身でバッファを持つ版
-template <typename T, std::size_t N>
+template <std::size_t N, typename T>
 requires FloatingPointConcept<T>
 class Variable {
 public:
@@ -183,12 +183,12 @@ public:
     
     
     // VariableRefに変換
-    __device__ VariableRef<T, N> ref() noexcept {
-        return VariableRef<T, N>(data_, grad_);
+    __device__ VariableRef<N, T> ref() noexcept {
+        return VariableRef<N, T>(data_, grad_);
     }
     
-    __device__ VariableRef<T, N> ref() const noexcept {
-        return VariableRef<T, N>(const_cast<T*>(data_), const_cast<T*>(grad_));
+    __device__ VariableRef<N, T> ref() const noexcept {
+        return VariableRef<N, T>(const_cast<T*>(data_), const_cast<T*>(grad_));
     }
     
 };

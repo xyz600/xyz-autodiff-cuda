@@ -19,7 +19,7 @@ struct SymmetricMatrixTestBuffers {
 template <typename T>
 __global__ void test_symmetric_matrix_basic_kernel(T* data, T* grad, T* result) {
     // 3x3対称行列（6要素）を作成
-    VariableRef<T, 6> var(data, grad);
+    VariableRef<6, T> var(data, grad);
     auto sym_matrix = make_symmetric_matrix_view<3>(var);
     
     // 上三角要素の設定
@@ -49,7 +49,7 @@ __global__ void test_symmetric_matrix_basic_kernel(T* data, T* grad, T* result) 
 // SymmetricMatrix transpose テスト用CUDAカーネル
 template <typename T>
 __global__ void test_symmetric_matrix_transpose_kernel(T* data, T* grad, T* result) {
-    VariableRef<T, 6> var(data, grad);
+    VariableRef<6, T> var(data, grad);
     auto sym_matrix = make_symmetric_matrix_view<3>(var);
     
     // データ設定
@@ -75,7 +75,7 @@ __global__ void test_symmetric_matrix_transpose_kernel(T* data, T* grad, T* resu
 // SymmetricMatrix ストレージテスト用CUDAカーネル
 template <typename T>
 __global__ void test_symmetric_matrix_storage_kernel(T* data, T* grad, T* result) {
-    VariableRef<T, 6> var(data, grad);
+    VariableRef<6, T> var(data, grad);
     auto sym_matrix = make_symmetric_matrix_view<3>(var);
     
     // 直接的にストレージにアクセス
@@ -193,16 +193,16 @@ TEST_F(SymmetricMatrixTest, SymmetricMatrixStorage) {
 
 TEST_F(SymmetricMatrixTest, ConceptCheck) {
     // Concept チェック
-    static_assert(xyz_autodiff::VariableConcept<SymmetricMatrixView<float, 3, Variable<float, 6>>>);
-    static_assert(xyz_autodiff::DifferentiableVariableConcept<SymmetricMatrixView<float, 3, Variable<float, 6>>>);
-    static_assert(xyz_autodiff::MatrixViewConcept<SymmetricMatrixView<float, 3, Variable<float, 6>>>);
-    static_assert(xyz_autodiff::MatrixViewConcept<SymmetricMatrixView<double, 4, Variable<double, 10>>>);
+    static_assert(xyz_autodiff::VariableConcept<SymmetricMatrixView<float, 3, Variable<6, float>>>);
+    static_assert(xyz_autodiff::DifferentiableVariableConcept<SymmetricMatrixView<float, 3, Variable<6, float>>>);
+    static_assert(xyz_autodiff::MatrixViewConcept<SymmetricMatrixView<float, 3, Variable<6, float>>>);
+    static_assert(xyz_autodiff::MatrixViewConcept<SymmetricMatrixView<double, 4, Variable<10, double>>>);
     
     // サイズチェック
-    EXPECT_EQ((SymmetricMatrixView<float, 3, Variable<float, 6>>::rows), 3);
-    EXPECT_EQ((SymmetricMatrixView<float, 3, Variable<float, 6>>::cols), 3);
-    EXPECT_EQ((SymmetricMatrixView<float, 3, Variable<float, 6>>::storage_size), 6);  // 3*(3+1)/2 = 6
-    EXPECT_EQ((SymmetricMatrixView<double, 4, Variable<double, 10>>::storage_size), 10);  // 4*(4+1)/2 = 10
+    EXPECT_EQ((SymmetricMatrixView<float, 3, Variable<6, float>>::rows), 3);
+    EXPECT_EQ((SymmetricMatrixView<float, 3, Variable<6, float>>::cols), 3);
+    EXPECT_EQ((SymmetricMatrixView<float, 3, Variable<6, float>>::storage_size), 6);  // 3*(3+1)/2 = 6
+    EXPECT_EQ((SymmetricMatrixView<double, 4, Variable<10, double>>::storage_size), 10);  // 4*(4+1)/2 = 10
 }
 
 int main(int argc, char** argv) {

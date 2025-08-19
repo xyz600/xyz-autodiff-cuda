@@ -28,9 +28,9 @@ __global__ void parallel_gradient_accumulation_kernel(
     if (tid >= num_threads) return;
     
     // グローバルメモリを参照するVariableRefを作成（ポインタ演算で各パラメータを指定）
-    VariableRef<double, 1> x_ref(&params->value[0], &params->grad[0]);
-    VariableRef<double, 1> y_ref(&params->value[1], &params->grad[1]);
-    VariableRef<double, 1> result_ref(&params->value[2], &params->grad[2]);
+    VariableRef<1, double> x_ref(&params->value[0], &params->grad[0]);
+    VariableRef<1, double> y_ref(&params->value[1], &params->grad[1]);
+    VariableRef<1, double> result_ref(&params->value[2], &params->grad[2]);
     
     // f(x, y) = x + y の勾配は単純に ∂f/∂x = 1, ∂f/∂y = 1
     // 各スレッドが1.0ずつ勾配を加算

@@ -15,17 +15,17 @@ using namespace xyz_autodiff;
 // ===========================================
 
 // Test types
-using TestVector2 = Variable<float, 2>;
-using TestVector3 = Variable<float, 3>;
-using TestVectorRef2 = VariableRef<float, 2>;
-using TestVectorRef3 = VariableRef<float, 3>;
+using TestVector2 = Variable<2, float>;
+using TestVector3 = Variable<3, float>;
+using TestVectorRef2 = VariableRef<2, float>;
+using TestVectorRef3 = VariableRef<3, float>;
 using MahalDistOp = BinaryOperation<1, op::MahalanobisDistanceLogic<TestVectorRef2, TestVectorRef3>, TestVectorRef2, TestVectorRef3>;
 
 // Static assertions for concept compliance
 static_assert(VariableConcept<TestVector2>, 
-    "Variable<float, 2> should satisfy VariableConcept");
+    "Variable<2, float> should satisfy VariableConcept");
 static_assert(DifferentiableVariableConcept<TestVector2>, 
-    "Variable<float, 2> should satisfy DifferentiableVariableConcept");
+    "Variable<2, float> should satisfy DifferentiableVariableConcept");
 
 static_assert(VariableConcept<MahalDistOp>, 
     "MahalanobisDistance Operation should satisfy VariableConcept");
@@ -64,8 +64,8 @@ __global__ void test_mahalanobis_distance_identity_kernel(float* result) {
     float cov_data[3] = {1.0f, 0.0f, 1.0f};  // [σ11, σ12, σ22]
     float cov_grad[3] = {0,0,0};
     
-    VariableRef<float, 2> point(point_data, point_grad);
-    VariableRef<float, 3> cov_3param(cov_data, cov_grad);
+    VariableRef<2, float> point(point_data, point_grad);
+    VariableRef<3, float> cov_3param(cov_data, cov_grad);
     
     auto distance_sq = op::mahalanobis_distance(point, cov_3param);
     distance_sq.forward();
@@ -96,8 +96,8 @@ __global__ void test_mahalanobis_distance_diagonal_kernel(float* result) {
     float inv_cov_data[3] = {0.25f, 0.0f, 1.0f/9.0f};  // [1/4, 0, 1/9]
     float inv_cov_grad[3] = {0,0,0};
     
-    VariableRef<float, 2> point(point_data, point_grad);
-    VariableRef<float, 3> inv_cov_3param(inv_cov_data, inv_cov_grad);
+    VariableRef<2, float> point(point_data, point_grad);
+    VariableRef<3, float> inv_cov_3param(inv_cov_data, inv_cov_grad);
     
     auto distance_sq = op::mahalanobis_distance(point, inv_cov_3param);
     distance_sq.forward();
@@ -129,8 +129,8 @@ __global__ void test_mahalanobis_distance_general_kernel(float* result) {
     float inv_cov_data[3] = {2.0f/3.0f, -1.0f/3.0f, 2.0f/3.0f};  // [2/3, -1/3, 2/3]
     float inv_cov_grad[3] = {0,0,0};
     
-    VariableRef<float, 2> point(point_data, point_grad);
-    VariableRef<float, 3> inv_cov_3param(inv_cov_data, inv_cov_grad);
+    VariableRef<2, float> point(point_data, point_grad);
+    VariableRef<3, float> inv_cov_3param(inv_cov_data, inv_cov_grad);
     
     auto distance_sq = op::mahalanobis_distance(point, inv_cov_3param);
     distance_sq.forward();
@@ -158,7 +158,7 @@ TEST_F(MahalanobisDistanceTest, GeneralMatrixCase) {
 // ===========================================
 
 TEST_F(MahalanobisDistanceTest, GradientVerification) {
-    using Logic = op::MahalanobisDistanceLogic<VariableRef<double, 2>, VariableRef<double, 3>>;
+    using Logic = op::MahalanobisDistanceLogic<VariableRef<2, double>, VariableRef<3, double>>;
     test::BinaryGradientTester<Logic, 2, 3, 1>::test_custom(
         "MahalanobisDistance", 
         30,      // num_tests (reduced for stability)
@@ -180,8 +180,8 @@ __global__ void test_mahalanobis_distance_gradient_kernel(double* result) {
     double cov_data[3] = {2.0, 0.5, 3.0};  // Well-conditioned matrix
     double cov_grad[3] = {0.0, 0.0, 0.0};
     
-    VariableRef<double, 2> point(point_data, point_grad);
-    VariableRef<double, 3> cov_3param(cov_data, cov_grad);
+    VariableRef<2, double> point(point_data, point_grad);
+    VariableRef<3, double> cov_3param(cov_data, cov_grad);
     
     auto distance_op = op::mahalanobis_distance(point, cov_3param);
     
@@ -262,8 +262,8 @@ __global__ void test_mahalanobis_distance_interface_kernel(float* result) {
     float cov_data[3] = {1.0f, 0.0f, 1.0f};
     float cov_grad[3] = {0,0,0};
     
-    VariableRef<float, 2> point(point_data, point_grad);
-    VariableRef<float, 3> cov_3param(cov_data, cov_grad);
+    VariableRef<2, float> point(point_data, point_grad);
+    VariableRef<3, float> cov_3param(cov_data, cov_grad);
     
     auto distance_op = op::mahalanobis_distance(point, cov_3param);
     

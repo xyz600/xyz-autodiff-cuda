@@ -19,18 +19,6 @@ enum class GradientTag {
     Numerical
 };
 
-// Base structure for optimization parameters
-struct OptimizationParameters {
-    // Model parameters: y = (x1 - a)^2 + b(x2 - c)^2 + d
-    float a;        // parameter a
-    float b;        // parameter b  
-    float c;        // parameter c
-    float d;        // parameter d
-    float x1;       // input x1
-    float x2;       // input x2
-    float y_target; // target value
-};
-
 // Buffer structure for GPU memory
 template <typename ParameterStruct>
 struct NetworkTestBuffer {

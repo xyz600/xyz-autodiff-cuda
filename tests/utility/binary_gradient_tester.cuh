@@ -35,8 +35,8 @@ __global__ void test_binary_gradient_kernel(
     using T = double;
     
     // Variable作成
-    VariableRef<T, In1Dim> input1_var(buffers->input1_data, buffers->input1_grad);
-    VariableRef<T, In2Dim> input2_var(buffers->input2_data, buffers->input2_grad);
+    VariableRef<In1Dim, T> input1_var(buffers->input1_data, buffers->input1_grad);
+    VariableRef<In2Dim, T> input2_var(buffers->input2_data, buffers->input2_grad);
     
     LogicType logic;
     
@@ -50,7 +50,7 @@ __global__ void test_binary_gradient_kernel(
             buffers->input2_grad[i] = T(0);
         }
         
-        auto op = BinaryOperation<OutDim, LogicType, VariableRef<T, In1Dim>, VariableRef<T, In2Dim>>(
+        auto op = BinaryOperation<OutDim, LogicType, VariableRef<In1Dim, T>, VariableRef<In2Dim, T>>(
             logic, input1_var, input2_var);
 
         op.forward();
@@ -82,7 +82,7 @@ __global__ void test_binary_gradient_kernel(
             buffers->input2_grad[i] = T(0);
         }
         
-        auto op = BinaryOperation<OutDim, LogicType, VariableRef<T, In1Dim>, VariableRef<T, In2Dim>>(
+        auto op = BinaryOperation<OutDim, LogicType, VariableRef<In1Dim, T>, VariableRef<In2Dim, T>>(
             logic, input1_var, input2_var);
         
         op.forward();

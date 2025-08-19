@@ -39,7 +39,7 @@ __global__ void test_unary_gradient_kernel(
     using T = double;
     
     // Variable作成
-    VariableRef<T, InDim> input_var(buffers->input_data, buffers->input_grad);
+    VariableRef<InDim, T> input_var(buffers->input_data, buffers->input_grad);
     
     LogicType logic;
     
@@ -50,7 +50,7 @@ __global__ void test_unary_gradient_kernel(
             buffers->input_grad[i] = T(0);
         }
         
-        auto op = UnaryOperation<OutDim, LogicType, VariableRef<T, InDim>>(logic, input_var);
+        auto op = UnaryOperation<OutDim, LogicType, VariableRef<InDim, T>>(logic, input_var);
         op.forward();
         
         // 上流勾配設定
@@ -74,7 +74,7 @@ __global__ void test_unary_gradient_kernel(
             buffers->input_grad[i] = T(0);
         }
         
-        auto op = UnaryOperation<OutDim, LogicType, VariableRef<T, InDim>>(logic, input_var);
+        auto op = UnaryOperation<OutDim, LogicType, VariableRef<InDim, T>>(logic, input_var);
         op.forward();
         
         // 上流勾配設定

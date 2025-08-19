@@ -1,0 +1,540 @@
+Preset CMake variables:
+
+  BUILD_EXAMPLES="ON"
+  BUILD_TESTS="ON"
+  CMAKE_BUILD_TYPE="Debug"
+  CMAKE_EXPORT_COMPILE_COMMANDS="ON"
+
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /workspaces/xyz-autodiff-cuda/build/debug
+ninja: no work to do.
+Test project /workspaces/xyz-autodiff-cuda/build/debug
+      Start 16: SymMatrix2InvTest
+      Start 22: LinearRegressionNetworkTest
+      Start  8: GradientVerificationTest
+      Start 17: BroadcastTest
+      Start 19: CovarianceGenerationTest
+      Start 15: NormOperationsTest
+      Start 21: MatrixMultiplicationTest
+      Start  9: OperationChainingTest
+      Start 12: ParallelGradientAccumulationTest
+      Start  7: MathDispatcherTest
+      Start 18: MiniGaussianSplattingTest
+      Start  2: DenseMatrixTest
+      Start 24: BinaryVariableOperatorsTest
+      Start  5: SymmetricMatrixTest
+      Start  1: VariableTest
+      Start  3: DiagonalMatrixTest
+ 1/24 Test #16: SymMatrix2InvTest ..................***Failed    0.95 sec
+Running main() from ./googletest/src/gtest_main.cc
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from SymMatrix2InvTest
+[ RUN      ] SymMatrix2InvTest.SymMatrix2InvForwardPass
+[       OK ] SymMatrix2InvTest.SymMatrix2InvForwardPass (569 ms)
+[ RUN      ] SymMatrix2InvTest.SymMatrix2InvGradientVerification
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 3.13142 vs 1e-05
+SymmetricMatrix2x2Inverse test case 0, input[0]: analytical=-1.9711996992175289, numerical=-8.1438477438834393, error_min=3.1314168965813818
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.613623 vs 1e-05
+SymmetricMatrix2x2Inverse test case 0, input[1]: analytical=29.711790944189239, numerical=11.479963373823791, error_min=0.61362263905976566
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 1.03588 vs 1e-05
+SymmetricMatrix2x2Inverse test case 0, input[2]: analytical=-2.11749307273573, numerical=-4.3109594722094622, error_min=1.0358789021396166
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.108028 vs 1e-05
+SymmetricMatrix2x2Inverse test case 1, input[0]: analytical=-0.062752744294325896, numerical=-0.17078098560209304, error_min=0.10802824130776714
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.995836 vs 1e-05
+SymmetricMatrix2x2Inverse test case 1, input[1]: analytical=1.513642394606429, numerical=0.0063022709633282492, error_min=0.99583635409143778
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.244464 vs 1e-05
+SymmetricMatrix2x2Inverse test case 1, input[2]: analytical=0.18237348457487104, numerical=-0.062090368505142129, error_min=0.24446385308001317
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.24097 vs 1e-05
+SymmetricMatrix2x2Inverse test case 2, input[0]: analytical=-0.51543900961502997, numerical=-0.75640866858250377, error_min=0.2409696589674738
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.847597 vs 1e-05
+SymmetricMatrix2x2Inverse test case 2, input[1]: analytical=3.2434842979577039, numerical=0.49431718513536804, error_min=0.84759686197752793
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.237749 vs 1e-05
+SymmetricMatrix2x2Inverse test case 2, input[2]: analytical=-0.56320715490698758, numerical=-0.80095587657606304, error_min=0.23774872166907546
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.426551 vs 1e-05
+SymmetricMatrix2x2Inverse test case 3, input[0]: analytical=-0.29050874847775765, numerical=-0.71706024602684493, error_min=0.42655149754908728
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.876389 vs 1e-05
+SymmetricMatrix2x2Inverse test case 3, input[1]: analytical=4.131828782894722, numerical=0.51073928822603865, error_min=0.87638904827314257
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.528539 vs 1e-05
+SymmetricMatrix2x2Inverse test case 3, input[2]: analytical=0.22118520198944866, numerical=-0.30735398186865759, error_min=0.52853918385810628
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.431169 vs 1e-05
+SymmetricMatrix2x2Inverse test case 4, input[0]: analytical=-13.333817271091513, numerical=-19.082939478920117, error_min=0.43116851618276131
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.350406 vs 1e-05
+SymmetricMatrix2x2Inverse test case 4, input[1]: analytical=60.550004754582147, numerical=39.33290033392953, error_min=0.35040632129838112
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.395684 vs 1e-05
+SymmetricMatrix2x2Inverse test case 4, input[2]: analytical=-14.677908566894265, numerical=-20.48571688044612, error_min=0.39568364164982273
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.283964 vs 1e-05
+SymmetricMatrix2x2Inverse test case 5, input[0]: analytical=0.090566282112327423, numerical=-0.19339760215409382, error_min=0.28396388426642127
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.498183 vs 1e-05
+SymmetricMatrix2x2Inverse test case 5, input[1]: analytical=1.4776338205862787, numerical=0.74150236977664552, error_min=0.49818259473619708
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.479864 vs 1e-05
+SymmetricMatrix2x2Inverse test case 5, input[2]: analytical=-0.94543367982826909, numerical=-1.4252977175951309, error_min=0.47986403776686182
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.917811 vs 1e-05
+SymmetricMatrix2x2Inverse test case 6, input[0]: analytical=-35.627124992346367, numerical=-68.326086235598737, error_min=0.91781083234409055
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.499742 vs 1e-05
+SymmetricMatrix2x2Inverse test case 6, input[1]: analytical=199.72997193002587, numerical=99.916517338145695, error_min=0.49974199479109316
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.788297 vs 1e-05
+SymmetricMatrix2x2Inverse test case 6, input[2]: analytical=-20.636081253687586, numerical=-36.903433839332706, error_min=0.78829659496219562
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 10.8719 vs 1e-05
+SymmetricMatrix2x2Inverse test case 7, input[0]: analytical=-143.37070864505171, numerical=-1702.0895110457277, error_min=10.871947395193917
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.648393 vs 1e-05
+SymmetricMatrix2x2Inverse test case 7, input[1]: analytical=9986.5441872400734, numerical=3511.336342192114, error_min=0.64839325032190909
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 10.8265 vs 1e-05
+SymmetricMatrix2x2Inverse test case 7, input[2]: analytical=-153.14610270044307, numerical=-1811.1801431544313, error_min=10.826485370621132
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.468486 vs 1e-05
+SymmetricMatrix2x2Inverse test case 8, input[0]: analytical=-0.85097289855250513, numerical=-1.3194585661914997, error_min=0.46848566763899457
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.563466 vs 1e-05
+SymmetricMatrix2x2Inverse test case 8, input[1]: analytical=5.5283962143749301, numerical=2.4133326306568805, error_min=0.56346605107974423
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.617811 vs 1e-05
+SymmetricMatrix2x2Inverse test case 8, input[2]: analytical=-0.78217178546484034, numerical=-1.3999822858808204, error_min=0.61781050041598007
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.823048 vs 1e-05
+SymmetricMatrix2x2Inverse test case 9, input[0]: analytical=0.52575594910877421, numerical=-0.2972924108667111, error_min=0.82304835997548531
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.899591 vs 1e-05
+SymmetricMatrix2x2Inverse test case 9, input[1]: analytical=4.2286385068076129, numerical=0.42459298861836381, error_min=0.89959108873108462
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.429335 vs 1e-05
+SymmetricMatrix2x2Inverse test case 9, input[2]: analytical=0.039298672225065619, numerical=-0.39003648649442885, error_min=0.42933515871949446
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.528503 vs 1e-05
+SymmetricMatrix2x2Inverse test case 10, input[0]: analytical=-33.170886892152524, numerical=-50.701803821355185, error_min=0.52850311136390138
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.427992 vs 1e-05
+SymmetricMatrix2x2Inverse test case 10, input[1]: analytical=191.38892812362022, numerical=109.47605931409797, error_min=0.42799167962638796
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.579843 vs 1e-05
+SymmetricMatrix2x2Inverse test case 10, input[2]: analytical=-37.517247187253233, numerical=-59.271361006905487, error_min=0.57984301756135714
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.430955 vs 1e-05
+SymmetricMatrix2x2Inverse test case 11, input[0]: analytical=-10.861541984306999, numerical=-15.542378971209807, error_min=0.43095510689603611
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.400554 vs 1e-05
+SymmetricMatrix2x2Inverse test case 11, input[1]: analytical=44.969568960997435, numerical=26.956824395997991, error_min=0.40055408537764908
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.430993 vs 1e-05
+SymmetricMatrix2x2Inverse test case 11, input[2]: analytical=-8.2905512769910423, numerical=-11.863720219211519, error_min=0.43099292469695877
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 1.38507 vs 1e-05
+SymmetricMatrix2x2Inverse test case 12, input[0]: analytical=1.365320160477026, numerical=-0.52574000824213241, error_min=1.3850671977614715
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.996827 vs 1e-05
+SymmetricMatrix2x2Inverse test case 12, input[1]: analytical=8.0437878346048066, numerical=0.025524517427836679, error_min=0.99682680374561472
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.933119 vs 1e-05
+SymmetricMatrix2x2Inverse test case 12, input[2]: analytical=0.83886127809411459, numerical=-0.094257345209516008, error_min=0.9331186233036306
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.442255 vs 1e-05
+SymmetricMatrix2x2Inverse test case 13, input[0]: analytical=-0.49476100657702443, numerical=-0.93701613191341093, error_min=0.4422551253363865
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.621951 vs 1e-05
+SymmetricMatrix2x2Inverse test case 13, input[1]: analytical=4.5322860246713095, numerical=1.7134246767698265, error_min=0.62195133593889007
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.542458 vs 1e-05
+SymmetricMatrix2x2Inverse test case 13, input[2]: analytical=-0.48285064578023196, numerical=-1.0253085728913067, error_min=0.54245792711107477
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.379554 vs 1e-05
+SymmetricMatrix2x2Inverse test case 14, input[0]: analytical=-0.69721406635845373, numerical=-1.0767685292157245, error_min=0.37955446285727079
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.306822 vs 1e-05
+SymmetricMatrix2x2Inverse test case 14, input[1]: analytical=4.8123013308379514, numerical=3.3357816964811029, error_min=0.3068219408654001
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.326281 vs 1e-05
+SymmetricMatrix2x2Inverse test case 14, input[2]: analytical=-2.41602033252838, numerical=-3.2043226109475405, error_min=0.32628130972482217
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.506157 vs 1e-05
+SymmetricMatrix2x2Inverse test case 15, input[0]: analytical=-0.11774010494862384, numerical=-0.62389670379231132, error_min=0.50615659884368747
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 1.02584 vs 1e-05
+SymmetricMatrix2x2Inverse test case 15, input[1]: analytical=4.6395968004653643, numerical=-0.11990555440205053, error_min=1.0258439600592066
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.460828 vs 1e-05
+SymmetricMatrix2x2Inverse test case 15, input[2]: analytical=0.21729183364104368, numerical=-0.24353571548448116, error_min=0.46082754912552482
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.838786 vs 1e-05
+SymmetricMatrix2x2Inverse test case 16, input[0]: analytical=15596.649839878946, numerical=2514.3948231575241, error_min=0.83878622338955833
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 1.10651 vs 1e-05
+SymmetricMatrix2x2Inverse test case 16, input[1]: analytical=46157.968367627793, numerical=-4916.4777046399195, error_min=1.1065141703266128
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.839568 vs 1e-05
+SymmetricMatrix2x2Inverse test case 16, input[2]: analytical=14977.422546027195, numerical=2402.8624864921176, error_min=0.8395676906952535
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.963492 vs 1e-05
+SymmetricMatrix2x2Inverse test case 17, input[0]: analytical=0.25321860672988999, numerical=-0.71027307248373495, error_min=0.963491679213625
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.887374 vs 1e-05
+SymmetricMatrix2x2Inverse test case 17, input[1]: analytical=6.8748720414609474, numerical=0.77428673910785051, error_min=0.88737437810648889
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 1.13857 vs 1e-05
+SymmetricMatrix2x2Inverse test case 17, input[2]: analytical=0.7390555759785189, numerical=-0.39951537615682053, error_min=1.1385709521353395
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 2.06116 vs 1e-05
+SymmetricMatrix2x2Inverse test case 18, input[0]: analytical=2.0009649317827449, numerical=-2.1233471641313386, error_min=2.0611616077846784
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.799889 vs 1e-05
+SymmetricMatrix2x2Inverse test case 18, input[1]: analytical=19.663392190984737, numerical=3.9348618954351093, error_min=0.7998889582622899
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 2.87289 vs 1e-05
+SymmetricMatrix2x2Inverse test case 18, input[2]: analytical=0.93640640819813581, numerical=-1.9364797214475755, error_min=2.8728861296457113
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.0347775 vs 1e-05
+SymmetricMatrix2x2Inverse test case 19, input[0]: analytical=-0.17516776183045246, numerical=-0.20994521335546876, error_min=0.034777451525016295
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.0257484 vs 1e-05
+SymmetricMatrix2x2Inverse test case 19, input[1]: analytical=0.084162308013698325, numerical=0.058413883762803182, error_min=0.025748424250895144
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.0210943 vs 1e-05
+SymmetricMatrix2x2Inverse test case 19, input[2]: analytical=-0.11891300319015777, numerical=-0.14000733901881937, error_min=0.021094335828661603
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.358446 vs 1e-05
+SymmetricMatrix2x2Inverse test case 20, input[0]: analytical=-0.9230736936445193, numerical=-1.2815195570968188, error_min=0.35844586345229945
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.414379 vs 1e-05
+SymmetricMatrix2x2Inverse test case 20, input[1]: analytical=3.3770619298045119, numerical=1.97767778193056, error_min=0.41437917839870875
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.0969182 vs 1e-05
+SymmetricMatrix2x2Inverse test case 20, input[2]: analytical=-0.8831952106836769, numerical=-0.98011343071645729, error_min=0.096918220032780389
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.70281 vs 1e-05
+SymmetricMatrix2x2Inverse test case 21, input[0]: analytical=-0.19511864991700825, numerical=-0.89792895450708687, error_min=0.70281030459007865
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.52006 vs 1e-05
+SymmetricMatrix2x2Inverse test case 21, input[1]: analytical=4.6813492700758177, numerical=2.2467663809934928, error_min=0.52006008281516125
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 1.26769 vs 1e-05
+SymmetricMatrix2x2Inverse test case 21, input[2]: analytical=-1.1272004153892023, numerical=-2.5561458074320407, error_min=1.2676941673672533
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.10784 vs 1e-05
+SymmetricMatrix2x2Inverse test case 22, input[0]: analytical=-0.55221660318739085, numerical=-0.6600563483633427, error_min=0.10783974517595185
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.743478 vs 1e-05
+SymmetricMatrix2x2Inverse test case 22, input[1]: analytical=2.0606495465393611, numerical=0.52860244548664992, error_min=0.74347775614034828
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.144645 vs 1e-05
+SymmetricMatrix2x2Inverse test case 22, input[2]: analytical=-0.55175989745994725, numerical=-0.69640517936641677, error_min=0.14464528190646952
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 13.4607 vs 1e-05
+SymmetricMatrix2x2Inverse test case 23, input[0]: analytical=-62.548681473303539, numerical=-904.49751679021529, error_min=13.460696780255308
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.644795 vs 1e-05
+SymmetricMatrix2x2Inverse test case 23, input[1]: analytical=5874.5409210864382, numerical=2086.6636986202648, error_min=0.64479544416308932
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 9.90193 vs 1e-05
+SymmetricMatrix2x2Inverse test case 23, input[2]: analytical=-110.42861555961503, numerical=-1203.8852254329204, error_min=9.9019317079367113
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.22714 vs 1e-05
+SymmetricMatrix2x2Inverse test case 24, input[0]: analytical=-0.30460032953371863, numerical=-0.53174039414780749, error_min=0.22714006461408887
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.345707 vs 1e-05
+SymmetricMatrix2x2Inverse test case 24, input[1]: analytical=2.2630939100508281, numerical=1.4807266816031275, error_min=0.34570692138450793
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.3348 vs 1e-05
+SymmetricMatrix2x2Inverse test case 24, input[2]: analytical=-0.86843250124707505, numerical=-1.2032328513631516, error_min=0.33480035011607656
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.851614 vs 1e-05
+SymmetricMatrix2x2Inverse test case 25, input[0]: analytical=-0.19028445169153951, numerical=-1.0418984440233161, error_min=0.85161399233177659
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.40214 vs 1e-05
+SymmetricMatrix2x2Inverse test case 25, input[1]: analytical=11.569289831905287, numerical=6.916818217907835, error_min=0.4021397753531134
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.416847 vs 1e-05
+SymmetricMatrix2x2Inverse test case 25, input[2]: analytical=-9.0836003259269162, numerical=-12.870069719484009, error_min=0.41684676314407415
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.433232 vs 1e-05
+SymmetricMatrix2x2Inverse test case 26, input[0]: analytical=-0.52208596240754246, numerical=-0.95531820187969418, error_min=0.43323223947215173
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.638429 vs 1e-05
+SymmetricMatrix2x2Inverse test case 26, input[1]: analytical=3.533516474421202, numerical=1.2776187093179718, error_min=0.63842854036013819
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.301863 vs 1e-05
+SymmetricMatrix2x2Inverse test case 26, input[2]: analytical=-0.33329095899473665, numerical=-0.63515355152289588, error_min=0.30186259252815922
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 1.15449 vs 1e-05
+SymmetricMatrix2x2Inverse test case 27, input[0]: analytical=0.40288823255291328, numerical=-0.75159772357093202, error_min=1.1544859561238452
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.910479 vs 1e-05
+SymmetricMatrix2x2Inverse test case 27, input[1]: analytical=5.9377305035890808, numerical=0.53154876436747944, error_min=0.91047947291542053
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.555846 vs 1e-05
+SymmetricMatrix2x2Inverse test case 27, input[2]: analytical=0.16436178504500473, numerical=-0.39148433997283044, error_min=0.55584612501783515
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.524155 vs 1e-05
+SymmetricMatrix2x2Inverse test case 28, input[0]: analytical=-3.8056333272830685, numerical=-5.8003746240916136, error_min=0.52415488442041724
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.376095 vs 1e-05
+SymmetricMatrix2x2Inverse test case 28, input[1]: analytical=10.709725855036211, numerical=6.681856085033262, error_min=0.37609457277646907
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.619844 vs 1e-05
+SymmetricMatrix2x2Inverse test case 28, input[2]: analytical=-1.2981444453826829, numerical=-2.102792096562824, error_min=0.61984446649381642
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.444242 vs 1e-05
+SymmetricMatrix2x2Inverse test case 29, input[0]: analytical=-29.414246132413481, numerical=-42.481285880875191, error_min=0.44424187142645427
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.398009 vs 1e-05
+SymmetricMatrix2x2Inverse test case 29, input[1]: analytical=117.54924849152304, numerical=70.763641260319403, error_min=0.39800856093586634
+/workspaces/xyz-autodiff-cuda/tests/operation/unary/../../utility/unary_gradient_tester.cuh:225: Failure
+Expected: (error_min) <= (tolerance), actual: 0.350179 vs 1e-05
+SymmetricMatrix2x2Inverse test case 29, input[2]: analytical=-22.388744381831305, numerical=-30.228805668954884, error_min=0.35017869485730824
+=== GRADIENT TEST SUMMARY for SymmetricMatrix2x2Inverse ===
+Number of tests: 30
+Tolerance: 1e-05
+Delta: 1e-06
+Maximum error: 13.4607
+Max error location: test case 23, input[0]
+Max error values: analytical=-62.5487, numerical=-904.498
+RECOMMENDATION: Use tolerance >= 14.8068 for this operation
+=========================================
+[  FAILED  ] SymMatrix2InvTest.SymMatrix2InvGradientVerification (9 ms)
+[----------] 2 tests from SymMatrix2InvTest (578 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (578 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] SymMatrix2InvTest.SymMatrix2InvGradientVerification
+
+ 1 FAILED TEST
+
+      Start  6: UnaryOperationsTest
+ 2/24 Test #17: BroadcastTest ......................   Passed    1.22 sec
+      Start 11: QuaternionToRotationMatrixTest
+ 3/24 Test  #2: DenseMatrixTest ....................   Passed    1.54 sec
+      Start 10: OperationConceptsTest
+ 4/24 Test  #3: DiagonalMatrixTest .................   Passed    1.54 sec
+      Start 23: VariableOperatorsTest
+ 5/24 Test #24: BinaryVariableOperatorsTest ........   Passed    1.55 sec
+      Start 13: SharedMemoryAtomicTest
+ 6/24 Test #21: MatrixMultiplicationTest ...........   Passed    1.57 sec
+      Start 20: MahalanobisDistanceTest
+ 7/24 Test  #1: VariableTest .......................   Passed    1.62 sec
+      Start 14: DAGBackwardTest
+ 8/24 Test  #7: MathDispatcherTest .................   Passed    1.68 sec
+      Start  4: MatrixTransposeTest
+ 9/24 Test #18: MiniGaussianSplattingTest ..........   Passed    1.73 sec
+10/24 Test #15: NormOperationsTest .................   Passed    1.78 sec
+11/24 Test  #9: OperationChainingTest ..............   Passed    1.81 sec
+12/24 Test #12: ParallelGradientAccumulationTest ...   Passed    1.83 sec
+13/24 Test #19: CovarianceGenerationTest ...........   Passed    1.86 sec
+14/24 Test  #5: SymmetricMatrixTest ................   Passed    1.88 sec
+15/24 Test  #6: UnaryOperationsTest ................   Passed    0.98 sec
+16/24 Test #11: QuaternionToRotationMatrixTest .....   Passed    0.77 sec
+17/24 Test  #8: GradientVerificationTest ...........   Passed    2.15 sec
+18/24 Test #22: LinearRegressionNetworkTest ........***Failed    2.16 sec
+Running main() from ./googletest/src/gtest_main.cc
+[==========] Running 6 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 6 tests from LinearRegressionNetworkGradientTest
+[ RUN      ] LinearRegressionNetworkGradientTest.SimpleLinearRegressionNetwork
+
+=== Testing SimpleLinearRegressionNetwork ===
+Number of tests: 100
+Tolerance: 1e-05
+Delta: 1e-06
+Parameter range: 0.3
+Progress: 10/100 (Passed: 0, Failed: 10)
+Progress: 20/100 (Passed: 0, Failed: 20)
+Progress: 30/100 (Passed: 0, Failed: 30)
+Progress: 40/100 (Passed: 0, Failed: 40)
+Progress: 50/100 (Passed: 0, Failed: 50)
+Progress: 60/100 (Passed: 0, Failed: 60)
+Progress: 70/100 (Passed: 0, Failed: 70)
+Progress: 80/100 (Passed: 0, Failed: 80)
+Progress: 90/100 (Passed: 0, Failed: 90)
+Progress: 100/100 (Passed: 0, Failed: 100)
+
+=== Results for SimpleLinearRegressionNetwork ===
+Passed: 0/100
+Failed: 100/100
+Success rate: 0%
+Maximum error: 5.8936
+Worst case: Test 72: Parameter 2: analytical=-24.209307, numerical=-18.315706, error=5.893600
+/workspaces/xyz-autodiff-cuda/tests/operation/base/../../utility/network_gradient_tester.cuh:189: Failure
+Expected equality of these values:
+  failed_tests
+    Which is: 100
+  0
+Some gradient tests failed for SimpleLinearRegressionNetwork
+[  FAILED  ] LinearRegressionNetworkGradientTest.SimpleLinearRegressionNetwork (1587 ms)
+[ RUN      ] LinearRegressionNetworkGradientTest.RegularizedLinearRegressionNetwork
+
+=== Testing RegularizedLinearRegressionNetwork ===
+Number of tests: 50
+Tolerance: 1e-05
+Delta: 1e-06
+Parameter range: 0.2
+Progress: 10/50 (Passed: 0, Failed: 10)
+Progress: 20/50 (Passed: 0, Failed: 20)
+Progress: 30/50 (Passed: 0, Failed: 30)
+Progress: 40/50 (Passed: 0, Failed: 40)
+Progress: 50/50 (Passed: 0, Failed: 50)
+
+=== Results for RegularizedLinearRegressionNetwork ===
+Passed: 0/50
+Failed: 50/50
+Success rate: 0%
+Maximum error: 4.81651
+Worst case: Test 5: Parameter 2: analytical=4.812064, numerical=-0.004444, error=4.816508
+/workspaces/xyz-autodiff-cuda/tests/operation/base/../../utility/network_gradient_tester.cuh:189: Failure
+Expected equality of these values:
+  failed_tests
+    Which is: 50
+  0
+Some gradient tests failed for RegularizedLinearRegressionNetwork
+[  FAILED  ] LinearRegressionNetworkGradientTest.RegularizedLinearRegressionNetwork (159 ms)
+[ RUN      ] LinearRegressionNetworkGradientTest.SubtractSquareOperation
+
+=== Testing SubtractSquareOnlyNetwork ===
+Number of tests: 50
+Tolerance: 1e-05
+Delta: 1e-07
+Parameter range: 0.5
+Progress: 10/50 (Passed: 0, Failed: 10)
+Progress: 20/50 (Passed: 0, Failed: 20)
+Progress: 30/50 (Passed: 0, Failed: 30)
+Progress: 40/50 (Passed: 0, Failed: 40)
+Progress: 50/50 (Passed: 0, Failed: 50)
+
+=== Results for SubtractSquareOnlyNetwork ===
+Passed: 0/50
+Failed: 50/50
+Success rate: 0%
+Maximum error: 2.11537
+Worst case: Test 39: Parameter 0: analytical=-3.432185, numerical=-5.547557, error=2.115373
+/workspaces/xyz-autodiff-cuda/tests/operation/base/../../utility/network_gradient_tester.cuh:189: Failure
+Expected equality of these values:
+  failed_tests
+    Which is: 50
+  0
+Some gradient tests failed for SubtractSquareOnlyNetwork
+[  FAILED  ] LinearRegressionNetworkGradientTest.SubtractSquareOperation (103 ms)
+[ RUN      ] LinearRegressionNetworkGradientTest.ComplexInteractionNetwork
+
+=== Testing ComplexInteractionNetwork ===
+Number of tests: 50
+Tolerance: 0.0001
+Delta: 1e-06
+Parameter range: 0.2
+Progress: 10/50 (Passed: 0, Failed: 10)
+Progress: 20/50 (Passed: 0, Failed: 20)
+Progress: 30/50 (Passed: 0, Failed: 30)
+Progress: 40/50 (Passed: 0, Failed: 40)
+Progress: 50/50 (Passed: 0, Failed: 50)
+
+=== Results for ComplexInteractionNetwork ===
+Passed: 0/50
+Failed: 50/50
+Success rate: 0%
+Maximum error: 1.93827
+Worst case: Test 45: Parameter 2: analytical=-2.214068, numerical=-0.275798, error=1.938271
+/workspaces/xyz-autodiff-cuda/tests/operation/base/../../utility/network_gradient_tester.cuh:189: Failure
+Expected equality of these values:
+  failed_tests
+    Which is: 50
+  0
+Some gradient tests failed for ComplexInteractionNetwork
+[  FAILED  ] LinearRegressionNetworkGradientTest.ComplexInteractionNetwork (122 ms)
+[ RUN      ] LinearRegressionNetworkGradientTest.StressTestWithLargeValues
+
+=== Testing SimpleLinearRegressionNetwork_LargeValues ===
+Number of tests: 20
+Tolerance: 0.001
+Delta: 1e-05
+Parameter range: 1
+Progress: 10/20 (Passed: 0, Failed: 10)
+Progress: 20/20 (Passed: 0, Failed: 20)
+
+=== Results for SimpleLinearRegressionNetwork_LargeValues ===
+Passed: 0/20
+Failed: 20/20
+Success rate: 0%
+Maximum error: 116780
+Worst case: Test 7: Parameter 2: analytical=27063.458984, numerical=143843.375000, error=116779.914062
+/workspaces/xyz-autodiff-cuda/tests/operation/base/../../utility/network_gradient_tester.cuh:189: Failure
+Expected equality of these values:
+  failed_tests
+    Which is: 20
+  0
+Some gradient tests failed for SimpleLinearRegressionNetwork_LargeValues
+[  FAILED  ] LinearRegressionNetworkGradientTest.StressTestWithLargeValues (39 ms)
+[ RUN      ] LinearRegressionNetworkGradientTest.EdgeCaseNearZero
+
+=== Testing SimpleLinearRegressionNetwork_NearZero ===
+Number of tests: 30
+Tolerance: 1e-05
+Delta: 1e-08
+Parameter range: 0.001
+Progress: 10/30 (Passed: 8, Failed: 2)
+Progress: 20/30 (Passed: 17, Failed: 3)
+Progress: 30/30 (Passed: 23, Failed: 7)
+
+=== Results for SimpleLinearRegressionNetwork_NearZero ===
+Passed: 23/30
+Failed: 7/30
+Success rate: 76.6667%
+Maximum error: 1.5399e-05
+Worst case: Test 23: Parameter 3: analytical=-0.003350, numerical=-0.003366, error=0.000015
+/workspaces/xyz-autodiff-cuda/tests/operation/base/../../utility/network_gradient_tester.cuh:189: Failure
+Expected equality of these values:
+  failed_tests
+    Which is: 7
+  0
+Some gradient tests failed for SimpleLinearRegressionNetwork_NearZero
+[  FAILED  ] LinearRegressionNetworkGradientTest.EdgeCaseNearZero (51 ms)
+[----------] 6 tests from LinearRegressionNetworkGradientTest (2063 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 1 test suite ran. (2063 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 6 tests, listed below:
+[  FAILED  ] LinearRegressionNetworkGradientTest.SimpleLinearRegressionNetwork
+[  FAILED  ] LinearRegressionNetworkGradientTest.RegularizedLinearRegressionNetwork
+[  FAILED  ] LinearRegressionNetworkGradientTest.SubtractSquareOperation
+[  FAILED  ] LinearRegressionNetworkGradientTest.ComplexInteractionNetwork
+[  FAILED  ] LinearRegressionNetworkGradientTest.StressTestWithLargeValues
+[  FAILED  ] LinearRegressionNetworkGradientTest.EdgeCaseNearZero
+
+ 6 FAILED TESTS
+
+19/24 Test #14: DAGBackwardTest ....................   Passed    0.94 sec
+20/24 Test  #4: MatrixTransposeTest ................   Passed    0.92 sec
+21/24 Test #10: OperationConceptsTest ..............   Passed    1.07 sec
+22/24 Test #20: MahalanobisDistanceTest ............   Passed    1.06 sec
+23/24 Test #23: VariableOperatorsTest ..............   Passed    1.10 sec
+24/24 Test #13: SharedMemoryAtomicTest .............   Passed    1.11 sec
+
+92% tests passed, 2 tests failed out of 24
+
+Total Test time (real) =   2.67 sec
+
+The following tests FAILED:
+	 16 - SymMatrix2InvTest (Failed)
+	 22 - LinearRegressionNetworkTest (Failed)

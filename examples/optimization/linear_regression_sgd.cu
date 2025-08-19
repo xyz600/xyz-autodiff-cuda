@@ -8,7 +8,7 @@
 #include "../../include/operations/binary/add_logic.cuh"
 #include "../../include/operations/binary/mul_logic.cuh"
 #include "../../include/util/cuda_unique_ptr.cuh"
-#include "subtract_squared.cuh"
+#include "../../include/operations/unary/squared_logic.cuh"
 
 using namespace xyz_autodiff;
 
@@ -89,31 +89,34 @@ __global__ void parallel_gradient_computation_kernel(
     if (idx >= batch_size) return;
     
     // パラメータ変数の作成（ポインタ演算で各パラメータを指定）
-    VariableRef<double, 1> a_var(&params->value[0], &params->grad[0]);  // a
-    VariableRef<double, 1> b_var(&params->value[1], &params->grad[1]);  // b
-    VariableRef<double, 1> c_var(&params->value[2], &params->grad[2]);  // c
-    VariableRef<double, 1> d_var(&params->value[3], &params->grad[3]);  // d
+    VariableRef<1, double> a_var(&params->value[0], &params->grad[0]);  // a
+    VariableRef<1, double> b_var(&params->value[1], &params->grad[1]);  // b
+    VariableRef<1, double> c_var(&params->value[2], &params->grad[2]);  // c
+    VariableRef<1, double> d_var(&params->value[3], &params->grad[3]);  // d
     
     // 現在のスレッドが担当するデータポイント
     const DataPoint& data = batch_data[idx];
     
     // (x1 - a)^2 をカスタムオペレーションで計算
-    auto x1_term = op::subtract_and_square(a_var, data.x1);
+    auto x1_term = a_var - data.x1;
+    auto x1_term2 = op::squared(x1_term);
     
     // (x2 - c)^2 をカスタムオペレーションで計算
-    auto x2_squared = op::subtract_and_square(c_var, data.x2);
+    auto x2_c = c_var - data.x2;
+    auto x2_squared = op::squared(x2_c);
     
     // b * (x2 - c)^2
-    auto x2_term = op::mul(b_var, x2_squared);
+    auto x2_term = b_var * x2_squared;
     
     // (x1 - a)^2 + b * (x2 - c)^2
-    auto combined_terms = op::add(x1_term, x2_term);
+    auto combined_terms = x1_term + x2_term;
     
     // y_pred = (x1 - a)^2 + b * (x2 - c)^2 + d
-    auto y_pred = op::add(combined_terms, d_var);
+    auto y_pred = combined_terms + d_var;
     
     // loss = (y_pred - y_target)^2 もカスタムオペレーションで計算
-    auto loss = op::subtract_and_square(y_pred, data.y);
+    auto loss = y_pred - data.y;
+    auto loss_2 = op::squared(loss);
     
     loss.run();
 }

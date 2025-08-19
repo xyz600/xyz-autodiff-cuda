@@ -16,19 +16,19 @@ using namespace xyz_autodiff;
 // ===========================================
 
 // Test types
-using TestVector2 = Variable<float, 2>;
-using TestVector1 = Variable<float, 1>;
-using TestVectorRef2 = VariableRef<float, 2>;
-using TestVectorRef1 = VariableRef<float, 1>;
+using TestVector2 = Variable<2, float>;
+using TestVector1 = Variable<1, float>;
+using TestVectorRef2 = VariableRef<2, float>;
+using TestVectorRef1 = VariableRef<1, float>;
 using CovGenOp = BinaryOperation<4, op::CovarianceMatrixGenerationLogic<TestVectorRef2, TestVectorRef1>, TestVectorRef2, TestVectorRef1>;
-using MatToCov3ParamOp = UnaryOperation<3, op::MatrixToCovariance3ParamLogic<VariableRef<float, 4>>, VariableRef<float, 4>>;
+using MatToCov3ParamOp = UnaryOperation<3, op::MatrixToCovariance3ParamLogic<VariableRef<4, float>>, VariableRef<4, float>>;
 using ScaleRotToCov3ParamOp = BinaryOperation<3, op::ScaleRotationToCovariance3ParamLogic<TestVectorRef2, TestVectorRef1>, TestVectorRef2, TestVectorRef1>;
 
 // Static assertions for concept compliance
 static_assert(VariableConcept<TestVector2>, 
-    "Variable<float, 2> should satisfy VariableConcept");
+    "Variable<2, float> should satisfy VariableConcept");
 static_assert(DifferentiableVariableConcept<TestVector2>, 
-    "Variable<float, 2> should satisfy DifferentiableVariableConcept");
+    "Variable<2, float> should satisfy DifferentiableVariableConcept");
 
 static_assert(VariableConcept<CovGenOp>, 
     "CovarianceGeneration Operation should satisfy VariableConcept");
@@ -81,8 +81,8 @@ __global__ void test_covariance_generation_identity_kernel(float* result) {
     float rotation_data[1] = {0.0f};  // 0 radians
     float rotation_grad[1] = {0};
     
-    VariableRef<float, 2> scale(scale_data, scale_grad);
-    VariableRef<float, 1> rotation(rotation_data, rotation_grad);
+    VariableRef<2, float> scale(scale_data, scale_grad);
+    VariableRef<1, float> rotation(rotation_data, rotation_grad);
     
     auto M = op::generate_covariance_matrix(scale, rotation);
     M.forward();
@@ -116,8 +116,8 @@ __global__ void test_covariance_generation_90deg_kernel(float* result) {
     float rotation_data[1] = {1.5707963f};  // π/2 radians
     float rotation_grad[1] = {0};
     
-    VariableRef<float, 2> scale(scale_data, scale_grad);
-    VariableRef<float, 1> rotation(rotation_data, rotation_grad);
+    VariableRef<2, float> scale(scale_data, scale_grad);
+    VariableRef<1, float> rotation(rotation_data, rotation_grad);
     
     auto M = op::generate_covariance_matrix(scale, rotation);
     M.forward();
@@ -151,7 +151,7 @@ __global__ void test_matrix_to_covariance_3param_kernel(float* result) {
     float matrix_data[4] = {1.0f, 2.0f, 3.0f, 4.0f};
     float matrix_grad[4] = {0,0,0,0};
     
-    VariableRef<float, 4> matrix(matrix_data, matrix_grad);
+    VariableRef<4, float> matrix(matrix_data, matrix_grad);
     
     auto cov_3param = op::matrix_to_covariance_3param(matrix);
     cov_3param.forward();
@@ -188,8 +188,8 @@ __global__ void test_scale_rotation_to_covariance_3param_kernel(float* result) {
     float rotation_data[1] = {0.0f};
     float rotation_grad[1] = {0};
     
-    VariableRef<float, 2> scale(scale_data, scale_grad);
-    VariableRef<float, 1> rotation(rotation_data, rotation_grad);
+    VariableRef<2, float> scale(scale_data, scale_grad);
+    VariableRef<1, float> rotation(rotation_data, rotation_grad);
     
     auto cov_3param = op::scale_rotation_to_covariance_3param(scale, rotation);
     cov_3param.forward();
@@ -218,7 +218,7 @@ TEST_F(CovarianceGenerationTest, ScaleRotationToCovariance3Param) {
 // ===========================================
 
 TEST_F(CovarianceGenerationTest, CovarianceGenerationGradientVerification) {
-    using Logic = op::CovarianceMatrixGenerationLogic<VariableRef<double, 2>, VariableRef<double, 1>>;
+    using Logic = op::CovarianceMatrixGenerationLogic<VariableRef<2, double>, VariableRef<1, double>>;
     test::BinaryGradientTester<Logic, 2, 1, 4>::test_custom(
         "CovarianceGeneration", 
         30,      // num_tests
@@ -230,7 +230,7 @@ TEST_F(CovarianceGenerationTest, CovarianceGenerationGradientVerification) {
 }
 
 TEST_F(CovarianceGenerationTest, MatrixToCovariance3ParamGradientVerification) {
-    using Logic = op::MatrixToCovariance3ParamLogic<VariableRef<double, 4>>;
+    using Logic = op::MatrixToCovariance3ParamLogic<VariableRef<4, double>>;
     test::UnaryGradientTester<Logic, 4, 3>::test_custom(
         "MatrixToCovariance3Param", 
         30,      // num_tests
@@ -242,7 +242,7 @@ TEST_F(CovarianceGenerationTest, MatrixToCovariance3ParamGradientVerification) {
 }
 
 TEST_F(CovarianceGenerationTest, ScaleRotationToCovariance3ParamGradientVerification) {
-    using Logic = op::ScaleRotationToCovariance3ParamLogic<VariableRef<double, 2>, VariableRef<double, 1>>;
+    using Logic = op::ScaleRotationToCovariance3ParamLogic<VariableRef<2, double>, VariableRef<1, double>>;
     test::BinaryGradientTester<Logic, 2, 1, 3>::test_custom(
         "ScaleRotationToCovariance3Param", 
         30,      // num_tests
@@ -264,8 +264,8 @@ __global__ void test_covariance_generation_gradient_kernel(double* result) {
     double rotation_data[1] = {0.2};  // small rotation
     double rotation_grad[1] = {0.0};
     
-    VariableRef<double, 2> scale(scale_data, scale_grad);
-    VariableRef<double, 1> rotation(rotation_data, rotation_grad);
+    VariableRef<2, double> scale(scale_data, scale_grad);
+    VariableRef<1, double> rotation(rotation_data, rotation_grad);
     
     auto M = op::generate_covariance_matrix(scale, rotation);
     
@@ -341,8 +341,8 @@ __global__ void test_covariance_interface_kernel(float* result) {
     float rotation_data[1] = {0.0f};
     float rotation_grad[1] = {0};
     
-    VariableRef<float, 2> scale(scale_data, scale_grad);
-    VariableRef<float, 1> rotation(rotation_data, rotation_grad);
+    VariableRef<2, float> scale(scale_data, scale_grad);
+    VariableRef<1, float> rotation(rotation_data, rotation_grad);
     
     // Test covariance generation operation
     auto M = op::generate_covariance_matrix(scale, rotation);

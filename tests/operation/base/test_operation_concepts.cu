@@ -12,12 +12,12 @@
 using namespace xyz_autodiff;
 
 // テスト用のOperation型を定義  
-using TestVariable = VariableRef<float, 2>;
+using TestVariable = VariableRef<2, float>;
 using TestUnaryOp = UnaryOperation<2, op::ExpLogic<2>, TestVariable>;
 using TestBinaryOp = BinaryOperation<2, op::MulLogic<TestVariable, TestVariable>, TestVariable, TestVariable>;
 
 // QuaternionToRotationMatrix用のテスト型
-using TestQuaternion = Variable<float, 4>;
+using TestQuaternion = Variable<4, float>;
 using TestQuatToMatOp = UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternion>;
 
 class OperationConceptTest : public ::testing::Test {
@@ -31,14 +31,14 @@ protected:
 };
 
 // Variable関連のstatic_assert
-static_assert(VariableConcept<Variable<float, 3>>, 
+static_assert(VariableConcept<Variable<3, float>>, 
     "Variable should satisfy VariableConcept");
-static_assert(VariableConcept<VariableRef<double, 5>>, 
+static_assert(VariableConcept<VariableRef<5, double>>, 
     "VariableRef should satisfy VariableConcept");
 
-static_assert(DifferentiableVariableConcept<Variable<float, 3>>, 
+static_assert(DifferentiableVariableConcept<Variable<3, float>>, 
     "Variable should satisfy DifferentiableVariableConcept");
-static_assert(DifferentiableVariableConcept<VariableRef<double, 5>>, 
+static_assert(DifferentiableVariableConcept<VariableRef<5, double>>, 
     "VariableRef should satisfy DifferentiableVariableConcept");
 
 // Operation関連のstatic_assert
@@ -58,14 +58,14 @@ static_assert(OperationNode<TestBinaryOp>,
     "BinaryOperation should satisfy OperationNode");
 
 // Variable は OperationNode ではないことを確認
-static_assert(!OperationNode<Variable<float, 3>>, 
+static_assert(!OperationNode<Variable<3, float>>, 
     "Variable should NOT satisfy OperationNode");
-static_assert(!OperationNode<VariableRef<double, 5>>, 
+static_assert(!OperationNode<VariableRef<5, double>>, 
     "VariableRef should NOT satisfy OperationNode");
 
 // 具体的な型でのテスト
-using TestVariable4d = Variable<double, 4>;
-using TestVariable2f = Variable<float, 2>;
+using TestVariable4d = Variable<4, double>;
+using TestVariable2f = Variable<2, float>;
 static_assert(VariableConcept<UnaryOperation<4, op::ExpLogic<4>, TestVariable4d>>, 
     "Specific UnaryOperation should satisfy VariableConcept");
 static_assert(VariableConcept<BinaryOperation<2, op::MulLogic<TestVariable2f, TestVariable2f>, TestVariable2f, TestVariable2f>>, 
@@ -80,8 +80,8 @@ static_assert(OperationNode<TestQuatToMatOp>,
     "QuaternionToRotationMatrix Operation should satisfy OperationNode");
 
 // 具体的なQuaternionToRotationMatrix型でのテスト
-using TestQuaternionFloat = Variable<float, 4>;
-using TestQuaternionDouble = Variable<double, 4>;
+using TestQuaternionFloat = Variable<4, float>;
+using TestQuaternionDouble = Variable<4, double>;
 static_assert(VariableConcept<UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternionFloat>>, 
     "Float QuaternionToRotationMatrix Operation should satisfy VariableConcept");
 static_assert(VariableConcept<UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternionDouble>>, 
@@ -110,10 +110,10 @@ TEST_F(OperationConceptTest, ConceptComplianceBasicTest) {
 // Variableのzero_gradテスト用カーネル
 template<typename T>
 __global__ void test_variable_zero_grad_kernel(T* result) {
-    Variable<float, 3> var;
+    Variable<3, float> var;
     var.zero_grad(); // コンパイルが通ることを確認
     
-    VariableRef<float, 3> var_ref(var.data(), var.grad());
+    VariableRef<3, float> var_ref(var.data(), var.grad());
     var_ref.zero_grad(); // コンパイルが通ることを確認
     
     *result = 1.0f; // 成功マーカー
@@ -137,12 +137,12 @@ __global__ void test_operation_interface_kernel(float* result) {
     float data2[2] = {3.0f, 4.0f};
     float grad2[2] = {0.0f, 0.0f};
     
-    VariableRef<float, 2> var1(data1, grad1);
-    VariableRef<float, 2> var2(data2, grad2);
+    VariableRef<2, float> var1(data1, grad1);
+    VariableRef<2, float> var2(data2, grad2);
     
     // UnaryOperationを作成（ExpLogicを使用）
     op::ExpLogic<2> logic;
-    UnaryOperation<2, op::ExpLogic<2>, VariableRef<float, 2>> op(logic, var1);
+    UnaryOperation<2, op::ExpLogic<2>, VariableRef<2, float>> op(logic, var1);
     
     // VariableConceptのインターフェースが使えることを確認
     op.zero_grad();  // zero_grad

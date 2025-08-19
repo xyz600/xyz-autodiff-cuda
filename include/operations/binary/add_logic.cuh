@@ -13,7 +13,7 @@ requires BinaryLogicParameterConcept<Input1, Input2> && (Input1::size == Input2:
 struct AddLogic {
     using T = typename Input1::value_type;
     static constexpr std::size_t Dim = Input1::size;
-    using Output = Variable<T, Dim>;
+    using Output = Variable<Dim, T>;
     
     // 出力次元をconstexprで定義
     static constexpr std::size_t outputDim = Dim;

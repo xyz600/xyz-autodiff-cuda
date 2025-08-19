@@ -29,7 +29,7 @@ struct VariableOperatorTestBuffer {
 template <typename T, std::size_t N>
 __global__ void test_variable_plus_constant_kernel(VariableOperatorTestBuffer<T, N>* buffer) {
     // Create VariableRef from buffer data and gradients
-    xyz_autodiff::VariableRef<T, N> input(buffer->input_data, buffer->input_grad);
+    xyz_autodiff::VariableRef<N, T> input(buffer->input_data, buffer->input_grad);
     
     // Zero gradient
     input.zero_grad();
@@ -212,7 +212,7 @@ struct VariableMinusTestBuffer {
 // CUDA kernel to test Variable - constant operator
 __global__ void test_variable_minus_constant_kernel(VariableMinusTestBuffer* buffer) {
     // Create VariableRef from buffer data and gradients
-    xyz_autodiff::VariableRef<float, 3> input(buffer->input_data, buffer->input_grad);
+    xyz_autodiff::VariableRef<3, float> input(buffer->input_data, buffer->input_grad);
     
     // Zero gradient
     input.zero_grad();
@@ -285,7 +285,7 @@ struct VariableMultiplyTestBuffer {
 // CUDA kernel to test Variable * constant operator
 __global__ void test_variable_multiply_constant_kernel(VariableMultiplyTestBuffer* buffer) {
     // Create VariableRef from buffer data and gradients
-    xyz_autodiff::VariableRef<float, 2> input(buffer->input_data, buffer->input_grad);
+    xyz_autodiff::VariableRef<2, float> input(buffer->input_data, buffer->input_grad);
     
     // Zero gradient
     input.zero_grad();
@@ -358,7 +358,7 @@ struct VariableDivideTestBuffer {
 // CUDA kernel to test Variable / constant operator
 __global__ void test_variable_divide_constant_kernel(VariableDivideTestBuffer* buffer) {
     // Create VariableRef from buffer data and gradients
-    xyz_autodiff::VariableRef<double, 2> input(buffer->input_data, buffer->input_grad);
+    xyz_autodiff::VariableRef<2, double> input(buffer->input_data, buffer->input_grad);
     
     // Zero gradient
     input.zero_grad();

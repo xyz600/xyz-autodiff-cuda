@@ -15,15 +15,15 @@ using namespace xyz_autodiff;
 // ===========================================
 
 // Test types
-using TestVector3 = Variable<float, 3>;
-using TestVectorRef3 = VariableRef<float, 3>;
+using TestVector3 = Variable<3, float>;
+using TestVectorRef3 = VariableRef<3, float>;
 using SymMatInvOp = UnaryOperation<3, op::SymMatrix2InvLogic<3>, TestVectorRef3>;
 
 // Static assertions for concept compliance
 static_assert(VariableConcept<TestVector3>, 
-    "Variable<float, 3> should satisfy VariableConcept");
+    "Variable<3, float> should satisfy VariableConcept");
 static_assert(DifferentiableVariableConcept<TestVector3>, 
-    "Variable<float, 3> should satisfy DifferentiableVariableConcept");
+    "Variable<3, float> should satisfy DifferentiableVariableConcept");
 
 static_assert(VariableConcept<SymMatInvOp>, 
     "SymmetricMatrix2x2Inverse Operation should satisfy VariableConcept");
@@ -62,7 +62,7 @@ __global__ void test_sym_matrix2_inv_forward_kernel(float* result) {
     float data[3] = {2.0f, 1.0f, 2.0f};
     float grad[3] = {0,0,0};
     
-    VariableRef<float, 3> input(data, grad);
+    VariableRef<3, float> input(data, grad);
     
     auto inv_result = op::sym_matrix2_inv(input);
     inv_result.forward();

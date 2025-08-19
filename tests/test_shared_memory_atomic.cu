@@ -46,8 +46,8 @@ __global__ void shared_memory_atomic_kernel(
     __syncthreads(); // Ensure initialization is complete
     
     // Create VariableRef pointing to shared memory
-    VariableRef<double, 1> x_ref(shared_x_data, shared_x_grad);
-    VariableRef<double, 1> y_ref(shared_y_data, shared_y_grad);
+    VariableRef<1, double> x_ref(shared_x_data, shared_x_grad);
+    VariableRef<1, double> y_ref(shared_y_data, shared_y_grad);
     
     // Each thread adds gradient using atomicAdd on shared memory
     x_ref.add_grad(0, 1.0);  // atomicAdd on shared memory
@@ -133,8 +133,8 @@ __global__ void multi_block_shared_memory_kernel(MultiBlockTestBuffers* results,
     __syncthreads();
     
     // Create VariableRef pointing to shared memory
-    VariableRef<double, 1> x_ref(shared_x_data, shared_x_grad);
-    VariableRef<double, 1> y_ref(shared_y_data, shared_y_grad);
+    VariableRef<1, double> x_ref(shared_x_data, shared_x_grad);
+    VariableRef<1, double> y_ref(shared_y_data, shared_y_grad);
     
     // Each thread adds gradient using atomicAdd on shared memory
     x_ref.add_grad(0, 1.0);

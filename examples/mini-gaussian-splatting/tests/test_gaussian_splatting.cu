@@ -28,8 +28,8 @@ __global__ void test_covariance_generation_kernel(float* result) {
     float rotation_data[1] = {0.0f};  // 0 radians
     float rotation_grad[1] = {0};
     
-    VariableRef<float, 2> scale(scale_data, scale_grad);
-    VariableRef<float, 1> rotation(rotation_data, rotation_grad);
+    VariableRef<2, float> scale(scale_data, scale_grad);
+    VariableRef<1, float> rotation(rotation_data, rotation_grad);
     
     auto M = op::generate_covariance_matrix(scale, rotation);
     M.forward();
@@ -64,8 +64,8 @@ __global__ void test_covariance_generation_90deg_kernel(float* result) {
     float rotation_data[1] = {1.5707963f};  // π/2 radians
     float rotation_grad[1] = {0};
     
-    VariableRef<float, 2> scale(scale_data, scale_grad);
-    VariableRef<float, 1> rotation(rotation_data, rotation_grad);
+    VariableRef<2, float> scale(scale_data, scale_grad);
+    VariableRef<1, float> rotation(rotation_data, rotation_grad);
     
     auto M = op::generate_covariance_matrix(scale, rotation);
     M.forward();
@@ -99,8 +99,8 @@ __global__ void test_scale_rotation_to_covariance_3param_kernel(float* result) {
     float rotation_data[1] = {0.0f};
     float rotation_grad[1] = {0};
     
-    VariableRef<float, 2> scale(scale_data, scale_grad);
-    VariableRef<float, 1> rotation(rotation_data, rotation_grad);
+    VariableRef<2, float> scale(scale_data, scale_grad);
+    VariableRef<1, float> rotation(rotation_data, rotation_grad);
     
     auto cov_3param = op::scale_rotation_to_covariance_3param(scale, rotation);
     cov_3param.forward();
@@ -133,8 +133,8 @@ __global__ void test_mahalanobis_distance_kernel(float* result) {
     float inv_cov_data[3] = {1.0f, 0.0f, 1.0f};  // identity matrix
     float inv_cov_grad[3] = {0,0,0};
     
-    VariableRef<float, 2> diff(diff_data, diff_grad);
-    VariableRef<float, 3> inv_cov(inv_cov_data, inv_cov_grad);
+    VariableRef<2, float> diff(diff_data, diff_grad);
+    VariableRef<3, float> inv_cov(inv_cov_data, inv_cov_grad);
     
     auto distance_sq = op::mahalanobis_distance(diff, inv_cov);
     distance_sq.forward();
@@ -167,9 +167,9 @@ __global__ void test_mahalanobis_distance_with_center_kernel(float* result) {
     float inv_cov_data[3] = {1.0f, 0.0f, 1.0f};
     float inv_cov_grad[3] = {0,0,0};
     
-    VariableRef<float, 2> point(point_data, point_grad);
-    VariableRef<float, 2> center(center_data, center_grad);
-    VariableRef<float, 3> inv_cov(inv_cov_data, inv_cov_grad);
+    VariableRef<2, float> point(point_data, point_grad);
+    VariableRef<2, float> center(center_data, center_grad);
+    VariableRef<3, float> inv_cov(inv_cov_data, inv_cov_grad);
     
     auto distance_sq = op::mahalanobis_distance_with_center(point, center, inv_cov);
     distance_sq.forward();
@@ -197,7 +197,7 @@ __global__ void test_quaternion_to_rotation_matrix_integration_kernel(float* res
     float quat_data[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     float quat_grad[4] = {0,0,0,0};
     
-    VariableRef<float, 4> quaternion(quat_data, quat_grad);
+    VariableRef<4, float> quaternion(quat_data, quat_grad);
     
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
     rotation_matrix.forward();
@@ -236,8 +236,8 @@ __global__ void test_gaussian_splatting_gradient_verification_kernel(float* resu
     double rotation_data[1] = {0.3};  // small rotation
     double rotation_grad[1] = {0.0};
     
-    VariableRef<double, 2> scale(scale_data, scale_grad);
-    VariableRef<double, 1> rotation(rotation_data, rotation_grad);
+    VariableRef<2, double> scale(scale_data, scale_grad);
+    VariableRef<1, double> rotation(rotation_data, rotation_grad);
     
     // Generate covariance -> invert -> use in Mahalanobis distance
     auto cov_3param = op::scale_rotation_to_covariance_3param(scale, rotation);

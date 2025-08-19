@@ -15,7 +15,7 @@ struct MatrixMultiplication3x3Logic {
     using T = typename Input1::value_type;
     static_assert(std::is_same_v<T, typename Input2::value_type>, "Input types must match");
     static constexpr std::size_t Dim = 9;
-    using Output = Variable<T, Dim>;
+    using Output = Variable<Dim, T>;
     
     static constexpr std::size_t outputDim = Dim;
     

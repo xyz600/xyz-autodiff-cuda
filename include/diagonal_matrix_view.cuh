@@ -6,7 +6,7 @@
 
 namespace xyz_autodiff {
 
-template <typename T, std::size_t N, typename VariableType = VariableRef<T, N>>
+template <typename T, std::size_t N, typename VariableType = VariableRef<N, T>>
 class DiagonalMatrixView {
 public:
     using value_type = T;
@@ -91,13 +91,13 @@ public:
 
 // ヘルパー関数
 template <std::size_t N, typename T>
-__host__ __device__ auto make_diagonal_matrix_view(VariableRef<T, N>& var) {
-    return DiagonalMatrixView<T, N, VariableRef<T, N>>(var);
+__host__ __device__ auto make_diagonal_matrix_view(VariableRef<N, T>& var) {
+    return DiagonalMatrixView<T, N, VariableRef<N, T>>(var);
 }
 
 template <std::size_t N, typename T>
-__host__ __device__ auto make_diagonal_matrix_view(Variable<T, N>& var) {
-    return DiagonalMatrixView<T, N, Variable<T, N>>(var);
+__host__ __device__ auto make_diagonal_matrix_view(Variable<N, T>& var) {
+    return DiagonalMatrixView<T, N, Variable<N, T>>(var);
 }
 
 } // namespace xyz_autodiff

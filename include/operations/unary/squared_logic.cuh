@@ -14,7 +14,7 @@ struct SquaredLogic {
     static constexpr std::size_t outputDim = Dim;
     
     template <typename Input>
-    __device__ void forward(Variable<typename Input::value_type, Dim>& output, const Input& input) const {
+    __device__ void forward(Variable<Dim, typename Input::value_type>& output, const Input& input) const {
         using T = typename Input::value_type;
         for (std::size_t i = 0; i < Dim; ++i) {
             T val = input[i];
@@ -23,7 +23,7 @@ struct SquaredLogic {
     }
     
     template <typename Input>
-    __device__ void backward(const Variable<typename Input::value_type, Dim>& output, Input& input) const {
+    __device__ void backward(const Variable<Dim, typename Input::value_type>& output, Input& input) const {
         using T = typename Input::value_type;
         for (std::size_t i = 0; i < Dim; ++i) {
             const T& output_grad = output.grad(i);
