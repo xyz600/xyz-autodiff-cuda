@@ -195,12 +195,25 @@ public:
                            double input_max = 2.0) {
         using T = double;
         
+        // 許容誤差の制約チェック（禁止）
+        if (tolerance < 1e-5) {
+            FAIL() << "FORBIDDEN: Using tolerance " << tolerance 
+                   << " which is smaller than 1e-5. Minimum tolerance for double precision tests is 1e-5.";
+        }
+        
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<T> dist(input_min, input_max);
         
         // デバイスメモリ確保（単一確保）
         auto device_buffers = makeCudaUnique<BinaryGradientTestBuffers<T, Input1Dim, Input2Dim, OutputDim>>();
+        
+        T max_error = 0.0;
+        std::size_t max_error_test_case = 0;
+        std::size_t max_error_input_index = 0;
+        bool max_error_is_input1 = true;
+        T max_error_analytical = 0.0;
+        T max_error_numerical = 0.0;
         
         for (std::size_t test_case = 0; test_case < num_tests; ++test_case) {
             BinaryGradientTestBuffers<T, Input1Dim, Input2Dim, OutputDim> host_buffers = {};
@@ -236,6 +249,16 @@ public:
             for (std::size_t i = 0; i < Input1Dim; ++i) {
                 T error_min = compute_error_min(host_buffers.analytical_grad1[i], host_buffers.numerical_grad1[i]);
                 
+                // 最大誤差を記録
+                if (error_min > max_error) {
+                    max_error = error_min;
+                    max_error_test_case = test_case;
+                    max_error_input_index = i;
+                    max_error_is_input1 = true;
+                    max_error_analytical = host_buffers.analytical_grad1[i];
+                    max_error_numerical = host_buffers.numerical_grad1[i];
+                }
+                
                 EXPECT_LE(error_min, tolerance) 
                     << operation_name << " test case " << test_case 
                     << ", input1[" << i << "]: analytical=" << host_buffers.analytical_grad1[i]
@@ -247,6 +270,16 @@ public:
             for (std::size_t i = 0; i < Input2Dim; ++i) {
                 T error_min = compute_error_min(host_buffers.analytical_grad2[i], host_buffers.numerical_grad2[i]);
                 
+                // 最大誤差を記録
+                if (error_min > max_error) {
+                    max_error = error_min;
+                    max_error_test_case = test_case;
+                    max_error_input_index = i;
+                    max_error_is_input1 = false;
+                    max_error_analytical = host_buffers.analytical_grad2[i];
+                    max_error_numerical = host_buffers.numerical_grad2[i];
+                }
+                
                 EXPECT_LE(error_min, tolerance) 
                     << operation_name << " test case " << test_case 
                     << ", input2[" << i << "]: analytical=" << host_buffers.analytical_grad2[i]
@@ -254,6 +287,22 @@ public:
                     << ", error_min=" << error_min;
             }
         }
+        
+        // 最大誤差を出力
+        std::cout << "=== GRADIENT TEST SUMMARY for " << operation_name << " ===" << std::endl;
+        std::cout << "Number of tests: " << num_tests << std::endl;
+        std::cout << "Tolerance: " << tolerance << std::endl;
+        std::cout << "Delta: " << delta << std::endl;
+        std::cout << "Maximum error: " << max_error << std::endl;
+        std::cout << "Max error location: test case " << max_error_test_case 
+                  << ", " << (max_error_is_input1 ? "input1" : "input2") 
+                  << "[" << max_error_input_index << "]" << std::endl;
+        std::cout << "Max error values: analytical=" << max_error_analytical 
+                  << ", numerical=" << max_error_numerical << std::endl;
+        if (max_error > tolerance) {
+            std::cout << "RECOMMENDATION: Use tolerance >= " << max_error * 1.1 << " for this operation" << std::endl;
+        }
+        std::cout << "==========================================" << std::endl;
     }
 };
 

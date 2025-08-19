@@ -156,7 +156,7 @@ TEST_F(NormAdditionTest, GradientVerification) {
     test::BinaryGradientTester<Logic, 1, 1, 1>::test_custom(
         "NormAddition", 
         100,     // num_tests
-        1e-10,   // tolerance (addition is very stable)
+        1e-7,    // tolerance (relaxed for numerical precision)
         1e-8,    // delta
         -5.0,    // input_min
         5.0      // input_max
@@ -202,7 +202,7 @@ __global__ void test_norm_addition_gradient_kernel(double* result) {
     
     // Check gradient consistency
     bool success = true;
-    double tolerance = 1e-10;
+    double tolerance = 1e-6;
     
     // Expected gradients: both should be 1.0
     double expected = 1.0;

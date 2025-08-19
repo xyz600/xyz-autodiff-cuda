@@ -226,3 +226,23 @@ __global__ void test_operation_interface_kernel(float* result) {
   - Smooth operations: `1e-5` tolerance, `1e-7` delta
   - Non-smooth operations (L1 norm): `1e-4` tolerance, `1e-6` delta
   - Avoid problematic inputs (e.g., zero for L2 norm)
+
+### 5. CRITICAL TESTING CONSTRAINTS
+**TEST SKIPPING IS COMPLETELY FORBIDDEN**
+- Never use `GTEST_SKIP()` for any test except CUDA device availability checks
+- All gradient verification tests must pass without skipping
+- If a test has numerical precision issues, fix the tolerance values or implementation instead of skipping
+- If a test has mathematical errors, fix the mathematical logic instead of skipping
+- Every operation must have complete test coverage including gradient verification
+- Problematic tests must be fixed, not skipped
+
+**TOLERANCE CONSTRAINTS FOR DOUBLE PRECISION TESTS**
+- Minimum tolerance for double precision gradient verification tests: `1e-5`
+- Setting tolerance values below `1e-5` is COMPLETELY FORBIDDEN for double precision tests
+- This constraint prevents numerical precision issues with CUDA double precision operations
+- Test utilities automatically FAIL when tolerance values below `1e-5` are used
+- Test utilities output maximum error and recommend appropriate tolerance values
+- Example acceptable tolerance ranges:
+  - Simple operations: `1e-5` to `1e-4`
+  - Complex operations (matrix operations): `1e-4` to `1e-3`
+  - Numerically challenging operations: `1e-3` or higher

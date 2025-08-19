@@ -89,21 +89,20 @@ TEST_F(MahalanobisDistanceTest, IdentityMatrixCase) {
 }
 
 __global__ void test_mahalanobis_distance_diagonal_kernel(float* result) {
-    // Test case: point = [2, 3], cov_3param = [4, 0, 9] (diagonal matrix)
-    // Σ^-1 = [[1/4, 0], [0, 1/9]]
-    // Expected: distance^2 = 2^2/4 + 3^2/9 = 1 + 1 = 2
+    // Test case: point = [2, 3], inv_cov_3param = [1/4, 0, 1/9] (diagonal inverse covariance)
+    // Expected: distance^2 = 2^2*(1/4) + 3^2*(1/9) = 1 + 1 = 2
     float point_data[2] = {2.0f, 3.0f};
     float point_grad[2] = {0,0};
-    float cov_data[3] = {4.0f, 0.0f, 9.0f};  // [σ11, σ12, σ22]
-    float cov_grad[3] = {0,0,0};
+    float inv_cov_data[3] = {0.25f, 0.0f, 1.0f/9.0f};  // [1/4, 0, 1/9]
+    float inv_cov_grad[3] = {0,0,0};
     
     VariableRef<float, 2> point(point_data, point_grad);
-    VariableRef<float, 3> cov_3param(cov_data, cov_grad);
+    VariableRef<float, 3> inv_cov_3param(inv_cov_data, inv_cov_grad);
     
-    auto distance_sq = op::mahalanobis_distance(point, cov_3param);
+    auto distance_sq = op::mahalanobis_distance(point, inv_cov_3param);
     distance_sq.forward();
     
-    float expected = 2.0f;  // 2^2/4 + 3^2/9 = 1 + 1
+    float expected = 2.0f;  // 2^2*(1/4) + 3^2*(1/9) = 1 + 1
     float tolerance = 1e-5f;
     bool success = (fabsf(distance_sq[0] - expected) < tolerance);
     
@@ -122,20 +121,18 @@ TEST_F(MahalanobisDistanceTest, DiagonalMatrixCase) {
 }
 
 __global__ void test_mahalanobis_distance_general_kernel(float* result) {
-    // Test case: point = [1, 1], cov_3param = [2, 1, 2]
-    // Σ = [[2, 1], [1, 2]], det(Σ) = 4 - 1 = 3
-    // Σ^-1 = (1/3) * [[2, -1], [-1, 2]]
-    // distance^2 = [1, 1] * Σ^-1 * [1, 1]^T = (1/3) * [1, 1] * [[2, -1], [-1, 2]] * [1, 1]^T
-    //            = (1/3) * [1, 1] * [1, 1]^T = (1/3) * 2 = 2/3
+    // Test case: point = [1, 1], inv_cov_3param = [2/3, -1/3, 2/3]
+    // From Σ = [[2, 1], [1, 2]], det(Σ) = 3, Σ^-1 = (1/3) * [[2, -1], [-1, 2]] = [[2/3, -1/3], [-1/3, 2/3]]
+    // distance^2 = [1, 1] * Σ^-1 * [1, 1]^T = (2/3)*1^2 + 2*(-1/3)*1*1 + (2/3)*1^2 = 2/3 - 2/3 + 2/3 = 2/3
     float point_data[2] = {1.0f, 1.0f};
     float point_grad[2] = {0,0};
-    float cov_data[3] = {2.0f, 1.0f, 2.0f};  // [σ11, σ12, σ22]
-    float cov_grad[3] = {0,0,0};
+    float inv_cov_data[3] = {2.0f/3.0f, -1.0f/3.0f, 2.0f/3.0f};  // [2/3, -1/3, 2/3]
+    float inv_cov_grad[3] = {0,0,0};
     
     VariableRef<float, 2> point(point_data, point_grad);
-    VariableRef<float, 3> cov_3param(cov_data, cov_grad);
+    VariableRef<float, 3> inv_cov_3param(inv_cov_data, inv_cov_grad);
     
-    auto distance_sq = op::mahalanobis_distance(point, cov_3param);
+    auto distance_sq = op::mahalanobis_distance(point, inv_cov_3param);
     distance_sq.forward();
     
     float expected = 2.0f / 3.0f;
