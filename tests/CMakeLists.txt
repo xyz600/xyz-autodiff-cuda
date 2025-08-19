@@ -202,11 +202,20 @@ set_target_properties(test_linear_regression_network PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-# Variable Operators テスト
+# Variable Operators テスト (constant operators)
 add_executable(test_variable_operators test_variable_operators.cu)
 target_link_libraries(test_variable_operators xyz_autodiff gtest gtest_main)
 target_include_directories(test_variable_operators PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_variable_operators PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Binary Variable Operators テスト (Variable + Variable operators)
+add_executable(test_binary_variable_operators operation/binary/test_variable_operators.cu)
+target_link_libraries(test_binary_variable_operators xyz_autodiff gtest gtest_main)
+target_include_directories(test_binary_variable_operators PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_binary_variable_operators PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_ARCHITECTURES "89"
 )
@@ -237,3 +246,4 @@ add_test(NAME MatrixMultiplicationTest COMMAND test_matrix_multiplication)
 # Removed: SymmetricMatrixOpsTest (now covered by standard operations)
 add_test(NAME LinearRegressionNetworkTest COMMAND test_linear_regression_network)
 add_test(NAME VariableOperatorsTest COMMAND test_variable_operators)
+add_test(NAME BinaryVariableOperatorsTest COMMAND test_binary_variable_operators)
