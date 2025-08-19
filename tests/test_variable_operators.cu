@@ -199,3 +199,223 @@ TEST_F(VariableOperatorTest, VariablePlusZeroConstant) {
             << "Backward pass failed at index " << i;
     }
 }
+
+// Test buffer for specific size operations
+struct VariableMinusTestBuffer {
+    float input_data[3];
+    float input_grad[3];
+    float output_data[3];
+    float constant_value;
+    float output_grad[3];
+};
+
+// CUDA kernel to test Variable - constant operator
+__global__ void test_variable_minus_constant_kernel(VariableMinusTestBuffer* buffer) {
+    // Create VariableRef from buffer data and gradients
+    xyz_autodiff::VariableRef<float, 3> input(buffer->input_data, buffer->input_grad);
+    
+    // Zero gradient
+    input.zero_grad();
+    
+    // Create operation and forward
+    auto result_op = input - buffer->constant_value;
+    result_op.forward();
+    
+    // Copy result to output data array
+    for (std::size_t i = 0; i < 3; ++i) {
+        buffer->output_data[i] = result_op[i];
+    }
+    
+    // Set gradient on output
+    for (std::size_t i = 0; i < 3; ++i) {
+        result_op.add_grad(i, buffer->output_grad[i]);
+    }
+    
+    // Backward pass
+    result_op.backward();
+}
+
+TEST_F(VariableOperatorTest, VariableMinusConstantFloat) {
+    // Prepare host data
+    VariableMinusTestBuffer host_buffer;
+    
+    // Initialize input values on host
+    float input_values[3] = {5.0f, 4.0f, 3.0f};
+    for (std::size_t i = 0; i < 3; ++i) {
+        host_buffer.input_data[i] = input_values[i];
+        host_buffer.input_grad[i] = 0.0f;
+        host_buffer.output_grad[i] = 1.0f;
+    }
+    
+    // Set constant value
+    host_buffer.constant_value = 2.0f;
+    
+    // Copy to device
+    auto device_buffer = makeCudaUnique<VariableMinusTestBuffer>();
+    cudaMemcpy(device_buffer.get(), &host_buffer, sizeof(VariableMinusTestBuffer), cudaMemcpyHostToDevice);
+    
+    // Launch kernel
+    test_variable_minus_constant_kernel<<<1, 1>>>(device_buffer.get());
+    cudaDeviceSynchronize();
+    
+    // Copy result back
+    cudaMemcpy(&host_buffer, device_buffer.get(), sizeof(VariableMinusTestBuffer), cudaMemcpyDeviceToHost);
+    
+    // Verify results on host
+    float expected_output[3] = {3.0f, 2.0f, 1.0f};
+    float expected_input_grad[3] = {1.0f, 1.0f, 1.0f}; // Since d/dx(x - c) = 1
+    
+    for (std::size_t i = 0; i < 3; ++i) {
+        EXPECT_NEAR(host_buffer.output_data[i], expected_output[i], 1e-6f) 
+            << "Forward pass failed at index " << i;
+        EXPECT_NEAR(host_buffer.input_grad[i], expected_input_grad[i], 1e-6f)
+            << "Backward pass failed at index " << i;
+    }
+}
+
+// Test buffer for multiply operation
+struct VariableMultiplyTestBuffer {
+    float input_data[2];
+    float input_grad[2];
+    float output_data[2];
+    float constant_value;
+    float output_grad[2];
+};
+
+// CUDA kernel to test Variable * constant operator
+__global__ void test_variable_multiply_constant_kernel(VariableMultiplyTestBuffer* buffer) {
+    // Create VariableRef from buffer data and gradients
+    xyz_autodiff::VariableRef<float, 2> input(buffer->input_data, buffer->input_grad);
+    
+    // Zero gradient
+    input.zero_grad();
+    
+    // Create operation and forward
+    auto result_op = input * buffer->constant_value;
+    result_op.forward();
+    
+    // Copy result to output data array
+    for (std::size_t i = 0; i < 2; ++i) {
+        buffer->output_data[i] = result_op[i];
+    }
+    
+    // Set gradient on output
+    for (std::size_t i = 0; i < 2; ++i) {
+        result_op.add_grad(i, buffer->output_grad[i]);
+    }
+    
+    // Backward pass
+    result_op.backward();
+}
+
+TEST_F(VariableOperatorTest, VariableMultiplyConstantFloat) {
+    // Prepare host data
+    VariableMultiplyTestBuffer host_buffer;
+    
+    // Initialize input values on host
+    float input_values[2] = {2.0f, 3.0f};
+    for (std::size_t i = 0; i < 2; ++i) {
+        host_buffer.input_data[i] = input_values[i];
+        host_buffer.input_grad[i] = 0.0f;
+        host_buffer.output_grad[i] = 1.0f;
+    }
+    
+    // Set constant value
+    host_buffer.constant_value = 1.5f;
+    
+    // Copy to device
+    auto device_buffer = makeCudaUnique<VariableMultiplyTestBuffer>();
+    cudaMemcpy(device_buffer.get(), &host_buffer, sizeof(VariableMultiplyTestBuffer), cudaMemcpyHostToDevice);
+    
+    // Launch kernel
+    test_variable_multiply_constant_kernel<<<1, 1>>>(device_buffer.get());
+    cudaDeviceSynchronize();
+    
+    // Copy result back
+    cudaMemcpy(&host_buffer, device_buffer.get(), sizeof(VariableMultiplyTestBuffer), cudaMemcpyDeviceToHost);
+    
+    // Verify results on host
+    float expected_output[2] = {3.0f, 4.5f};
+    float expected_input_grad[2] = {1.5f, 1.5f}; // Since d/dx(x * c) = c
+    
+    for (std::size_t i = 0; i < 2; ++i) {
+        EXPECT_NEAR(host_buffer.output_data[i], expected_output[i], 1e-6f) 
+            << "Forward pass failed at index " << i;
+        EXPECT_NEAR(host_buffer.input_grad[i], expected_input_grad[i], 1e-6f)
+            << "Backward pass failed at index " << i;
+    }
+}
+
+// Test buffer for divide operation
+struct VariableDivideTestBuffer {
+    double input_data[2];
+    double input_grad[2];
+    double output_data[2];
+    double constant_value;
+    double output_grad[2];
+};
+
+// CUDA kernel to test Variable / constant operator
+__global__ void test_variable_divide_constant_kernel(VariableDivideTestBuffer* buffer) {
+    // Create VariableRef from buffer data and gradients
+    xyz_autodiff::VariableRef<double, 2> input(buffer->input_data, buffer->input_grad);
+    
+    // Zero gradient
+    input.zero_grad();
+    
+    // Create operation and forward
+    auto result_op = input / buffer->constant_value;
+    result_op.forward();
+    
+    // Copy result to output data array
+    for (std::size_t i = 0; i < 2; ++i) {
+        buffer->output_data[i] = result_op[i];
+    }
+    
+    // Set gradient on output
+    for (std::size_t i = 0; i < 2; ++i) {
+        result_op.add_grad(i, buffer->output_grad[i]);
+    }
+    
+    // Backward pass
+    result_op.backward();
+}
+
+TEST_F(VariableOperatorTest, VariableDivideConstantDouble) {
+    // Prepare host data
+    VariableDivideTestBuffer host_buffer;
+    
+    // Initialize input values on host
+    double input_values[2] = {6.0, 9.0};
+    for (std::size_t i = 0; i < 2; ++i) {
+        host_buffer.input_data[i] = input_values[i];
+        host_buffer.input_grad[i] = 0.0;
+        host_buffer.output_grad[i] = 1.0;
+    }
+    
+    // Set constant value
+    host_buffer.constant_value = 3.0;
+    
+    // Copy to device
+    auto device_buffer = makeCudaUnique<VariableDivideTestBuffer>();
+    cudaMemcpy(device_buffer.get(), &host_buffer, sizeof(VariableDivideTestBuffer), cudaMemcpyHostToDevice);
+    
+    // Launch kernel
+    test_variable_divide_constant_kernel<<<1, 1>>>(device_buffer.get());
+    cudaDeviceSynchronize();
+    
+    // Copy result back
+    cudaMemcpy(&host_buffer, device_buffer.get(), sizeof(VariableDivideTestBuffer), cudaMemcpyDeviceToHost);
+    
+    // Verify results on host
+    double expected_output[2] = {2.0, 3.0};
+    double expected_input_grad[2] = {1.0 / 3.0, 1.0 / 3.0}; // Since d/dx(x / c) = 1/c
+    
+    for (std::size_t i = 0; i < 2; ++i) {
+        EXPECT_NEAR(host_buffer.output_data[i], expected_output[i], 1e-10) 
+            << "Forward pass failed at index " << i;
+        EXPECT_NEAR(host_buffer.input_grad[i], expected_input_grad[i], 1e-10)
+            << "Backward pass failed at index " << i;
+    }
+}
+

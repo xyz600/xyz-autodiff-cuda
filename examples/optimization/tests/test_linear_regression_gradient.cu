@@ -6,7 +6,7 @@
 #include "../../../include/operations/binary/mul_logic.cuh"
 #include "../../../include/operations/binary/add_logic.cuh"
 #include "../../../include/operations/binary/sub_logic.cuh"
-#include "../../../include/operations/binary/sub_constant_logic.cuh"
+#include "../../../include/operations/unary/sub_constant_logic.cuh"
 #include "../../../include/operations/unary/squared_logic.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
 
