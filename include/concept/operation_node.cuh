@@ -13,6 +13,8 @@ concept OperationNode = requires(T node) {
     typename T::value_type;
     { T::size } -> std::convertible_to<std::size_t>;
     
+    { node.forward() } -> std::same_as<void>;
+
     // 勾配初期化
     { node.zero_grad() } -> std::same_as<void>;
     
