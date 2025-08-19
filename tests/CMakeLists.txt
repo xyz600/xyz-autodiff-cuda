@@ -153,7 +153,7 @@ set_target_properties(test_sym_matrix2_inv PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-# Broadcast Operator テスト
+# Broadcast Operation テスト
 add_executable(test_broadcast operation/unary/test_broadcast.cu)
 target_link_libraries(test_broadcast xyz_autodiff gtest gtest_main)
 target_include_directories(test_broadcast PRIVATE ${CMAKE_SOURCE_DIR}/include)
@@ -197,10 +197,6 @@ set_target_properties(test_matrix_multiplication PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_ARCHITECTURES "89"
 )
-
-# Removed: test_norm_addition (now covered by standard add operations in test_norm_operations)
-
-# Removed: test_symmetric_matrix_ops (now covered by standard operations)
 
 # Linear Regression Network テスト
 add_executable(test_linear_regression_network operation/base/test_linear_regression_network.cu)

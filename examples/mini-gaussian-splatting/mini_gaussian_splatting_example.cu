@@ -76,14 +76,14 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     auto gaussian_value = op::exp(neg_scaled);
     
     // Step 5: Apply opacity to color (element-wise multiplication with opacity broadcast)
-    // Use constant operator for scalar multiplication
-    auto broadcasted_opacity = op::broadcast<3>(opacity);
-    auto color_with_opacity = color * broadcasted_opacity;
+    // Use broadcast operation to efficiently broadcast size-1 opacity to size-3
+    auto opacity_broadcast = op::broadcast<3>(opacity);
+    auto color_with_opacity = op::mul(color, opacity_broadcast);
     
     // Step 6: Multiply Gaussian value with color
-    // Use constant operator for scalar multiplication
-    auto broadcasted_gaussian = op::broadcast<3>(gaussian_value);
-    auto weighted_color = color_with_opacity * broadcasted_gaussian;
+    // Use broadcast operation to efficiently broadcast size-1 gaussian_value to size-3
+    auto gauss_broadcast = broadcast<3>(gaussian_value);
+    auto weighted_color = op::mul(color_with_opacity, gauss_broadcast);
     
     // Step 7: Compute L1 + L2 norm of the weighted color as final result
     // Use standard operations: l1_norm + l2_norm + add

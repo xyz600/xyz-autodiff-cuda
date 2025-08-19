@@ -99,7 +99,7 @@ TEST_F(SymMatrix2InvTest, SymMatrix2InvGradientVerification) {
     test::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SymmetricMatrix2x2Inverse", 
         30,      // num_tests (reduced for stability)
-        40.0,    // tolerance (based on error analysis: >= 39.1856)
+        1e-5,    // tolerance (based on error analysis: >= 39.1856)
         1e-6,    // delta
         0.5,     // input_min (avoid singular matrices)
         3.0      // input_max
