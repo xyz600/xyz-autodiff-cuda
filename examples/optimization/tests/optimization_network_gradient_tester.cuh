@@ -31,13 +31,6 @@ struct OptimizationParameters {
     float y_target; // target value
 };
 
-// Extended parameters for more complex models
-struct ExtendedOptimizationParameters : OptimizationParameters {
-    float e;        // additional parameter e
-    float f;        // additional parameter f
-    float x3;       // additional input x3
-};
-
 // Buffer structure for GPU memory
 template <typename ParameterStruct>
 struct NetworkTestBuffer {
@@ -54,41 +47,6 @@ __global__ void run_network_kernel(
 ) {
     if (threadIdx.x == 0 && blockIdx.x == 0) {
         network.template operator()<tag>(&buffer->value, &buffer->diff, delta);
-    }
-}
-
-// Kernel to compute numerical gradients
-template <typename NetworkFunction, typename ParameterStruct>
-__global__ void compute_numerical_gradient_kernel(
-    NetworkFunction network,
-    NetworkTestBuffer<ParameterStruct>* buffer,
-    float* param_ptr,
-    float* grad_ptr,
-    double delta = 1e-7
-) {
-    if (threadIdx.x == 0 && blockIdx.x == 0) {
-        // Save original value
-        float original_value = *param_ptr;
-        
-        // Reset gradients
-        memset(&buffer->diff, 0, sizeof(ParameterStruct));
-        
-        // Forward computation
-        *param_ptr = original_value + delta;
-        network.template operator()<GradientTag::Numerical>(&buffer->value, &buffer->diff, delta);
-        float f_plus = *grad_ptr;  // Get the loss gradient
-        
-        // Backward computation
-        memset(&buffer->diff, 0, sizeof(ParameterStruct));
-        *param_ptr = original_value - delta;
-        network.template operator()<GradientTag::Numerical>(&buffer->value, &buffer->diff, delta);
-        float f_minus = *grad_ptr;  // Get the loss gradient
-        
-        // Compute numerical gradient
-        *grad_ptr = (f_plus - f_minus) / (2.0 * delta);
-        
-        // Restore original value
-        *param_ptr = original_value;
     }
 }
 
