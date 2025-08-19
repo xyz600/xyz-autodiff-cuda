@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
 #include <cmath>
-#include "../include/variable.cuh"
-#include "../include/operations/quaternion_to_rotation_matrix_logic.cuh"
-#include "../include/concept/variable.cuh"
-#include "../include/concept/operation_node.cuh"
-#include "../include/util/cuda_unique_ptr.cuh"
+#include "../../../include/variable.cuh"
+#include "../../../include/operations/unary/to_rotation_matrix_logic.cuh"
+#include "../../../include/concept/variable.cuh"
+#include "../../../include/concept/operation_node.cuh"
+#include "../../../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;
 
@@ -223,9 +223,9 @@ __global__ void test_quaternion_operation_chaining_kernel(float* result) {
     // Use a non-identity quaternion to test gradient propagation
     float quat_data[4] = {0.1f, 0.2f, 0.3f, 0.926f};  // Approximately normalized
     float quat_grad[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-    
+    // FIXME: atomic 演算しなくていい部分の修正
     VariableRef<float, 4> quaternion(quat_data, quat_grad);
-    
+
     // Create quaternion to rotation matrix operation
     auto rotation_matrix = op::quaternion_to_rotation_matrix(quaternion);
     

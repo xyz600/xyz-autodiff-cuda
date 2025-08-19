@@ -55,7 +55,7 @@ set_target_properties(test_symmetric_matrix PROPERTIES
 )
 
 # UnaryOperations テスト
-add_executable(test_unary_operations test_unary_operations.cu)
+add_executable(test_unary_operations operation/unary/test_unary_operations.cu)
 target_link_libraries(test_unary_operations xyz_autodiff gtest gtest_main)
 target_include_directories(test_unary_operations PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_unary_operations PROPERTIES
@@ -73,7 +73,7 @@ set_target_properties(test_math_dispatcher PROPERTIES
 )
 
 # GradientVerification テスト
-add_executable(test_gradient_verification test_gradient_verification.cu)
+add_executable(test_gradient_verification operation/base/test_gradient_verification.cu)
 target_link_libraries(test_gradient_verification xyz_autodiff gtest gtest_main)
 target_include_directories(test_gradient_verification PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_gradient_verification PROPERTIES
@@ -82,7 +82,7 @@ set_target_properties(test_gradient_verification PROPERTIES
 )
 
 # OperationChaining テスト
-add_executable(test_operation_chaining test_operation_chaining.cu)
+add_executable(test_operation_chaining operation/base/test_operation_chaining.cu)
 target_link_libraries(test_operation_chaining xyz_autodiff gtest gtest_main)
 target_include_directories(test_operation_chaining PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_operation_chaining PROPERTIES
@@ -91,7 +91,7 @@ set_target_properties(test_operation_chaining PROPERTIES
 )
 
 # OperationConcepts テスト
-add_executable(test_operation_concepts test_operation_concepts.cu)
+add_executable(test_operation_concepts operation/base/test_operation_concepts.cu)
 target_link_libraries(test_operation_concepts xyz_autodiff gtest gtest_main)
 target_include_directories(test_operation_concepts PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_operation_concepts PROPERTIES
@@ -100,7 +100,7 @@ set_target_properties(test_operation_concepts PROPERTIES
 )
 
 # QuaternionToRotationMatrix テスト
-add_executable(test_quaternion_to_rotation_matrix test_quaternion_to_rotation_matrix.cu)
+add_executable(test_quaternion_to_rotation_matrix operation/unary/test_quaternion_to_rotation_matrix.cu)
 target_link_libraries(test_quaternion_to_rotation_matrix xyz_autodiff gtest gtest_main)
 target_include_directories(test_quaternion_to_rotation_matrix PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_quaternion_to_rotation_matrix PROPERTIES
@@ -135,6 +135,64 @@ set_target_properties(test_dag_backward PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# Standard Norm Operations テスト
+add_executable(test_norm_operations operation/unary/test_norm_operations.cu)
+target_link_libraries(test_norm_operations xyz_autodiff gtest gtest_main)
+target_include_directories(test_norm_operations PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_norm_operations PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Standard Symmetric Matrix 2x2 Inverse テスト
+add_executable(test_sym_matrix2_inv operation/unary/test_sym_matrix2_inv.cu)
+target_link_libraries(test_sym_matrix2_inv xyz_autodiff gtest gtest_main)
+target_include_directories(test_sym_matrix2_inv PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_sym_matrix2_inv PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Mini Gaussian Splatting Core テスト
+add_executable(test_mini_gaussian_splatting ../examples/mini-gaussian-splatting/tests/test_gaussian_splatting.cu)
+target_link_libraries(test_mini_gaussian_splatting xyz_autodiff gtest gtest_main)
+target_include_directories(test_mini_gaussian_splatting PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
+set_target_properties(test_mini_gaussian_splatting PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Mini Gaussian Splatting Individual Operation Tests
+add_executable(test_covariance_generation ../examples/mini-gaussian-splatting/tests/test_covariance_generation.cu)
+target_link_libraries(test_covariance_generation xyz_autodiff gtest gtest_main)
+target_include_directories(test_covariance_generation PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
+set_target_properties(test_covariance_generation PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Removed: test_element_wise_exp and test_element_wise_multiply (now covered by standard operations)
+
+add_executable(test_mahalanobis_distance ../examples/mini-gaussian-splatting/tests/test_mahalanobis_distance.cu)
+target_link_libraries(test_mahalanobis_distance xyz_autodiff gtest gtest_main)
+target_include_directories(test_mahalanobis_distance PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
+set_target_properties(test_mahalanobis_distance PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+add_executable(test_matrix_multiplication ../examples/mini-gaussian-splatting/tests/test_matrix_multiplication.cu)
+target_link_libraries(test_matrix_multiplication xyz_autodiff gtest gtest_main)
+target_include_directories(test_matrix_multiplication PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
+set_target_properties(test_matrix_multiplication PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Removed: test_norm_addition (now covered by standard add operations in test_norm_operations)
+
+# Removed: test_symmetric_matrix_ops (now covered by standard operations)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
@@ -150,3 +208,12 @@ add_test(NAME QuaternionToRotationMatrixTest COMMAND test_quaternion_to_rotation
 add_test(NAME ParallelGradientAccumulationTest COMMAND test_parallel_gradient_accumulation)
 add_test(NAME SharedMemoryAtomicTest COMMAND test_shared_memory_atomic)
 add_test(NAME DAGBackwardTest COMMAND test_dag_backward)
+add_test(NAME NormOperationsTest COMMAND test_norm_operations)
+add_test(NAME SymMatrix2InvTest COMMAND test_sym_matrix2_inv)
+add_test(NAME MiniGaussianSplattingTest COMMAND test_mini_gaussian_splatting)
+add_test(NAME CovarianceGenerationTest COMMAND test_covariance_generation)
+# Removed: ElementWiseExpTest and ElementWiseMultiplyTest (now covered by standard operations)
+add_test(NAME MahalanobisDistanceTest COMMAND test_mahalanobis_distance)
+add_test(NAME MatrixMultiplicationTest COMMAND test_matrix_multiplication)
+# Removed: NormAdditionTest (now covered by standard add operations in NormOperationsTest)
+# Removed: SymmetricMatrixOpsTest (now covered by standard operations)

@@ -2,8 +2,8 @@
 #include <cuda_runtime.h>
 #include <cmath>
 #include "../include/variable.cuh"
-#include "../include/operations/add_logic.cuh"
-#include "../include/operations/mul_logic.cuh"
+#include "../include/operations/binary/add_logic.cuh"
+#include "../include/operations/binary/mul_logic.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;

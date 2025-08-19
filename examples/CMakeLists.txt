@@ -6,3 +6,6 @@ set_target_properties(linear_regression_sgd PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_ARCHITECTURES "89"
 )
+
+# Add Mini Gaussian Splatting subdirectory
+add_subdirectory(mini-gaussian-splatting)

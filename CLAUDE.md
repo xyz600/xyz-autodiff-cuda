@@ -142,10 +142,22 @@ task build:debug && cd build/debug && ./examples/linear_regression_sgd
 - Shows gradient accumulation across batches
 - Partial convergence achieved (needs optimization tuning for full convergence)
 
-## Forward実行の変更 
-- operationのファクトリ関数（op::add, op::mul等）で.forward()を明示的に呼ぶ
-- Operation::forward()は input.forward() + 参照カウント → logic.forward() の順で実行
-- Operation構築時には自動実行しない（明示的な.forward()呼び出しが必要）
+## Operation実行の指針
+- **Operationチェーンの構築**: 各operationのファクトリ関数（op::add, op::mul, l1_norm, l2_norm等）で操作グラフを構築する時は、`.forward()`を呼ばない
+- **最終実行**: 最後の出力operationで一度だけ`.run()`を呼ぶ
+- **run()の動作**: `.run()`は内部で`.forward()`（前向き計算）と`.backward()`（勾配計算）の両方を実行する
+- **例**:
+  ```cpp
+  // ❌ 各operation毎にforward()を呼ぶのは避ける
+  auto a = op::add(x, y); a.forward();
+  auto b = op::mul(a, z); b.forward();
+  b.run();
+  
+  // ✅ 正しい: operationチェーンを作成してから最後にrun()
+  auto a = op::add(x, y);
+  auto b = op::mul(a, z);
+  b.run();  // forward + backward を実行
+  ```
 
 ## 修正済みの問題
 - zero_grad()が再帰的に入力をゼロクリアする問題を修正
@@ -155,3 +167,92 @@ task build:debug && cd build/debug && ./examples/linear_regression_sgd
 - 多くのgradient verification testsが失敗（解析的勾配が数値的勾配の約半分）
 - DAGテストのMultiplePathsToSameNodeが失敗（勾配が1.0、期待値4.0）
 - 参照カウントメカニズムの動作に課題
+
+## Testing Guidelines for Mini Gaussian Splatting Operations
+
+When creating tests for operations in `examples/mini-gaussian-splatting/`, follow these patterns:
+
+### 1. File Structure
+- Create one test file per operation: `test_<operation_name>.cu`
+- Place tests in `examples/mini-gaussian-splatting/tests/`
+
+### 2. Test Categories (Required for each operation)
+
+#### A. Static Assert Tests for Concept Compliance
+```cpp
+// Test that operations satisfy Variable and OperationNode concepts
+static_assert(VariableConcept<OperationType>, "...");
+static_assert(DifferentiableVariableConcept<OperationType>, "...");
+static_assert(OperationNode<OperationType>, "...");
+static_assert(!OperationNode<Variable<T, N>>, "Variable should NOT be OperationNode");
+```
+
+#### B. Forward Pass Tests
+```cpp
+// Test correctness of forward computation with known inputs/outputs
+__global__ void test_operation_forward_kernel(float* result) { /* ... */ }
+TEST_F(OperationTest, ForwardPass) { /* ... */ }
+```
+
+#### C. Gradient Verification Tests (Double Precision)
+```cpp
+// Use utility classes from tests/utility/
+TEST_F(OperationTest, GradientVerification) {
+    using Logic = OperationLogic<VariableRef<double, N>>;
+    test::UnaryGradientTester<Logic, InputDim, OutputDim>::test_custom(
+        "OperationName", 
+        50,      // num_tests
+        1e-5,    // tolerance
+        1e-7,    // delta
+        -2.0,    // input_min
+        2.0      // input_max
+    );
+}
+```
+
+#### D. Specific Gradient Tests
+```cpp
+// Test specific mathematical properties of gradients
+__global__ void test_operation_gradient_kernel(double* result) {
+    // Test analytical vs numerical gradients
+    // Compare with known mathematical derivatives
+}
+```
+
+#### E. Interface Compliance Tests
+```cpp
+// Test that all Variable and OperationNode methods work correctly
+__global__ void test_operation_interface_kernel(float* result) {
+    // Test: forward(), backward(), zero_grad(), data(), grad(), etc.
+}
+```
+
+### 3. Utility Usage
+- **Unary operations**: Use `test::UnaryGradientTester` from `tests/utility/unary_gradient_tester.cuh`
+- **Binary operations**: Use `test::BinaryGradientTester` from `tests/utility/binary_gradient_tester.cuh`  
+- **Ternary operations**: Create operations and test manually or extend utilities
+
+### 4. Precision Guidelines
+- Use **double precision** for gradient verification tests
+- Use appropriate tolerance values:
+  - Smooth operations: `1e-5` tolerance, `1e-7` delta
+  - Non-smooth operations (L1 norm): `1e-4` tolerance, `1e-6` delta
+  - Avoid problematic inputs (e.g., zero for L2 norm)
+
+### 5. CRITICAL TESTING CONSTRAINTS
+**TEST SKIPPING IS COMPLETELY FORBIDDEN**
+- Never use `GTEST_SKIP()` for any test except CUDA device availability checks
+- All gradient verification tests must pass without skipping
+- If a test has numerical precision issues, fix the tolerance values or implementation instead of skipping
+- If a test has mathematical errors, fix the mathematical logic instead of skipping
+- Every operation must have complete test coverage including gradient verification
+- Problematic tests must be fixed, not skipped
+
+**TOLERANCE CONSTRAINTS FOR DOUBLE PRECISION TESTS**
+- Minimum tolerance for double precision gradient verification tests: `1e-5`
+- Setting tolerance values below `1e-5` is COMPLETELY FORBIDDEN for double precision tests
+- This constraint prevents numerical precision issues with CUDA double precision operations
+- Test utilities automatically FAIL when tolerance values below `1e-5` are used
+- Test utilities output maximum error and recommend appropriate tolerance values
+- Example acceptable tolerance ranges:
+  - Simple operations: `1e-5`

@@ -2,8 +2,8 @@
 
 #include <cstddef>
 #include <cuda_runtime.h>
-#include "operation.cuh"
-#include "../concept/variable.cuh"
+#include "../operation.cuh"
+#include "../../concept/variable.cuh"
 
 namespace xyz_autodiff {
 

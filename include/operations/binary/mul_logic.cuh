@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cuda_runtime.h>
-#include "../concept/core_logic.cuh"
-#include "operation.cuh"
+#include "../../concept/core_logic.cuh"
+#include "../operation.cuh"
 
 namespace xyz_autodiff {
 namespace op {

@@ -43,7 +43,20 @@
       "Bash(./tests/test_dag_backward:*)",
       "Bash(./debug_dag_simple)",
       "Bash(./debug_simple_add)",
-      "Bash(nvidia-smi:*)"
+      "Bash(nvidia-smi:*)",
+      "Bash(./tests/test_mini_gaussian_matrix_operations)",
+      "Bash(./tests/test_mini_gaussian_norm_operations:*)",
+      "Bash(./tests/test_mini_gaussian_splatting:*)",
+      "Bash(./examples/mini-gaussian-splatting/mini_gaussian_splatting_example)",
+      "Bash(./tests/test_symmetric_matrix_ops:*)",
+      "Bash(./tests/test_mahalanobis_distance:*)",
+      "Bash(./build/debug/tests/test_symmetric_matrix_ops)",
+      "Bash(./tests/test_norm_addition)",
+      "Bash(./tests/test_element_wise_multiply:*)",
+      "Bash(./tests/test_element_wise_exp:*)",
+      "Bash(true)",
+      "Bash(./tests/test_norm_operations)",
+      "Bash(./tests/test_sym_matrix2_inv:*)"
     ],
     "deny": []
   }
