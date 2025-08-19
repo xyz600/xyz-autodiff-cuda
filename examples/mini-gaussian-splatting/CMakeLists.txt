@@ -11,3 +11,4 @@ set_target_properties(mini_gaussian_splatting_example PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_ARCHITECTURES "89"
 )
+
