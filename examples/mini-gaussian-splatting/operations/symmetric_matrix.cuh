@@ -1,9 +1,13 @@
 #pragma once
 
+// NOTE: Standard 2x2 symmetric matrix inverse is now handled by include/operations/unary/sym_matrix2_inv_logic.cuh
+// This file contains only specialized matrix operations for mini-gaussian-splatting
+
 #include <cuda_runtime.h>
 #include <cmath>
 #include "../../include/concept/core_logic.cuh"
 #include "../../include/operations/operation.cuh"
+#include "../../include/operations/unary/sym_matrix2_inv_logic.cuh"
 
 namespace xyz_autodiff {
 namespace op {
@@ -77,84 +81,6 @@ struct Symmetric3ParamToMatrixLogic {
     }
 };
 
-// Inverse of 2x2 symmetric matrix represented by 3 parameters
-// Input: [a, b, c] representing [[a, b], [b, c]]
-// Output: [a', b', c'] representing inverse matrix
-template <typename Input>
-requires UnaryLogicParameterConcept<Input> && (Input::size == 3)
-struct SymmetricMatrix2x2InverseLogic {
-    using T = typename Input::value_type;
-    static constexpr std::size_t Dim = 3;
-    using Output = Variable<T, Dim>;
-    
-    static constexpr std::size_t outputDim = Dim;
-    
-    static_assert(UnaryLogicParameterConcept<Input>, "Input must satisfy UnaryLogicParameterConcept");
-    
-    __host__ __device__ SymmetricMatrix2x2InverseLogic() = default;
-    
-    // forward: Compute inverse of [[a, b], [b, c]]
-    __device__ void forward(Output& output, const Input& input) const {
-        const T& a = input[0];
-        const T& b = input[1];
-        const T& c = input[2];
-        
-        // Determinant: det = ac - b^2
-        T det = a * c - b * b;
-        
-        // Avoid division by zero
-        if (abs(det) < T(1e-8)) {
-            det = T(1e-8);  // regularization
-        }
-        
-        T inv_det = T(1) / det;
-        
-        // Inverse matrix: [[c, -b], [-b, a]] / det
-        output[0] = c * inv_det;   // a'
-        output[1] = -b * inv_det;  // b'
-        output[2] = a * inv_det;   // c'
-    }
-    
-    // backward: Gradient propagation for matrix inverse
-    __device__ void backward(const Output& output, Input& input) const {
-        const T& a = input[0];
-        const T& b = input[1];
-        const T& c = input[2];
-        
-        T det = a * c - b * b;
-        if (abs(det) < T(1e-8)) {
-            det = T(1e-8);  // same regularization as forward
-        }
-        
-        T inv_det = T(1) / det;
-        T inv_det2 = inv_det * inv_det;
-        
-        const T& grad_a_inv = output.grad(0);  // gradient w.r.t a'
-        const T& grad_b_inv = output.grad(1);  // gradient w.r.t b'
-        const T& grad_c_inv = output.grad(2);  // gradient w.r.t c'
-        
-        // d(a')/d(a) = d(c/det)/da = -c*c/det^2
-        // d(a')/d(b) = d(c/det)/db = 2*c*b/det^2
-        // d(a')/d(c) = d(c/det)/dc = (det - c*a)/det^2 = (ac - b^2 - ca)/det^2 = -b^2/det^2
-        
-        T da_inv_da = -c * c * inv_det2;
-        T da_inv_db = T(2) * c * b * inv_det2;
-        T da_inv_dc = inv_det - a * c * inv_det2;
-        
-        T db_inv_da = T(2) * b * c * inv_det2;
-        T db_inv_db = -inv_det + T(2) * b * b * inv_det2;
-        T db_inv_dc = T(2) * b * a * inv_det2;
-        
-        T dc_inv_da = inv_det - a * c * inv_det2;
-        T dc_inv_db = T(2) * a * b * inv_det2;
-        T dc_inv_dc = -a * a * inv_det2;
-        
-        input.add_grad(0, grad_a_inv * da_inv_da + grad_b_inv * db_inv_da + grad_c_inv * dc_inv_da);
-        input.add_grad(1, grad_a_inv * da_inv_db + grad_b_inv * db_inv_db + grad_c_inv * dc_inv_db);
-        input.add_grad(2, grad_a_inv * da_inv_dc + grad_b_inv * db_inv_dc + grad_c_inv * dc_inv_dc);
-    }
-};
-
 // Factory functions
 template <typename Input>
 requires UnaryLogicParameterConcept<Input> && (Input::size == 9)
@@ -172,12 +98,11 @@ __device__ auto symmetric_3param_to_matrix(Input& input) {
     return UnaryOperation<LogicType::outputDim, LogicType, Input>(logic, input);
 }
 
+// Use standard implementation from include/operations/unary/sym_matrix2_inv_logic.cuh
 template <typename Input>
 requires UnaryLogicParameterConcept<Input> && (Input::size == 3)
 __device__ auto symmetric_matrix_2x2_inverse(Input& input) {
-    using LogicType = SymmetricMatrix2x2InverseLogic<Input>;
-    LogicType logic;
-    return UnaryOperation<LogicType::outputDim, LogicType, Input>(logic, input);
+    return sym_matrix2_inv(input);
 }
 
 } // namespace op

@@ -4,7 +4,7 @@
 #include "../../../include/variable.cuh"
 #include "../operations/covariance_generation.cuh"
 #include "../operations/mahalanobis_distance.cuh"
-#include "../../../include/operations/unary/quaternion_to_rotation_matrix_logic.cuh"
+#include "../../../include/operations/unary/to_rotation_matrix_logic.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;

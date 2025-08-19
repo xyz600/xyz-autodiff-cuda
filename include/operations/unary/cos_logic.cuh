@@ -1,0 +1,52 @@
+#pragma once
+
+#include <cstddef>
+#include <cuda_runtime.h>
+#include "../operation.cuh"
+#include "../math.cuh"
+#include "../../concept/variable.cuh"
+
+namespace xyz_autodiff {
+
+// Cos関数のロジック実装
+template <std::size_t Dim>
+struct CosLogic {
+    static constexpr std::size_t outputDim = Dim;
+    
+    template <typename Output, typename Input>
+    __host__ __device__ void forward(Output& output, const Input& input) const {
+        for (std::size_t i = 0; i < outputDim; ++i) {
+            // cos(x)
+            using T = typename Input::value_type;
+            output[i] = math::cos(input[i]);
+        }
+    }
+    
+    template <typename Output, typename Input>
+    __host__ __device__ void backward(const Output& output, Input& input) const {
+        for (std::size_t i = 0; i < outputDim; ++i) {
+            // d/dx cos(x) = -sin(x)
+            using T = typename Input::value_type;
+            T sin_val = math::sin(input[i]);
+            input.add_grad(i, output.grad(i) * (-sin_val));
+        }
+    }
+};
+
+// Cos関数のファクトリ
+template <std::size_t Dim, DifferentiableVariableConcept Input>
+__host__ __device__ auto cos(Input& input) {
+    CosLogic<Dim> logic;
+    
+    auto op = UnaryOperation<Dim, CosLogic<Dim>, Input>(logic, input);
+    return op;
+}
+
+// 型推論をサポートする版（入力のサイズから自動的にDimを決定）
+template <DifferentiableVariableConcept Input>
+__host__ __device__ auto cos(Input& input) {
+    constexpr std::size_t Dim = Input::size;
+    return cos<Dim>(input);
+}
+
+} // namespace xyz_autodiff

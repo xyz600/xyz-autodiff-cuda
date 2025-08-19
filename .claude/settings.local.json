@@ -53,7 +53,10 @@
       "Bash(./build/debug/tests/test_symmetric_matrix_ops)",
       "Bash(./tests/test_norm_addition)",
       "Bash(./tests/test_element_wise_multiply:*)",
-      "Bash(./tests/test_element_wise_exp:*)"
+      "Bash(./tests/test_element_wise_exp:*)",
+      "Bash(true)",
+      "Bash(./tests/test_norm_operations)",
+      "Bash(./tests/test_sym_matrix2_inv:*)"
     ],
     "deny": []
   }

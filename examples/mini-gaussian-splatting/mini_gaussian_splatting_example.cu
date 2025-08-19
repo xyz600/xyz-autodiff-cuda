@@ -14,7 +14,7 @@
 #include "operations/covariance_generation.cuh"
 #include "../../include/operations/binary/mul_logic.cuh"
 #include "operations/element_wise_multiply.cuh"  // for scalar_multiply
-#include "../../include/operations/unary/quaternion_to_rotation_matrix_logic.cuh"
+#include "../../include/operations/unary/to_rotation_matrix_logic.cuh"
 
 using namespace xyz_autodiff;
 

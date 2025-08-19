@@ -135,20 +135,20 @@ set_target_properties(test_dag_backward PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-# Mini Gaussian Splatting Matrix Operations テスト
-add_executable(test_mini_gaussian_matrix_operations ../examples/mini-gaussian-splatting/tests/test_matrix_operations.cu)
-target_link_libraries(test_mini_gaussian_matrix_operations xyz_autodiff gtest gtest_main)
-target_include_directories(test_mini_gaussian_matrix_operations PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
-set_target_properties(test_mini_gaussian_matrix_operations PROPERTIES
+# Standard Norm Operations テスト
+add_executable(test_norm_operations test_norm_operations.cu)
+target_link_libraries(test_norm_operations xyz_autodiff gtest gtest_main)
+target_include_directories(test_norm_operations PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_norm_operations PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_ARCHITECTURES "89"
 )
 
-# Mini Gaussian Splatting Norm Operations テスト
-add_executable(test_mini_gaussian_norm_operations ../examples/mini-gaussian-splatting/tests/test_norm_operations.cu)
-target_link_libraries(test_mini_gaussian_norm_operations xyz_autodiff gtest gtest_main)
-target_include_directories(test_mini_gaussian_norm_operations PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
-set_target_properties(test_mini_gaussian_norm_operations PROPERTIES
+# Standard Symmetric Matrix 2x2 Inverse テスト
+add_executable(test_sym_matrix2_inv test_sym_matrix2_inv.cu)
+target_link_libraries(test_sym_matrix2_inv xyz_autodiff gtest gtest_main)
+target_include_directories(test_sym_matrix2_inv PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_sym_matrix2_inv PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_ARCHITECTURES "89"
 )
@@ -171,21 +171,7 @@ set_target_properties(test_covariance_generation PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-add_executable(test_element_wise_exp ../examples/mini-gaussian-splatting/tests/test_element_wise_exp.cu)
-target_link_libraries(test_element_wise_exp xyz_autodiff gtest gtest_main)
-target_include_directories(test_element_wise_exp PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
-set_target_properties(test_element_wise_exp PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)
-
-add_executable(test_element_wise_multiply ../examples/mini-gaussian-splatting/tests/test_element_wise_multiply.cu)
-target_link_libraries(test_element_wise_multiply xyz_autodiff gtest gtest_main)
-target_include_directories(test_element_wise_multiply PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
-set_target_properties(test_element_wise_multiply PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)
+# Removed: test_element_wise_exp and test_element_wise_multiply (now covered by standard operations)
 
 add_executable(test_mahalanobis_distance ../examples/mini-gaussian-splatting/tests/test_mahalanobis_distance.cu)
 target_link_libraries(test_mahalanobis_distance xyz_autodiff gtest gtest_main)
@@ -211,13 +197,7 @@ set_target_properties(test_norm_addition PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-add_executable(test_symmetric_matrix_ops ../examples/mini-gaussian-splatting/tests/test_symmetric_matrix.cu)
-target_link_libraries(test_symmetric_matrix_ops xyz_autodiff gtest gtest_main)
-target_include_directories(test_symmetric_matrix_ops PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
-set_target_properties(test_symmetric_matrix_ops PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)
+# Removed: test_symmetric_matrix_ops (now covered by standard operations)
 
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
@@ -234,13 +214,12 @@ add_test(NAME QuaternionToRotationMatrixTest COMMAND test_quaternion_to_rotation
 add_test(NAME ParallelGradientAccumulationTest COMMAND test_parallel_gradient_accumulation)
 add_test(NAME SharedMemoryAtomicTest COMMAND test_shared_memory_atomic)
 add_test(NAME DAGBackwardTest COMMAND test_dag_backward)
-add_test(NAME MiniGaussianMatrixOperationsTest COMMAND test_mini_gaussian_matrix_operations)
-add_test(NAME MiniGaussianNormOperationsTest COMMAND test_mini_gaussian_norm_operations)
+add_test(NAME NormOperationsTest COMMAND test_norm_operations)
+add_test(NAME SymMatrix2InvTest COMMAND test_sym_matrix2_inv)
 add_test(NAME MiniGaussianSplattingTest COMMAND test_mini_gaussian_splatting)
 add_test(NAME CovarianceGenerationTest COMMAND test_covariance_generation)
-add_test(NAME ElementWiseExpTest COMMAND test_element_wise_exp)
-add_test(NAME ElementWiseMultiplyTest COMMAND test_element_wise_multiply)
+# Removed: ElementWiseExpTest and ElementWiseMultiplyTest (now covered by standard operations)
 add_test(NAME MahalanobisDistanceTest COMMAND test_mahalanobis_distance)
 add_test(NAME MatrixMultiplicationTest COMMAND test_matrix_multiplication)
 add_test(NAME NormAdditionTest COMMAND test_norm_addition)
-add_test(NAME SymmetricMatrixOpsTest COMMAND test_symmetric_matrix_ops)
+# Removed: SymmetricMatrixOpsTest (now covered by standard operations)
