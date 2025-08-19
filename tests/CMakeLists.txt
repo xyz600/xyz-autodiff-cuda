@@ -135,6 +135,33 @@ set_target_properties(test_dag_backward PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# Mini Gaussian Splatting Matrix Operations テスト
+add_executable(test_mini_gaussian_matrix_operations ../examples/mini-gaussian-splatting/tests/test_matrix_operations.cu)
+target_link_libraries(test_mini_gaussian_matrix_operations xyz_autodiff gtest gtest_main)
+target_include_directories(test_mini_gaussian_matrix_operations PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
+set_target_properties(test_mini_gaussian_matrix_operations PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Mini Gaussian Splatting Norm Operations テスト
+add_executable(test_mini_gaussian_norm_operations ../examples/mini-gaussian-splatting/tests/test_norm_operations.cu)
+target_link_libraries(test_mini_gaussian_norm_operations xyz_autodiff gtest gtest_main)
+target_include_directories(test_mini_gaussian_norm_operations PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
+set_target_properties(test_mini_gaussian_norm_operations PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Mini Gaussian Splatting Core テスト
+add_executable(test_mini_gaussian_splatting ../examples/mini-gaussian-splatting/tests/test_gaussian_splatting.cu)
+target_link_libraries(test_mini_gaussian_splatting xyz_autodiff gtest gtest_main)
+target_include_directories(test_mini_gaussian_splatting PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
+set_target_properties(test_mini_gaussian_splatting PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
@@ -150,3 +177,6 @@ add_test(NAME QuaternionToRotationMatrixTest COMMAND test_quaternion_to_rotation
 add_test(NAME ParallelGradientAccumulationTest COMMAND test_parallel_gradient_accumulation)
 add_test(NAME SharedMemoryAtomicTest COMMAND test_shared_memory_atomic)
 add_test(NAME DAGBackwardTest COMMAND test_dag_backward)
+add_test(NAME MiniGaussianMatrixOperationsTest COMMAND test_mini_gaussian_matrix_operations)
+add_test(NAME MiniGaussianNormOperationsTest COMMAND test_mini_gaussian_norm_operations)
+add_test(NAME MiniGaussianSplattingTest COMMAND test_mini_gaussian_splatting)

@@ -43,7 +43,11 @@
       "Bash(./tests/test_dag_backward:*)",
       "Bash(./debug_dag_simple)",
       "Bash(./debug_simple_add)",
-      "Bash(nvidia-smi:*)"
+      "Bash(nvidia-smi:*)",
+      "Bash(./tests/test_mini_gaussian_matrix_operations)",
+      "Bash(./tests/test_mini_gaussian_norm_operations:*)",
+      "Bash(./tests/test_mini_gaussian_splatting:*)",
+      "Bash(./examples/mini-gaussian-splatting/mini_gaussian_splatting_example)"
     ],
     "deny": []
   }
