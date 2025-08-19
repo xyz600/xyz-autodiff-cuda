@@ -4,7 +4,7 @@
 #include "../../../include/variable.cuh"
 #include "../../../include/concept/variable.cuh"
 #include "../../../include/concept/operation_node.cuh"
-#include "../operations/element_wise_multiply.cuh"
+#include "../../../include/operations/mul_logic.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
 #include "../../../tests/utility/binary_gradient_tester.cuh"
 
@@ -17,7 +17,7 @@ using namespace xyz_autodiff;
 // Test types
 using TestVector3 = Variable<float, 3>;
 using TestVectorRef3 = VariableRef<float, 3>;
-using ElemMulOp = BinaryOperation<3, op::ElementWiseMultiplyLogic<TestVectorRef3, TestVectorRef3>, TestVectorRef3, TestVectorRef3>;
+using ElemMulOp = BinaryOperation<3, op::MulLogic<TestVectorRef3, TestVectorRef3>, TestVectorRef3, TestVectorRef3>;
 
 // Static assertions for concept compliance
 static_assert(VariableConcept<TestVector3>, 
@@ -64,7 +64,7 @@ __global__ void test_element_wise_multiply_forward_kernel(float* result) {
     VariableRef<float, 3> a(a_data, a_grad);
     VariableRef<float, 3> b(b_data, b_grad);
     
-    auto result_vec = op::element_wise_multiply(a, b);
+    auto result_vec = op::mul(a, b);
     result_vec.forward();
     
     float tolerance = 1e-6f;
@@ -96,7 +96,7 @@ __global__ void test_element_wise_multiply_identity_kernel(float* result) {
     VariableRef<float, 3> a(a_data, a_grad);
     VariableRef<float, 3> b(b_data, b_grad);
     
-    auto result_vec = op::element_wise_multiply(a, b);
+    auto result_vec = op::mul(a, b);
     result_vec.forward();
     
     float tolerance = 1e-6f;
@@ -123,7 +123,7 @@ TEST_F(ElementWiseMultiplyTest, IdentityMultiplication) {
 // ===========================================
 
 TEST_F(ElementWiseMultiplyTest, GradientVerification) {
-    using Logic = op::ElementWiseMultiplyLogic<VariableRef<double, 3>, VariableRef<double, 3>>;
+    using Logic = op::MulLogic<VariableRef<double, 3>, VariableRef<double, 3>>;
     test::BinaryGradientTester<Logic, 3, 3, 3>::test_custom(
         "ElementWiseMultiply", 
         50,      // num_tests
@@ -148,7 +148,7 @@ __global__ void test_element_wise_multiply_gradient_kernel(double* result) {
     VariableRef<double, 3> a(a_data, a_grad);
     VariableRef<double, 3> b(b_data, b_grad);
     
-    auto mul_op = op::element_wise_multiply(a, b);
+    auto mul_op = op::mul(a, b);
     
     // Forward pass
     mul_op.forward();
@@ -227,7 +227,7 @@ __global__ void test_element_wise_multiply_interface_kernel(float* result) {
     VariableRef<float, 3> a(a_data, a_grad);
     VariableRef<float, 3> b(b_data, b_grad);
     
-    auto mul_op = op::element_wise_multiply(a, b);
+    auto mul_op = op::mul(a, b);
     
     // Test VariableConcept interface
     mul_op.zero_grad();

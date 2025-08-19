@@ -12,7 +12,8 @@
 #include "operations/symmetric_matrix.cuh"
 #include "operations/mahalanobis_distance.cuh"
 #include "operations/covariance_generation.cuh"
-#include "operations/element_wise_multiply.cuh"
+#include "../../include/operations/mul_logic.cuh"
+#include "operations/element_wise_multiply.cuh"  // for scalar_multiply
 #include "../../include/operations/quaternion_to_rotation_matrix_logic.cuh"
 
 using namespace xyz_autodiff;

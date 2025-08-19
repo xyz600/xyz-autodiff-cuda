@@ -4,7 +4,8 @@
 #include "../../../include/variable.cuh"
 #include "../../../include/concept/variable.cuh"
 #include "../../../include/concept/operation_node.cuh"
-#include "../operations/element_wise_exp.cuh"
+#include "../../../include/operations/exp_logic.cuh"
+#include "../operations/element_wise_exp.cuh"  // exp(-x)専用ロジックのため
 #include "../../../include/util/cuda_unique_ptr.cuh"
 #include "../../../tests/utility/unary_gradient_tester.cuh"
 
@@ -17,7 +18,7 @@ using namespace xyz_autodiff;
 // Test types
 using TestVector3 = Variable<float, 3>;
 using TestVectorRef3 = VariableRef<float, 3>;
-using ExpOp = UnaryOperation<3, op::ElementWiseExpLogic<TestVectorRef3>, TestVectorRef3>;
+using ExpOp = UnaryOperation<3, ExpLogic<3>, TestVectorRef3>;
 using ExpNegOp = UnaryOperation<3, op::ElementWiseExpNegLogic<TestVectorRef3>, TestVectorRef3>;
 
 // Static assertions for concept compliance
@@ -69,7 +70,7 @@ __global__ void test_element_wise_exp_forward_kernel(float* result) {
     
     VariableRef<float, 3> vec(data, grad);
     
-    auto exp_result = op::element_wise_exp(vec);
+    auto exp_result = exp(vec);
     exp_result.forward();
     
     float tolerance = 1e-5f;
@@ -129,7 +130,7 @@ TEST_F(ElementWiseExpTest, ExpNegForwardPass) {
 // ===========================================
 
 TEST_F(ElementWiseExpTest, ExpGradientVerification) {
-    using Logic = op::ElementWiseExpLogic<VariableRef<double, 3>>;
+    using Logic = ExpLogic<3>;
     test::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "ElementWiseExp", 
         50,      // num_tests
@@ -166,7 +167,7 @@ __global__ void test_exp_gradient_kernel(double* result) {
     double grad[3] = {0.0, 0.0, 0.0};
     
     VariableRef<double, 3> input(data, grad);
-    auto exp_op = op::element_wise_exp(input);
+    auto exp_op = exp(input);
     
     // Forward pass
     exp_op.forward();
@@ -299,7 +300,7 @@ __global__ void test_exp_interface_kernel(float* result) {
     VariableRef<float, 3> input(data, grad);
     
     // Test both exp and exp_neg operations
-    auto exp_op = op::element_wise_exp(input);
+    auto exp_op = exp(input);
     auto exp_neg_op = op::element_wise_exp_neg(input);
     
     // Test VariableConcept interface on exp

@@ -7,36 +7,8 @@
 namespace xyz_autodiff {
 namespace op {
 
-// Element-wise multiplication for two inputs: output[i] = input1[i] * input2[i]
-template <typename Input1, typename Input2>
-requires BinaryLogicParameterConcept<Input1, Input2> && 
-         (Input1::size == Input2::size)
-struct ElementWiseMultiplyLogic {
-    using T = typename Input1::value_type;
-    static_assert(std::is_same_v<T, typename Input2::value_type>, "Input types must match");
-    static constexpr std::size_t Dim = Input1::size;
-    using Output = Variable<T, Dim>;
-    
-    static constexpr std::size_t outputDim = Dim;
-    
-    __host__ __device__ ElementWiseMultiplyLogic() = default;
-    
-    // forward: output[i] = input1[i] * input2[i]
-    __device__ void forward(Output& output, const Input1& input1, const Input2& input2) const {
-        for (std::size_t i = 0; i < Dim; ++i) {
-            output[i] = input1[i] * input2[i];
-        }
-    }
-    
-    // backward: d(ab)/da = b, d(ab)/db = a
-    __device__ void backward(const Output& output, Input1& input1, Input2& input2) const {
-        for (std::size_t i = 0; i < Dim; ++i) {
-            const T& output_grad = output.grad(i);
-            input1.add_grad(i, output_grad * input2[i]);
-            input2.add_grad(i, output_grad * input1[i]);
-        }
-    }
-};
+// NOTE: Standard 2-input element-wise multiplication is now handled by include/operations/mul_logic.cuh
+// This file contains only specialized multiplication operations for mini-gaussian-splatting
 
 // Element-wise multiplication for three inputs: output[i] = input1[i] * input2[i] * input3[i]
 template <typename Input1, typename Input2, typename Input3>
@@ -101,16 +73,7 @@ struct ScalarMultiplyLogic {
     }
 };
 
-// Factory function for element-wise multiplication (2 inputs)
-template <typename Input1, typename Input2>
-requires BinaryLogicParameterConcept<Input1, Input2> && 
-         (Input1::size == Input2::size)
-__device__ auto element_wise_multiply(Input1& input1, Input2& input2) {
-    using LogicType = ElementWiseMultiplyLogic<Input1, Input2>;
-    
-    LogicType logic;
-    return BinaryOperation<LogicType::outputDim, LogicType, Input1, Input2>(logic, input1, input2);
-}
+// NOTE: 2-input element_wise_multiply is now available as op::mul() from include/operations/mul_logic.cuh
 
 // Factory function for element-wise multiplication (3 inputs) - c * d * o operation
 template <typename Input1, typename Input2, typename Input3>
