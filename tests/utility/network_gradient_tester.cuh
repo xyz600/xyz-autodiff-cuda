@@ -6,8 +6,8 @@
 #include <random>
 #include <string>
 #include <tuple>
-#include "../../../include/variable.cuh"
-#include "../../../include/util/cuda_unique_ptr.cuh"
+#include "../../include/variable.cuh"
+#include "../../include/util/cuda_unique_ptr.cuh"
 
 namespace xyz_autodiff {
 namespace optimization {

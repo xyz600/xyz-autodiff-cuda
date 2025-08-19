@@ -5,8 +5,9 @@
 #include "../../../include/variable.cuh"
 #include "../../../include/operations/binary/mul_logic.cuh"
 #include "../../../include/operations/binary/add_logic.cuh"
+#include "../../../include/operations/binary/sub_logic.cuh"
+#include "../../../include/operations/unary/squared_logic.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
-#include "../subtract_squared.cuh"
 
 using namespace xyz_autodiff;
 
@@ -47,11 +48,13 @@ __global__ void compute_gradient_kernel(
     // 現在のスレッドが担当するデータポイント
     const DataPoint& data = batch_data[idx];
     
-    // (x1 - a)^2 をカスタムオペレーションで計算
-    auto x1_term = op::subtract_and_square(a_var, data.x1);
+    // (x1 - a)^2 を sub と squared 操作で計算
+    auto x1_minus_a = op::sub_constant(a_var, data.x1);
+    auto x1_term = squared(x1_minus_a);
     
-    // (x2 - c)^2 をカスタムオペレーションで計算
-    auto x2_squared = op::subtract_and_square(c_var, data.x2);
+    // (x2 - c)^2 を sub と squared 操作で計算
+    auto x2_minus_c = op::sub_constant(c_var, data.x2);
+    auto x2_squared = squared(x2_minus_c);
     
     // b * (x2 - c)^2
     auto x2_term = op::mul(b_var, x2_squared);
@@ -62,8 +65,9 @@ __global__ void compute_gradient_kernel(
     // y_pred = (x1 - a)^2 + b * (x2 - c)^2 + d
     auto y_pred = op::add(combined_terms, d_var);
     
-    // loss = (y_pred - y_target)^2 もカスタムオペレーションで計算
-    auto loss = op::subtract_and_square(y_pred, data.y);
+    // loss = (y_pred - y_target)^2 を sub と squared 操作で計算
+    auto y_diff = op::sub_constant(y_pred, data.y);
+    auto loss = squared(y_diff);
     
     // Run gradient computation based on mode
     if constexpr (mode == GradientMode::Numerical) {

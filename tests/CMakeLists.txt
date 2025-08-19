@@ -193,6 +193,15 @@ set_target_properties(test_matrix_multiplication PROPERTIES
 
 # Removed: test_symmetric_matrix_ops (now covered by standard operations)
 
+# Linear Regression Network テスト
+add_executable(test_linear_regression_network operation/base/test_linear_regression_network.cu)
+target_link_libraries(test_linear_regression_network xyz_autodiff gtest gtest_main)
+target_include_directories(test_linear_regression_network PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_linear_regression_network PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # CTest にテストを登録
 add_test(NAME VariableTest COMMAND test_variable)
 add_test(NAME DenseMatrixTest COMMAND test_dense_matrix)
@@ -217,3 +226,4 @@ add_test(NAME MahalanobisDistanceTest COMMAND test_mahalanobis_distance)
 add_test(NAME MatrixMultiplicationTest COMMAND test_matrix_multiplication)
 # Removed: NormAdditionTest (now covered by standard add operations in NormOperationsTest)
 # Removed: SymmetricMatrixOpsTest (now covered by standard operations)
+add_test(NAME LinearRegressionNetworkTest COMMAND test_linear_regression_network)

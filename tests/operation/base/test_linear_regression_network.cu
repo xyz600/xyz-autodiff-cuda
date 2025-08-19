@@ -6,11 +6,12 @@
 #include "../../../include/concept/operation_node.cuh"
 #include "../../../include/operations/binary/mul_logic.cuh"
 #include "../../../include/operations/binary/add_logic.cuh"
+#include "../../../include/operations/binary/sub_logic.cuh"
+#include "../../../include/operations/unary/squared_logic.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
 
-// Include optimization-specific operations and utilities
-#include "../subtract_squared.cuh"
-#include "optimization_network_gradient_tester.cuh"
+// Include test utilities
+#include "../../utility/network_gradient_tester.cuh"
 
 using namespace xyz_autodiff;
 using namespace xyz_autodiff::optimization::test;
@@ -35,11 +36,13 @@ struct SimpleLinearRegressionNetwork {
         VariableRef<float, 1> c_var(&value->c, &diff->c);
         VariableRef<float, 1> d_var(&value->d, &diff->d);
         
-        // Compute (x1 - a)^2 using custom operation
-        auto x1_term = op::subtract_and_square(a_var, value->x1);
+        // Compute (x1 - a)^2 using sub and squared operations
+        auto x1_minus_a = op::sub_constant(a_var, value->x1);
+        auto x1_term = squared(x1_minus_a);
         
-        // Compute (x2 - c)^2 using custom operation
-        auto x2_squared = op::subtract_and_square(c_var, value->x2);
+        // Compute (x2 - c)^2 using sub and squared operations
+        auto x2_minus_c = op::sub_constant(c_var, value->x2);
+        auto x2_squared = squared(x2_minus_c);
         
         // Compute b * (x2 - c)^2
         auto x2_term = op::mul(b_var, x2_squared);
@@ -51,7 +54,8 @@ struct SimpleLinearRegressionNetwork {
         auto y_pred = op::add(combined_terms, d_var);
         
         // Compute loss = (y_pred - y_target)^2
-        auto loss = op::subtract_and_square(y_pred, value->y_target);
+        auto y_diff = op::sub_constant(y_pred, value->y_target);
+        auto loss = squared(y_diff);
         
         // Run gradient computation based on tag
         if constexpr (tag == GradientTag::Analytical) {
@@ -78,14 +82,17 @@ struct RegularizedLinearRegressionNetwork {
         VariableRef<float, 1> d_var(&value->d, &diff->d);
         
         // Compute prediction terms
-        auto x1_term = op::subtract_and_square(a_var, value->x1);
-        auto x2_squared = op::subtract_and_square(c_var, value->x2);
+        auto x1_minus_a = op::sub_constant(a_var, value->x1);
+        auto x1_term = squared(x1_minus_a);
+        auto x2_minus_c = op::sub_constant(c_var, value->x2);
+        auto x2_squared = squared(x2_minus_c);
         auto x2_term = op::mul(b_var, x2_squared);
         auto combined_terms = op::add(x1_term, x2_term);
         auto y_pred = op::add(combined_terms, d_var);
         
         // Compute main loss
-        auto main_loss = op::subtract_and_square(y_pred, value->y_target);
+        auto y_diff = op::sub_constant(y_pred, value->y_target);
+        auto main_loss = squared(y_diff);
         
         // Add L2 regularization: 0.01 * (a^2 + b^2 + c^2 + d^2)
         auto a_reg = op::mul(a_var, a_var);
@@ -115,7 +122,7 @@ struct RegularizedLinearRegressionNetwork {
     }
 };
 
-// Test only the subtract_and_square operation
+// Test only the sub and square operations combined
 struct SubtractSquareOnlyNetwork {
     template <GradientTag tag>
     __device__ void operator()(
@@ -125,7 +132,8 @@ struct SubtractSquareOnlyNetwork {
     ) const {
         // Only test (a - x1)^2 where x1 is treated as a constant
         VariableRef<float, 1> a_var(&value->a, &diff->a);
-        auto result = op::subtract_and_square(a_var, value->x1);
+        auto a_minus_x1 = op::sub_constant(a_var, value->x1);
+        auto result = squared(a_minus_x1);
         
         if constexpr (tag == GradientTag::Analytical) {
             result.run();
@@ -158,11 +166,13 @@ struct ComplexInteractionNetwork {
         auto cd_diff = op::add(c_var, d_squared);  // c + d^2
         
         // Term 3: b * (a - x1)^2
-        auto a_x1_sq = op::subtract_and_square(a_var, value->x1);
+        auto a_minus_x1 = op::sub_constant(a_var, value->x1);
+        auto a_x1_sq = squared(a_minus_x1);
         auto term3 = op::mul(b_var, a_x1_sq);
         
         // Term 4: c * (b - x2)^2
-        auto b_x2_sq = op::subtract_and_square(b_var, value->x2);
+        auto b_minus_x2 = op::sub_constant(b_var, value->x2);
+        auto b_x2_sq = squared(b_minus_x2);
         auto term4 = op::mul(c_var, b_x2_sq);
         
         // Combine all terms
@@ -171,7 +181,8 @@ struct ComplexInteractionNetwork {
         auto y_pred = op::add(sum1, sum2);
         
         // Compute loss
-        auto loss = op::subtract_and_square(y_pred, value->y_target);
+        auto y_diff = op::sub_constant(y_pred, value->y_target);
+        auto loss = squared(y_diff);
         
         if constexpr (tag == GradientTag::Analytical) {
             loss.run();
