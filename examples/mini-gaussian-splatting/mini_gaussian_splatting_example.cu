@@ -9,7 +9,6 @@
 #include "operations/matrix_multiplication.cuh"
 #include "../../include/operations/unary/neg_logic.cuh"
 #include "../../include/operations/unary/exp_logic.cuh"
-#include "operations/symmetric_matrix.cuh"
 #include "operations/mahalanobis_distance.cuh"
 #include "operations/covariance_generation.cuh"
 #include "../../include/operations/binary/mul_logic.cuh"
@@ -19,6 +18,7 @@
 // Using standard operations for l1_norm + l2_norm + add
 #include "../../include/operations/unary/to_rotation_matrix_logic.cuh"
 #include "../../include/operations/unary/broadcast.cuh"
+#include "../../include/operations/unary/sym_matrix2_inv_logic.cuh"
 
 using namespace xyz_autodiff;
 
@@ -55,7 +55,7 @@ __global__ void mini_gaussian_splatting_kernel(
     auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
     
     // Step 2: Compute inverse covariance matrix
-    auto inv_covariance = op::symmetric_matrix_2x2_inverse(covariance);
+    auto inv_covariance = op::sym_matrix2_inv(covariance);
     
     // Step 3: Compute Mahalanobis distance
     auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point, center, inv_covariance);
