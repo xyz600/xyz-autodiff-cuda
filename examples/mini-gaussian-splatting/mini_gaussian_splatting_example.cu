@@ -57,60 +57,29 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     
     // Step 1: Generate covariance matrix from scale and rotation
     auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
-    covariance.forward();
-    
-    // Store intermediate result
-    for (int i = 0; i < 3; i++) {
-        buffers->covariance_3param[i] = covariance[i];
-    }
     
     // Step 2: Compute inverse covariance matrix
     auto inv_covariance = op::symmetric_matrix_2x2_inverse(covariance);
-    inv_covariance.forward();
-    
-    // Store intermediate result
-    for (int i = 0; i < 3; i++) {
-        buffers->inv_covariance_3param[i] = inv_covariance[i];
-    }
     
     // Step 3: Compute Mahalanobis distance
     auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point, center, inv_covariance);
-    mahalanobis_dist_sq.forward();
-    
-    buffers->mahalanobis_dist_sq[0] = mahalanobis_dist_sq[0];
     
     // Step 4: Compute Gaussian value: exp(-0.5 * distance^2)
     auto scaled_distance = op::scalar_multiply(mahalanobis_dist_sq, 0.5f);
-    scaled_distance.forward();
     
     auto gaussian_value = op::element_wise_exp_neg(scaled_distance);
-    gaussian_value.forward();
-    
-    buffers->gaussian_value[0] = gaussian_value[0];
     
     // Step 5: Apply opacity to color (scalar multiplication)
     auto color_with_opacity = op::scalar_multiply(color, opacity[0]);
-    color_with_opacity.forward();
-    
-    // Store color with opacity
-    for (int i = 0; i < 3; i++) {
-        buffers->color_with_opacity[i] = color_with_opacity[i];
-    }
     
     // Step 6: Multiply Gaussian value with color (scalar multiplication)
     auto weighted_color = op::scalar_multiply(color_with_opacity, gaussian_value[0]);
-    weighted_color.forward();
     
     // Step 7: Compute L1 + L2 norm of the weighted color as final result
     auto final_result = op::l1_plus_l2_norm(weighted_color);
-    final_result.forward();
-    
-    buffers->final_result[0] = final_result[0];
     
     // Step 8: Compute gradients by running backward pass
-    final_result.zero_grad();
-    final_result.add_grad(0, 1.0f);  // Set upstream gradient to 1.0
-    final_result.backward();
+    final_result.run();
 }
 
 // Host function to run mini Gaussian splatting example
