@@ -261,4 +261,31 @@ __device__ auto operator/(VariableRef<T, N>& var, const T& constant) {
     return op::div_constant(var, constant);
 }
 
+// Generic operator overloads for any type satisfying DifferentiableVariableConcept
+// This allows operation results (like TernaryOperation, UnaryOperation, etc.) to use constant operators
+
+// Generic + constant
+template <DifferentiableVariableConcept Var>
+__device__ auto operator+(Var& var, const typename Var::value_type& constant) {
+    return op::add_constant(var, constant);
+}
+
+// Generic - constant
+template <DifferentiableVariableConcept Var>
+__device__ auto operator-(Var& var, const typename Var::value_type& constant) {
+    return op::sub_constant(var, constant);
+}
+
+// Generic * constant
+template <DifferentiableVariableConcept Var>
+__device__ auto operator*(Var& var, const typename Var::value_type& constant) {
+    return op::mul_constant(var, constant);
+}
+
+// Generic / constant
+template <DifferentiableVariableConcept Var>
+__device__ auto operator/(Var& var, const typename Var::value_type& constant) {
+    return op::div_constant(var, constant);
+}
+
 } // namespace xyz_autodiff
