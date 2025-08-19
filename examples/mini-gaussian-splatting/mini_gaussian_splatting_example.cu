@@ -71,8 +71,8 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     auto scaled_distance = mahalanobis_dist_sq * 0.5f;
     
     // Apply negation and then exponential using standard operations
-    auto neg_scaled = neg(scaled_distance);
-    auto gaussian_value = exp(neg_scaled);
+    auto neg_scaled = op::neg(scaled_distance);
+    auto gaussian_value = op::exp(neg_scaled);
     
     // Step 5: Apply opacity to color (element-wise multiplication with opacity broadcast)
     // Use constant operator for scalar multiplication
@@ -84,9 +84,9 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     
     // Step 7: Compute L1 + L2 norm of the weighted color as final result
     // Use standard operations: l1_norm + l2_norm + add
-    auto l1_result = l1_norm(weighted_color);
-    auto l2_result = l2_norm(weighted_color);
-    auto final_result = add(l1_result, l2_result);
+    auto l1_result = op::l1_norm(weighted_color);
+    auto l2_result = op::l2_norm(weighted_color);
+    auto final_result = op::add(l1_result, l2_result);
     
     // Step 8: Compute gradients by running forward and backward pass
     final_result.run();

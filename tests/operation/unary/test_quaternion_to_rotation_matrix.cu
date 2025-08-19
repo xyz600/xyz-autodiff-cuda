@@ -21,7 +21,7 @@ protected:
 
 // Static assert tests for concept compliance
 using TestQuaternion = Variable<float, 4>;
-using QuatToMatOp = UnaryOperation<9, QuaternionToRotationMatrixLogic<4>, TestQuaternion>;
+using QuatToMatOp = UnaryOperation<9, op::QuaternionToRotationMatrixLogic<4>, TestQuaternion>;
 
 static_assert(VariableConcept<TestQuaternion>, 
     "Quaternion Variable should satisfy VariableConcept");

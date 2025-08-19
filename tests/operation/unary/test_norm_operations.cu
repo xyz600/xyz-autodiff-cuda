@@ -18,8 +18,8 @@ using namespace xyz_autodiff;
 // Test types
 using TestVector3 = Variable<float, 3>;
 using TestVectorRef3 = VariableRef<float, 3>;
-using L1NormOp = UnaryOperation<1, L1NormLogic<3>, TestVectorRef3>;
-using L2NormOp = UnaryOperation<1, L2NormLogic<3>, TestVectorRef3>;
+using L1NormOp = UnaryOperation<1, op::L1NormLogic<3>, TestVectorRef3>;
+using L2NormOp = UnaryOperation<1, op::L2NormLogic<3>, TestVectorRef3>;
 
 // Static assertions for concept compliance
 static_assert(VariableConcept<TestVector3>, 
@@ -71,7 +71,7 @@ __global__ void test_l1_norm_forward_kernel(float* result) {
     
     VariableRef<float, 3> vec(data, grad);
     
-    auto l1_result = l1_norm(vec);
+    auto l1_result = op::l1_norm(vec);
     l1_result.forward();
     
     float expected = 12.0f;
@@ -103,7 +103,7 @@ __global__ void test_l2_norm_forward_kernel(float* result) {
     
     VariableRef<float, 2> vec(data, grad);
     
-    auto l2_result = l2_norm(vec);
+    auto l2_result = op::l2_norm(vec);
     l2_result.forward();
     
     float expected = 5.0f;
@@ -129,7 +129,7 @@ TEST_F(NormOperationsTest, L2NormForwardPass) {
 // ===========================================
 
 TEST_F(NormOperationsTest, L1NormGradientVerification) {
-    using Logic = L1NormLogic<3>;
+    using Logic = op::L1NormLogic<3>;
     test::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "L1Norm", 
         50,      // num_tests
@@ -145,7 +145,7 @@ TEST_F(NormOperationsTest, L1NormGradientVerification) {
 // ===========================================
 
 TEST_F(NormOperationsTest, L2NormGradientVerification) {
-    using Logic = L2NormLogic<3>;
+    using Logic = op::L2NormLogic<3>;
     test::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "L2Norm", 
         50,      // num_tests
@@ -167,8 +167,8 @@ __global__ void test_norm_interface_kernel(float* result) {
     VariableRef<float, 3> input(data, grad);
     
     // Test all norm operations
-    auto l1_op = l1_norm(input);
-    auto l2_op = l2_norm(input);
+    auto l1_op = op::l1_norm(input);
+    auto l2_op = op::l2_norm(input);
     
     // Test VariableConcept interface on L1 norm
     l1_op.zero_grad();

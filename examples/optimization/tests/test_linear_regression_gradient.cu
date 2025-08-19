@@ -51,11 +51,11 @@ __global__ void compute_gradient_kernel(
     
     // (x1 - a)^2 を sub と squared 操作で計算
     auto x1_minus_a = op::sub_constant(a_var, data.x1);
-    auto x1_term = squared(x1_minus_a);
+    auto x1_term = op::squared(x1_minus_a);
     
     // (x2 - c)^2 を sub と squared 操作で計算
     auto x2_minus_c = op::sub_constant(c_var, data.x2);
-    auto x2_squared = squared(x2_minus_c);
+    auto x2_squared = op::squared(x2_minus_c);
     
     // b * (x2 - c)^2
     auto x2_term = op::mul(b_var, x2_squared);
@@ -68,7 +68,7 @@ __global__ void compute_gradient_kernel(
     
     // loss = (y_pred - y_target)^2 を sub と squared 操作で計算
     auto y_diff = op::sub_constant(y_pred, data.y);
-    auto loss = squared(y_diff);
+    auto loss = op::squared(y_diff);
     
     // Run gradient computation based on mode
     if constexpr (mode == GradientMode::Numerical) {

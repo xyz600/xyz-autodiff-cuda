@@ -7,6 +7,7 @@
 #include "../../concept/variable.cuh"
 
 namespace xyz_autodiff {
+namespace op {
 
 // Sin関数のロジック実装
 template <std::size_t Dim>
@@ -49,4 +50,5 @@ __host__ __device__ auto sin(Input& input) {
     return sin<Dim>(input);
 }
 
+} // namespace op
 } // namespace xyz_autodiff

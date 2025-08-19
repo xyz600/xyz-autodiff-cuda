@@ -17,7 +17,7 @@ using namespace xyz_autodiff;
 // Test types
 using TestVector3 = Variable<float, 3>;
 using TestVectorRef3 = VariableRef<float, 3>;
-using SymMatInvOp = UnaryOperation<3, SymMatrix2InvLogic<3>, TestVectorRef3>;
+using SymMatInvOp = UnaryOperation<3, op::SymMatrix2InvLogic<3>, TestVectorRef3>;
 
 // Static assertions for concept compliance
 static_assert(VariableConcept<TestVector3>, 
@@ -64,7 +64,7 @@ __global__ void test_sym_matrix2_inv_forward_kernel(float* result) {
     
     VariableRef<float, 3> input(data, grad);
     
-    auto inv_result = sym_matrix2_inv(input);
+    auto inv_result = op::sym_matrix2_inv(input);
     inv_result.forward();
     
     float expected_a = 2.0f/3.0f;   // 2/3
@@ -95,7 +95,7 @@ TEST_F(SymMatrix2InvTest, SymMatrix2InvForwardPass) {
 // ===========================================
 
 TEST_F(SymMatrix2InvTest, SymMatrix2InvGradientVerification) {
-    using Logic = SymMatrix2InvLogic<3>;
+    using Logic = op::SymMatrix2InvLogic<3>;
     test::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SymmetricMatrix2x2Inverse", 
         30,      // num_tests (reduced for stability)

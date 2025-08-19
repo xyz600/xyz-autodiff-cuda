@@ -5,6 +5,7 @@
 #include "../operation.cuh"
 
 namespace xyz_autodiff {
+namespace op {
 
 // Logic for squared operation: output = input^2
 template <std::size_t Dim>
@@ -43,4 +44,5 @@ __device__ auto squared(Input& input) {
     return UnaryOperation<Dim, LogicType, Input>(logic, input);
 }
 
+} // namespace op
 } // namespace xyz_autodiff

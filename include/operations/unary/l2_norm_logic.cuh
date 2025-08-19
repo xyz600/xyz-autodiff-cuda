@@ -7,6 +7,7 @@
 #include "../../concept/variable.cuh"
 
 namespace xyz_autodiff {
+namespace op {
 
 // L2 norm operation: output = sqrt(sum(input[i]^2))
 template <std::size_t InputDim>
@@ -55,4 +56,5 @@ __host__ __device__ auto l2_norm(Input& input) {
     return l2_norm<Dim>(input);
 }
 
+} // namespace op
 } // namespace xyz_autodiff

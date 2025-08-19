@@ -7,6 +7,7 @@
 #include "../../concept/variable.cuh"
 
 namespace xyz_autodiff {
+namespace op {
 
 // Inverse of 2x2 symmetric matrix represented by 3 parameters
 // Input: [a, b, c] representing [[a, b], [b, c]]
@@ -87,4 +88,5 @@ __host__ __device__ auto sym_matrix2_inv(Input& input) {
     return op;
 }
 
+} // namespace op
 } // namespace xyz_autodiff
