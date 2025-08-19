@@ -142,10 +142,22 @@ task build:debug && cd build/debug && ./examples/linear_regression_sgd
 - Shows gradient accumulation across batches
 - Partial convergence achieved (needs optimization tuning for full convergence)
 
-## Forward実行の変更 
-- operationのファクトリ関数（op::add, op::mul等）で.forward()を明示的に呼ぶ
-- Operation::forward()は input.forward() + 参照カウント → logic.forward() の順で実行
-- Operation構築時には自動実行しない（明示的な.forward()呼び出しが必要）
+## Operation実行の指針
+- **Operationチェーンの構築**: 各operationのファクトリ関数（op::add, op::mul, l1_norm, l2_norm等）で操作グラフを構築する時は、`.forward()`を呼ばない
+- **最終実行**: 最後の出力operationで一度だけ`.run()`を呼ぶ
+- **run()の動作**: `.run()`は内部で`.forward()`（前向き計算）と`.backward()`（勾配計算）の両方を実行する
+- **例**:
+  ```cpp
+  // ❌ 各operation毎にforward()を呼ぶのは避ける
+  auto a = op::add(x, y); a.forward();
+  auto b = op::mul(a, z); b.forward();
+  b.run();
+  
+  // ✅ 正しい: operationチェーンを作成してから最後にrun()
+  auto a = op::add(x, y);
+  auto b = op::mul(a, z);
+  b.run();  // forward + backward を実行
+  ```
 
 ## 修正済みの問題
 - zero_grad()が再帰的に入力をゼロクリアする問題を修正

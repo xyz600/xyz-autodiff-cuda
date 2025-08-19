@@ -9,12 +9,14 @@
 #include "../../include/operations/unary/neg_logic.cuh"
 #include "../../include/operations/unary/exp_logic.cuh"
 #include "operations/norm_operations.cuh"
-#include "operations/norm_addition.cuh"
 #include "operations/symmetric_matrix.cuh"
 #include "operations/mahalanobis_distance.cuh"
 #include "operations/covariance_generation.cuh"
 #include "../../include/operations/binary/mul_logic.cuh"
-// Using standard mul operation for multiplication
+#include "../../include/operations/binary/add_logic.cuh"
+#include "../../include/operations/unary/l1_norm_logic.cuh"
+#include "../../include/operations/unary/l2_norm_logic.cuh"
+// Using standard operations for l1_norm + l2_norm + add
 #include "../../include/operations/unary/to_rotation_matrix_logic.cuh"
 
 using namespace xyz_autodiff;
@@ -71,13 +73,10 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     float scalar_grad[1] = {0.0f};
     VariableRef<float, 1> scalar_half(scalar_data, scalar_grad);
     auto scaled_distance = op::mul(mahalanobis_dist_sq, scalar_half);
-    scaled_distance.forward();
     
     // Apply negation and then exponential using standard operations
     auto neg_scaled = neg(scaled_distance);
-    neg_scaled.forward();
     auto gaussian_value = exp(neg_scaled);
-    gaussian_value.forward();
     
     // Step 5: Apply opacity to color (element-wise multiplication with opacity broadcast)
     // Create opacity as 3-element variable for broadcasting
@@ -85,7 +84,6 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     float opacity_grad[3] = {0.0f, 0.0f, 0.0f};
     VariableRef<float, 3> opacity_broadcast(opacity_data, opacity_grad);
     auto color_with_opacity = op::mul(color, opacity_broadcast);
-    color_with_opacity.forward();
     
     // Step 6: Multiply Gaussian value with color
     // Create gaussian_value as 3-element variable for broadcasting
@@ -93,12 +91,14 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     float gauss_grad[3] = {0.0f, 0.0f, 0.0f};
     VariableRef<float, 3> gauss_broadcast(gauss_data, gauss_grad);
     auto weighted_color = op::mul(color_with_opacity, gauss_broadcast);
-    weighted_color.forward();
     
     // Step 7: Compute L1 + L2 norm of the weighted color as final result
-    auto final_result = op::l1_plus_l2_norm(weighted_color);
+    // Use standard operations: l1_norm + l2_norm + add
+    auto l1_result = l1_norm(weighted_color);
+    auto l2_result = l2_norm(weighted_color);
+    auto final_result = add(l1_result, l2_result);
     
-    // Step 8: Compute gradients by running backward pass
+    // Step 8: Compute gradients by running forward and backward pass
     final_result.run();
 }
 

@@ -189,13 +189,7 @@ set_target_properties(test_matrix_multiplication PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-add_executable(test_norm_addition ../examples/mini-gaussian-splatting/tests/test_norm_addition.cu)
-target_link_libraries(test_norm_addition xyz_autodiff gtest gtest_main)
-target_include_directories(test_norm_addition PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
-set_target_properties(test_norm_addition PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)
+# Removed: test_norm_addition (now covered by standard add operations in test_norm_operations)
 
 # Removed: test_symmetric_matrix_ops (now covered by standard operations)
 
@@ -221,5 +215,5 @@ add_test(NAME CovarianceGenerationTest COMMAND test_covariance_generation)
 # Removed: ElementWiseExpTest and ElementWiseMultiplyTest (now covered by standard operations)
 add_test(NAME MahalanobisDistanceTest COMMAND test_mahalanobis_distance)
 add_test(NAME MatrixMultiplicationTest COMMAND test_matrix_multiplication)
-add_test(NAME NormAdditionTest COMMAND test_norm_addition)
+# Removed: NormAdditionTest (now covered by standard add operations in NormOperationsTest)
 # Removed: SymmetricMatrixOpsTest (now covered by standard operations)
