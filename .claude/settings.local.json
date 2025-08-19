@@ -56,7 +56,8 @@
       "Bash(./tests/test_element_wise_exp:*)",
       "Bash(true)",
       "Bash(./tests/test_norm_operations)",
-      "Bash(./tests/test_sym_matrix2_inv:*)"
+      "Bash(./tests/test_sym_matrix2_inv:*)",
+      "Bash(./tests/test_broadcast:*)"
     ],
     "deny": []
   }

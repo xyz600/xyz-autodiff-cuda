@@ -17,6 +17,7 @@
 #include "../../include/operations/unary/l2_norm_logic.cuh"
 // Using standard operations for l1_norm + l2_norm + add
 #include "../../include/operations/unary/to_rotation_matrix_logic.cuh"
+#include "../../include/operations/unary/broadcast_logic.cuh"
 
 using namespace xyz_autodiff;
 
@@ -78,17 +79,13 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     auto gaussian_value = exp(neg_scaled);
     
     // Step 5: Apply opacity to color (element-wise multiplication with opacity broadcast)
-    // Create opacity as 3-element variable for broadcasting
-    float opacity_data[3] = {opacity[0], opacity[0], opacity[0]};
-    float opacity_grad[3] = {0.0f, 0.0f, 0.0f};
-    VariableRef<float, 3> opacity_broadcast(opacity_data, opacity_grad);
+    // Use broadcast operation to efficiently broadcast size-1 opacity to size-3
+    auto opacity_broadcast = broadcast<3>(opacity);
     auto color_with_opacity = op::mul(color, opacity_broadcast);
     
     // Step 6: Multiply Gaussian value with color
-    // Create gaussian_value as 3-element variable for broadcasting
-    float gauss_data[3] = {gaussian_value[0], gaussian_value[0], gaussian_value[0]};
-    float gauss_grad[3] = {0.0f, 0.0f, 0.0f};
-    VariableRef<float, 3> gauss_broadcast(gauss_data, gauss_grad);
+    // Use broadcast operation to efficiently broadcast size-1 gaussian_value to size-3
+    auto gauss_broadcast = broadcast<3>(gaussian_value);
     auto weighted_color = op::mul(color_with_opacity, gauss_broadcast);
     
     // Step 7: Compute L1 + L2 norm of the weighted color as final result

@@ -163,7 +163,7 @@ public:
         using T = double;
         
         // 許容誤差の制約チェック（禁止）
-        if (tolerance < 1e-5) {
+        if (tolerance < 0.0 || tolerance > 1e-5) {
             FAIL() << "FORBIDDEN: Using tolerance " << tolerance 
                    << " which is smaller than 1e-5. Minimum tolerance for double precision tests is 1e-5.";
         }
