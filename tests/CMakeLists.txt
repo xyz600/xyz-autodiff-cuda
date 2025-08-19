@@ -153,6 +153,15 @@ set_target_properties(test_sym_matrix2_inv PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# Broadcast Operation テスト
+add_executable(test_broadcast operation/unary/test_broadcast.cu)
+target_link_libraries(test_broadcast xyz_autodiff gtest gtest_main)
+target_include_directories(test_broadcast PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_broadcast PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # Mini Gaussian Splatting Core テスト
 add_executable(test_mini_gaussian_splatting ../examples/mini-gaussian-splatting/tests/test_gaussian_splatting.cu)
 target_link_libraries(test_mini_gaussian_splatting xyz_autodiff gtest gtest_main)
@@ -210,6 +219,7 @@ add_test(NAME SharedMemoryAtomicTest COMMAND test_shared_memory_atomic)
 add_test(NAME DAGBackwardTest COMMAND test_dag_backward)
 add_test(NAME NormOperationsTest COMMAND test_norm_operations)
 add_test(NAME SymMatrix2InvTest COMMAND test_sym_matrix2_inv)
+add_test(NAME BroadcastTest COMMAND test_broadcast)
 add_test(NAME MiniGaussianSplattingTest COMMAND test_mini_gaussian_splatting)
 add_test(NAME CovarianceGenerationTest COMMAND test_covariance_generation)
 # Removed: ElementWiseExpTest and ElementWiseMultiplyTest (now covered by standard operations)
