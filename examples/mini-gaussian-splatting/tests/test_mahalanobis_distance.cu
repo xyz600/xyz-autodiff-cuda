@@ -162,7 +162,7 @@ TEST_F(MahalanobisDistanceTest, GradientVerification) {
     test::BinaryGradientTester<Logic, 2, 3, 1>::test_custom(
         "MahalanobisDistance", 
         30,      // num_tests (reduced for stability)
-        1e-4,    // tolerance (relaxed for matrix inversion stability)
+        1e-5,    // tolerance (relaxed for matrix inversion stability)
         1e-6,    // delta
         0.1,     // input_min (avoid singular matrices)
         2.0      // input_max
@@ -218,7 +218,7 @@ __global__ void test_mahalanobis_distance_gradient_kernel(double* result) {
     
     // Check gradient consistency
     bool success = true;
-    double tolerance = 1e-4;
+    double tolerance = 1e-5;
     
     for (int i = 0; i < 2; i++) {
         double diff = fabs(analytical_point_grad[i] - point.grad(i));

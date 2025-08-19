@@ -171,7 +171,7 @@ TEST_F(NormOperationsTest, L1NormGradientVerification) {
     test::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "L1Norm", 
         50,      // num_tests
-        1e-4,    // tolerance (L1 norm has non-smooth gradients at zero)
+        1e-5,    // tolerance (L1 norm has non-smooth gradients at zero)
         1e-6,    // delta
         -2.0,    // input_min
         2.0      // input_max

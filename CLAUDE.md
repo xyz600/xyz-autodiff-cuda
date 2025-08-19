@@ -243,6 +243,4 @@ __global__ void test_operation_interface_kernel(float* result) {
 - Test utilities automatically FAIL when tolerance values below `1e-5` are used
 - Test utilities output maximum error and recommend appropriate tolerance values
 - Example acceptable tolerance ranges:
-  - Simple operations: `1e-5` to `1e-4`
-  - Complex operations (matrix operations): `1e-4` to `1e-3`
-  - Numerically challenging operations: `1e-3` or higher
+  - Simple operations: `1e-5`

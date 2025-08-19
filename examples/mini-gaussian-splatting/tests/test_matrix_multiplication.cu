@@ -144,7 +144,7 @@ TEST_F(MatrixMultiplicationTest, GradientVerification) {
     test::BinaryGradientTester<Logic, 9, 9, 9>::test_custom(
         "MatrixMultiplication3x3", 
         50,      // num_tests
-        1e-4,    // tolerance
+        1e-5,    // tolerance
         1e-6,    // delta
         -2.0,    // input_min
         2.0      // input_max
@@ -199,7 +199,7 @@ __global__ void test_matrix_multiply_gradient_kernel(double* result) {
     
     // Check gradient consistency
     bool success = true;
-    double tolerance = 1e-4;
+    double tolerance = 1e-5;
     
     for (int i = 0; i < 9; i++) {
         double diff_a = fabs(analytical_grad_a[i] - A.grad(i));

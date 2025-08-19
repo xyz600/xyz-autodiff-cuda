@@ -222,7 +222,7 @@ TEST_F(CovarianceGenerationTest, CovarianceGenerationGradientVerification) {
     test::BinaryGradientTester<Logic, 2, 1, 4>::test_custom(
         "CovarianceGeneration", 
         30,      // num_tests
-        1e-4,    // tolerance
+        1e-5,    // tolerance
         1e-6,    // delta
         -2.0,    // input_min
         2.0      // input_max
@@ -246,7 +246,7 @@ TEST_F(CovarianceGenerationTest, ScaleRotationToCovariance3ParamGradientVerifica
     test::BinaryGradientTester<Logic, 2, 1, 3>::test_custom(
         "ScaleRotationToCovariance3Param", 
         30,      // num_tests
-        1e-4,    // tolerance
+        1e-5,    // tolerance
         1e-6,    // delta
         -2.0,    // input_min
         2.0      // input_max
@@ -300,7 +300,7 @@ __global__ void test_covariance_generation_gradient_kernel(double* result) {
     
     // Check gradient consistency
     bool success = true;
-    double tolerance = 1e-4;
+    double tolerance = 1e-5;
     
     for (int i = 0; i < 2; i++) {
         double diff = fabs(analytical_scale_grad[i] - scale.grad(i));

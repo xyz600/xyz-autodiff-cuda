@@ -8,7 +8,7 @@
 namespace xyz_autodiff {
 namespace op {
 
-// NOTE: Standard exp operation is now handled by include/operations/exp_logic.cuh
+// NOTE: Standard exp operation is now handled by include/operations/unary/exp_logic.cuh
 // This file contains only specialized exp operations for mini-gaussian-splatting
 
 // Specialized exp(-x) operation

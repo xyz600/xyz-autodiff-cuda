@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
 #include "utility/gradient_test_utility.cuh"
-#include "../include/operations/sigmoid_logic.cuh"
-#include "../include/operations/exp_logic.cuh"
-#include "../include/operations/add_logic.cuh"
-#include "../include/operations/mul_logic.cuh"
+#include "../include/operations/unary/sigmoid_logic.cuh"
+#include "../include/operations/unary/exp_logic.cuh"
+#include "../include/operations/binary/add_logic.cuh"
+#include "../include/operations/binary/mul_logic.cuh"
 
 using namespace xyz_autodiff;
 using namespace xyz_autodiff::test;

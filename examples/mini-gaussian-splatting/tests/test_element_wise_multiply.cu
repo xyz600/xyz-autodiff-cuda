@@ -4,7 +4,7 @@
 #include "../../../include/variable.cuh"
 #include "../../../include/concept/variable.cuh"
 #include "../../../include/concept/operation_node.cuh"
-#include "../../../include/operations/mul_logic.cuh"
+#include "../../../include/operations/binary/mul_logic.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
 #include "../../../tests/utility/binary_gradient_tester.cuh"
 

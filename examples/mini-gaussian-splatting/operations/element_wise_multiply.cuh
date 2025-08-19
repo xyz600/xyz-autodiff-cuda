@@ -7,7 +7,7 @@
 namespace xyz_autodiff {
 namespace op {
 
-// NOTE: Standard 2-input element-wise multiplication is now handled by include/operations/mul_logic.cuh
+// NOTE: Standard 2-input element-wise multiplication is now handled by include/operations/binary/mul_logic.cuh
 // This file contains only specialized multiplication operations for mini-gaussian-splatting
 
 // Element-wise multiplication for three inputs: output[i] = input1[i] * input2[i] * input3[i]
@@ -73,7 +73,7 @@ struct ScalarMultiplyLogic {
     }
 };
 
-// NOTE: 2-input element_wise_multiply is now available as op::mul() from include/operations/mul_logic.cuh
+// NOTE: 2-input element_wise_multiply is now available as op::mul() from include/operations/binary/mul_logic.cuh
 
 // Factory function for element-wise multiplication (3 inputs) - c * d * o operation
 template <typename Input1, typename Input2, typename Input3>

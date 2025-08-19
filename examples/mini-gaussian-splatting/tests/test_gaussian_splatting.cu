@@ -4,7 +4,7 @@
 #include "../../../include/variable.cuh"
 #include "../operations/covariance_generation.cuh"
 #include "../operations/mahalanobis_distance.cuh"
-#include "../../../include/operations/quaternion_to_rotation_matrix_logic.cuh"
+#include "../../../include/operations/unary/quaternion_to_rotation_matrix_logic.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;
@@ -263,7 +263,7 @@ __global__ void test_gaussian_splatting_gradient_verification_kernel(float* resu
     cov_3param.run_numerical(1e-8);
     
     // Compare analytical vs numerical gradients
-    double tolerance = 1e-4;
+    double tolerance = 1e-5;
     bool success = true;
     
     for (int i = 0; i < 2; i++) {

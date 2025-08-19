@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
 #include "../include/variable.cuh"
-#include "../include/operations/add_logic.cuh"
-#include "../include/operations/mul_logic.cuh"
-#include "../include/operations/exp_logic.cuh"
-#include "../include/operations/quaternion_to_rotation_matrix_logic.cuh"
+#include "../include/operations/binary/add_logic.cuh"
+#include "../include/operations/binary/mul_logic.cuh"
+#include "../include/operations/unary/exp_logic.cuh"
+#include "../include/operations/unary/quaternion_to_rotation_matrix_logic.cuh"
 #include "../include/concept/variable.cuh"
 #include "../include/concept/operation_node.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
