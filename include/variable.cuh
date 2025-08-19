@@ -60,8 +60,6 @@ public:
             grad_ptr_[i] = T{};
         }
     }
-    
-    
 };
 
 // Variable - 自身でバッファを持つ版

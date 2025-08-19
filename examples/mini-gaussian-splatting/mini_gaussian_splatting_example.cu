@@ -17,6 +17,7 @@
 #include "../../include/operations/unary/l2_norm_logic.cuh"
 // Using standard operations for l1_norm + l2_norm + add
 #include "../../include/operations/unary/to_rotation_matrix_logic.cuh"
+#include "../../include/operations/unary/broadcast.cuh"
 
 using namespace xyz_autodiff;
 
@@ -50,7 +51,7 @@ struct GaussianSplattingBuffers {
 // Mini Gaussian splatting evaluation kernel
 __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers) {
     // Create Variable references from buffer data
-    VariableRef<float, 2> center(buffers->gaussian_center, buffers->gaussian_center_grad);
+    auto center = VariableRef<float, 2>(buffers->gaussian_center, buffers->gaussian_center_grad);
     VariableRef<float, 2> scale(buffers->gaussian_scale, buffers->gaussian_scale_grad);
     VariableRef<float, 1> rotation(buffers->gaussian_rotation, buffers->gaussian_rotation_grad);
     VariableRef<float, 3> color(buffers->gaussian_color, buffers->gaussian_color_grad);
@@ -76,11 +77,13 @@ __global__ void mini_gaussian_splatting_kernel(GaussianSplattingBuffers* buffers
     
     // Step 5: Apply opacity to color (element-wise multiplication with opacity broadcast)
     // Use constant operator for scalar multiplication
-    auto color_with_opacity = color * opacity[0];
+    auto broadcasted_opacity = op::broadcast<3>(opacity);
+    auto color_with_opacity = color * broadcasted_opacity;
     
     // Step 6: Multiply Gaussian value with color
     // Use constant operator for scalar multiplication
-    auto weighted_color = color_with_opacity * gaussian_value[0];
+    auto broadcasted_gaussian = op::broadcast<3>(gaussian_value);
+    auto weighted_color = color_with_opacity * broadcasted_gaussian;
     
     // Step 7: Compute L1 + L2 norm of the weighted color as final result
     // Use standard operations: l1_norm + l2_norm + add
