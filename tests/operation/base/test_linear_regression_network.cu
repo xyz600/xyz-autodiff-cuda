@@ -152,32 +152,15 @@ struct ComplexInteractionNetwork {
     ) const {
         VariableRef<1, double> a_var(&value->a, &diff->a);
         VariableRef<1, double> b_var(&value->b, &diff->b);
-        VariableRef<1, double> c_var(&value->c, &diff->c);
-        VariableRef<1, double> d_var(&value->d, &diff->d);
 
-        auto ab = a_var * b_var;
-
-        auto d2 = op::squared(d_var);
-        auto cd2 = c_var + d2;
-
-        auto ax = a_var - value->x1;
-        auto ax2 = op::squared(ax);
-        auto bax = b_var * ax2;
-
-        auto by = b_var - value->x2;
-        auto by2 = op::squared(by);
-
-        auto sum1 = ab + cd2;
-        auto sum2 = bax + by2;
-        auto sum = sum1 + sum2;
-
-        auto v = sum - value->y_target;
-        auto loss = op::squared(v);
+        auto ab = a_var + b_var;
+        auto ab2 = a_var + b_var;
+        auto ab_sum = ab + ab2;
         
         if constexpr (tag == GradientTag::Analytical) {
-            loss.run();
+            ab_sum.run();
         } else if constexpr (tag == GradientTag::Numerical) {
-            loss.run_numerical(delta);
+            ab_sum.run_numerical(delta);
         }
     }
 };

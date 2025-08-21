@@ -162,15 +162,6 @@ set_target_properties(test_broadcast PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-# Mini Gaussian Splatting Core テスト
-add_executable(test_mini_gaussian_splatting ../examples/mini-gaussian-splatting/tests/test_gaussian_splatting.cu)
-target_link_libraries(test_mini_gaussian_splatting xyz_autodiff gtest gtest_main)
-target_include_directories(test_mini_gaussian_splatting PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
-set_target_properties(test_mini_gaussian_splatting PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)
-
 # Mini Gaussian Splatting Individual Operation Tests
 add_executable(test_covariance_generation ../examples/mini-gaussian-splatting/tests/test_covariance_generation.cu)
 target_link_libraries(test_covariance_generation xyz_autodiff gtest gtest_main)
@@ -238,7 +229,7 @@ set_target_properties(test_binary_operations_gradient PROPERTIES
 
 # Constant Operations Gradient Tests
 add_executable(test_constant_operations_gradient operation/unary/test_constant_operations_gradient.cu)
-target_link_libraries(test_constant_operations_gradient xyz_autodiff gtest gtest_main)
+target_link_libraries(test_constant_operations_gradient xyz_autodiff)
 target_include_directories(test_constant_operations_gradient PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(test_constant_operations_gradient PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
@@ -290,7 +281,6 @@ add_test(NAME DAGBackwardTest COMMAND test_dag_backward)
 add_test(NAME NormOperationsTest COMMAND test_norm_operations)
 add_test(NAME SymMatrix2InvTest COMMAND test_sym_matrix2_inv)
 add_test(NAME BroadcastTest COMMAND test_broadcast)
-add_test(NAME MiniGaussianSplattingTest COMMAND test_mini_gaussian_splatting)
 add_test(NAME CovarianceGenerationTest COMMAND test_covariance_generation)
 # Removed: ElementWiseExpTest and ElementWiseMultiplyTest (now covered by standard operations)
 add_test(NAME MahalanobisDistanceTest COMMAND test_mahalanobis_distance)

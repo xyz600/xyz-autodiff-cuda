@@ -2,6 +2,7 @@
 
 #include <cuda_runtime.h>
 #include <type_traits>
+#include <cstdint>
 #include "../concept/core_logic.cuh"
 #include "../concept/variable.cuh"
 #include "../concept/operation_node.cuh"
@@ -24,7 +25,7 @@ private:
     Logic logic_;
     Input& input_;
     output_type output_;  // Variableが自身でバッファを持つ
-    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
+    std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -73,11 +74,11 @@ public:
     }
     
     // 参照カウント管理メソッド
-    __device__ void increment_ref_count() const {
+    __device__ void increment_ref_count() {
         ref_count_++;
     }
     
-    __device__ bool decrement_ref_count_and_check() const {
+    __device__ bool decrement_ref_count_and_check() {
         return --ref_count_ == 0;
     }
     
@@ -199,7 +200,7 @@ private:
     Input1& input1_;
     Input2& input2_;
     output_type output_;
-    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
+    std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -258,11 +259,11 @@ public:
     }
     
     // 参照カウント管理メソッド
-    __device__ void increment_ref_count() const {
+    __device__ void increment_ref_count() {
         ref_count_++;
     }
     
-    __device__ bool decrement_ref_count_and_check() const {
+    __device__ bool decrement_ref_count_and_check() {
         return --ref_count_ == 0;
     }
     

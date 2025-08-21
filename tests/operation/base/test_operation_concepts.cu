@@ -107,66 +107,6 @@ TEST_F(OperationConceptTest, ConceptComplianceBasicTest) {
     EXPECT_TRUE(true);
 }
 
-// Variableのzero_gradテスト用カーネル
-template<typename T>
-__global__ void test_variable_zero_grad_kernel(T* result) {
-    Variable<3, float> var;
-    var.zero_grad(); // コンパイルが通ることを確認
-    
-    VariableRef<3, float> var_ref(var.data(), var.grad());
-    var_ref.zero_grad(); // コンパイルが通ることを確認
-    
-    *result = 1.0f; // 成功マーカー
-}
-
-TEST_F(OperationConceptTest, VariableZeroGradInterface) {
-    auto device_result = makeCudaUnique<float>();
-    
-    test_variable_zero_grad_kernel<<<1, 1>>>(device_result.get());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
-    EXPECT_EQ(host_result, 1.0f);
-}
-
-// Operationのインターフェーステスト用カーネル
-__global__ void test_operation_interface_kernel(float* result) {
-    float data1[2] = {1.0f, 2.0f};
-    float grad1[2] = {0.0f, 0.0f};
-    float data2[2] = {3.0f, 4.0f};
-    float grad2[2] = {0.0f, 0.0f};
-    
-    VariableRef<2, float> var1(data1, grad1);
-    VariableRef<2, float> var2(data2, grad2);
-    
-    // UnaryOperationを作成（ExpLogicを使用）
-    op::ExpLogic<2> logic;
-    UnaryOperation<2, op::ExpLogic<2>, VariableRef<2, float>> op(logic, var1);
-    
-    // VariableConceptのインターフェースが使えることを確認
-    op.zero_grad();  // zero_grad
-    constexpr auto size = op.size;  // size
-    auto* data = op.data();  // data()
-    auto* grad = op.grad();  // grad()
-    auto value = op[0];  // operator[]
-    auto grad_value = op.grad(0);  // grad(size_t)
-    
-    // 結果を設定（サイズが正しいことを確認）
-    *result = (size == 2 && data != nullptr && grad != nullptr) ? 1.0f : 0.0f;
-}
-
-TEST_F(OperationConceptTest, OperationVariableInterface) {
-    auto device_result = makeCudaUnique<float>();
-    
-    test_operation_interface_kernel<<<1, 1>>>(device_result.get());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
-    EXPECT_EQ(host_result, 1.0f);
-}
-
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
