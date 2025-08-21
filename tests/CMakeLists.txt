@@ -309,6 +309,15 @@ set_target_properties(test_matrix_operations_gradient PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# Mini Gaussian Splatting Gradient Tests
+add_executable(test_mini_gaussian_splatting_gradient ../examples/mini-gaussian-splatting/tests/test_mini_gaussian_splatting_gradient.cu)
+target_link_libraries(test_mini_gaussian_splatting_gradient xyz_autodiff gtest gtest_main)
+target_include_directories(test_mini_gaussian_splatting_gradient PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
+set_target_properties(test_mini_gaussian_splatting_gradient PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # NEW GRADIENT VERIFICATION TESTS
 add_test(NAME BinaryOperationsGradientTest COMMAND test_binary_operations_gradient)
 add_test(NAME BasicUnaryOperationsGradientTest COMMAND test_basic_unary_operations_gradient)
@@ -317,3 +326,4 @@ add_test(NAME SpecializedOperationsGradientTest COMMAND test_specialized_operati
 add_test(NAME NormOperationsGradientTest COMMAND test_norm_operations_gradient)
 add_test(NAME ExponentialOperationsGradientTest COMMAND test_exponential_operations_gradient)
 add_test(NAME MatrixOperationsGradientTest COMMAND test_matrix_operations_gradient)
+add_test(NAME MiniGaussianSplattingGradientTest COMMAND test_mini_gaussian_splatting_gradient)
