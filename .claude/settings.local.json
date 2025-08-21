@@ -72,8 +72,14 @@
       "Bash(./debug_duplicate_add)",
       "Bash(./tests/test_norm_operations_gradient:*)",
       "Bash(./tests/test_matmul_operations_gradient:*)",
-      "Bash(./tests/test_matrix_multiplication)"
+      "Bash(./tests/test_matrix_multiplication)",
+      "Bash(pkg-config:*)",
+      "Bash(curl:*)",
+      "Bash(./examples/mini-gaussian-splatting/gaussian_splatting_training:*)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "/usr"
+    ]
   }
 }
