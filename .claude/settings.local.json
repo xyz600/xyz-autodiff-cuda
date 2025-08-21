@@ -69,7 +69,8 @@
       "Bash(./tests/test_binary_variable_operators:*)",
       "Bash(./test_universal_operators)",
       "Bash(./tests/test_broadcast:*)",
-      "Bash(./debug_duplicate_add)"
+      "Bash(./debug_duplicate_add)",
+      "Bash(./tests/test_norm_operations_gradient:*)"
     ],
     "deny": []
   }

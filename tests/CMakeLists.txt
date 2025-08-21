@@ -227,15 +227,6 @@ set_target_properties(test_binary_operations_gradient PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-# Constant Operations Gradient Tests
-add_executable(test_constant_operations_gradient operation/unary/test_constant_operations_gradient.cu)
-target_link_libraries(test_constant_operations_gradient xyz_autodiff)
-target_include_directories(test_constant_operations_gradient PRIVATE ${CMAKE_SOURCE_DIR}/include)
-set_target_properties(test_constant_operations_gradient PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)
-
 # Basic Unary Operations Gradient Tests
 add_executable(test_basic_unary_operations_gradient operation/unary/test_basic_unary_operations_gradient.cu)
 target_link_libraries(test_basic_unary_operations_gradient xyz_autodiff gtest gtest_main)
@@ -291,9 +282,38 @@ add_test(NAME LinearRegressionNetworkTest COMMAND test_linear_regression_network
 add_test(NAME VariableOperatorsTest COMMAND test_variable_operators)
 add_test(NAME BinaryVariableOperatorsTest COMMAND test_binary_variable_operators)
 
+# Norm Operations Gradient Tests
+add_executable(test_norm_operations_gradient operation/unary/test_norm_operations_gradient.cu)
+target_link_libraries(test_norm_operations_gradient xyz_autodiff gtest gtest_main)
+target_include_directories(test_norm_operations_gradient PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_norm_operations_gradient PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Exponential Operations Gradient Tests
+add_executable(test_exponential_operations_gradient operation/unary/test_exponential_operations_gradient.cu)
+target_link_libraries(test_exponential_operations_gradient xyz_autodiff gtest gtest_main)
+target_include_directories(test_exponential_operations_gradient PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_exponential_operations_gradient PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Matrix Operations Gradient Tests
+add_executable(test_matrix_operations_gradient operation/unary/test_matrix_operations_gradient.cu)
+target_link_libraries(test_matrix_operations_gradient xyz_autodiff gtest gtest_main)
+target_include_directories(test_matrix_operations_gradient PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_matrix_operations_gradient PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # NEW GRADIENT VERIFICATION TESTS
 add_test(NAME BinaryOperationsGradientTest COMMAND test_binary_operations_gradient)
-add_test(NAME ConstantOperationsGradientTest COMMAND test_constant_operations_gradient)
 add_test(NAME BasicUnaryOperationsGradientTest COMMAND test_basic_unary_operations_gradient)
 add_test(NAME TrigonometricOperationsGradientTest COMMAND test_trigonometric_operations_gradient)
 add_test(NAME SpecializedOperationsGradientTest COMMAND test_specialized_operations_gradient)
+add_test(NAME NormOperationsGradientTest COMMAND test_norm_operations_gradient)
+add_test(NAME ExponentialOperationsGradientTest COMMAND test_exponential_operations_gradient)
+add_test(NAME MatrixOperationsGradientTest COMMAND test_matrix_operations_gradient)
