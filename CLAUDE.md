@@ -242,11 +242,18 @@ __global__ void test_operation_interface_kernel(float* result) {
 ### 5. CRITICAL TESTING CONSTRAINTS
 **TEST SKIPPING IS COMPLETELY FORBIDDEN**
 - Never use `GTEST_SKIP()` for any test except CUDA device availability checks
+- Never use `DISABLED_` prefix to disable tests
 - All gradient verification tests must pass without skipping
 - If a test has numerical precision issues, fix the tolerance values or implementation instead of skipping
 - If a test has mathematical errors, fix the mathematical logic instead of skipping
 - Every operation must have complete test coverage including gradient verification
 - Problematic tests must be fixed, not skipped
+
+**MANDATORY PRE-COMPLETION CHECK**
+- Before completing any task, ALWAYS run: `grep -r "DISABLED_" tests/` 
+- Ensure zero results (no DISABLED_ tests exist)
+- If any DISABLED_ tests are found, they MUST be fixed and enabled
+- This check prevents accidental test skipping and ensures complete test coverage
 
 **TOLERANCE CONSTRAINTS FOR DOUBLE PRECISION TESTS**
 - Minimum tolerance for double precision gradient verification tests: `1e-5`

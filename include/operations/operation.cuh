@@ -537,11 +537,11 @@ public:
             const auto orig = input1_[i];
 
             input1_[i] = orig + delta;
-            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input1_[i] = orig - delta;
-            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input1_[i] = orig;

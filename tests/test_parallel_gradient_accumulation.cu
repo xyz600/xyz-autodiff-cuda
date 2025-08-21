@@ -118,7 +118,7 @@ TEST_F(ParallelGradientAccumulationTest, AtomicGradientAccumulation) {
 }
 
 // 性能測定テスト（より大きなスレッド数） - 無効化
-TEST_F(ParallelGradientAccumulationTest, DISABLED_LargeScaleAtomicAccumulation) {
+TEST_F(ParallelGradientAccumulationTest, LargeScaleAtomicAccumulation) {
     const std::size_t NUM_THREADS = 100000;  // 10万スレッド（元の計画通り）
     const std::size_t THREADS_PER_BLOCK = 512;
     const std::size_t NUM_BLOCKS = (NUM_THREADS + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
