@@ -4,7 +4,7 @@
 #include "../../../include/variable.cuh"
 #include "../../../include/concept/variable.cuh"
 #include "../../../include/concept/operation_node.cuh"
-#include "../operations/matrix_multiplication.cuh"
+#include "../../../include/operations/binary/matmul_logic.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
 #include "../../../tests/utility/binary_gradient_tester.cuh"
 
@@ -17,7 +17,7 @@ using namespace xyz_autodiff;
 // Test types
 using TestMatrix9 = Variable<9, float>;
 using TestMatrixRef9 = VariableRef<9, float>;
-using MatMulOp = BinaryOperation<9, op::MatrixMultiplication3x3Logic<TestMatrixRef9, TestMatrixRef9>, TestMatrixRef9, TestMatrixRef9>;
+using MatMulOp = BinaryOperation<9, op::MatMulLogic<3, 3, 3, TestMatrixRef9, TestMatrixRef9>, TestMatrixRef9, TestMatrixRef9>;
 
 // Static assertions for concept compliance
 static_assert(VariableConcept<TestMatrix9>, 
@@ -56,7 +56,7 @@ protected:
 
 // Use the binary gradient tester utility
 TEST_F(MatrixMultiplicationTest, GradientVerification) {
-    using Logic = op::MatrixMultiplication3x3Logic<VariableRef<9, double>, VariableRef<9, double>>;
+    using Logic = op::MatMulLogic<3, 3, 3, VariableRef<9, double>, VariableRef<9, double>>;
     test::BinaryGradientTester<Logic, 9, 9, 9>::test_custom(
         "MatrixMultiplication3x3", 
         50,      // num_tests

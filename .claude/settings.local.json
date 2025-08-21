@@ -70,7 +70,9 @@
       "Bash(./test_universal_operators)",
       "Bash(./tests/test_broadcast:*)",
       "Bash(./debug_duplicate_add)",
-      "Bash(./tests/test_norm_operations_gradient:*)"
+      "Bash(./tests/test_norm_operations_gradient:*)",
+      "Bash(./tests/test_matmul_operations_gradient:*)",
+      "Bash(./tests/test_matrix_multiplication)"
     ],
     "deny": []
   }
