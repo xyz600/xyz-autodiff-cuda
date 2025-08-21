@@ -93,15 +93,17 @@ public:
         bool passed = true;
         
         // Check each parameter gradient
-        float* analytical_ptr = reinterpret_cast<float*>(&analytical_grads);
-        float* numerical_ptr = reinterpret_cast<float*>(&numerical_grads);
-        int num_params = sizeof(ParameterStruct) / sizeof(float);
+        double* analytical_ptr = reinterpret_cast<double*>(&analytical_grads);
+        double* numerical_ptr = reinterpret_cast<double*>(&numerical_grads);
+        int num_params = sizeof(ParameterStruct) / sizeof(double);
         
         for (int i = 0; i < num_params; ++i) {
             double error = std::abs(analytical_ptr[i] - numerical_ptr[i]);
             double relative_error = error / (std::abs(numerical_ptr[i]) + 1e-10);
             
-            if (error > tolerance && relative_error > tolerance) {
+            // Use min(absolute_error, relative_error) < tolerance condition
+            double min_error = std::min(error, relative_error);
+            if (min_error > tolerance) {
                 passed = false;
                 if (error > max_error) {
                     max_error = error;
@@ -140,13 +142,13 @@ public:
         // Random number generator
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> dist(-parameter_range, parameter_range);
+        std::uniform_real_distribution<double> dist(-parameter_range, parameter_range);
         
         for (int test_idx = 0; test_idx < num_tests; ++test_idx) {
             // Create random parameter perturbation
             ParameterStruct test_params = initial_params;
-            float* param_ptr = reinterpret_cast<float*>(&test_params);
-            int num_params = sizeof(ParameterStruct) / sizeof(float);
+            double* param_ptr = reinterpret_cast<double*>(&test_params);
+            int num_params = sizeof(ParameterStruct) / sizeof(double);
             
             for (int i = 0; i < num_params; ++i) {
                 param_ptr[i] += dist(gen);

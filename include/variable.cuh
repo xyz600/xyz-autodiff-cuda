@@ -7,6 +7,8 @@
 namespace xyz_autodiff {
 
 // VariableRef - 外部バッファへの参照版 (現在のVariableの設計)
+// [NOTE] CANNOT USE BUFFER ON A LOCAL VARIABLE
+// TO STORE AS A LOCAL VARAIBLE, USE Variable INSTEAD
 template <std::size_t N, typename T>
 requires FloatingPointConcept<T>
 class VariableRef {
@@ -44,13 +46,7 @@ public:
     
     // 勾配への加算（shared/globalはatomicAdd、純粋ローカルのみ通常加算）
     __device__ __forceinline__ void add_grad(std::size_t i, T value) const noexcept {
-        // shared memory または global memory の場合はatomicAdd
-        if (__isShared(grad_ptr_ + i) || __isGlobal(grad_ptr_ + i)) {
-            atomicAdd(&grad_ptr_[i], value);
-        } else {
-            // レジスタ・純粋ローカルの場合は通常加算
-            grad_ptr_[i] += value;
-        }
+        atomicAdd(&grad_ptr_[i], value);
     }
     
     // 勾配をゼロクリア
@@ -177,7 +173,7 @@ public:
     __device__ void zero_grad() noexcept {
         #pragma unroll
         for (std::size_t i = 0; i < N; ++i) {
-            grad_[i] = T{};
+            grad_[i] = T(0);
         }
     }
     

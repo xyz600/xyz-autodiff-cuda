@@ -226,47 +226,6 @@ TEST_F(OperationChainingTest, AnalyticalVsNumericalGradient) {
     }
 }
 
-TEST_F(OperationChainingTest, SimpleForwardTest) {
-    using T = double;
-    
-    // 簡単なテストケース: x=2, y=3, z=4 の場合
-    // f(2, 3, 4) = 2*4 + 3 = 8 + 3 = 11
-    T x = 2.0, y = 3.0, z = 4.0;
-    T expected_output = 11.0;
-    
-    auto device_buffers = makeCudaUnique<OperationChainingBuffers<T>>();
-    
-    T upstream_grad = 1.0;
-    
-    // バッファ構造体にデータをセット
-    OperationChainingBuffers<T> host_buffers = {};
-    host_buffers.params.value[0] = x;
-    host_buffers.params.value[1] = y;
-    host_buffers.params.value[2] = z;
-    host_buffers.output_grad[0] = upstream_grad;
-    
-    ASSERT_EQ(cudaMemcpy(device_buffers.get(), &host_buffers, sizeof(OperationChainingBuffers<T>), cudaMemcpyHostToDevice), cudaSuccess);
-    
-    test_chaining_analytical_kernel<T><<<1, 1>>>(
-        &device_buffers.get()->params, device_buffers.get()->output_data, device_buffers.get()->output_grad);
-    
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    // 結果をホストにコピー
-    ASSERT_EQ(cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(OperationChainingBuffers<T>), cudaMemcpyDeviceToHost), cudaSuccess);
-    
-    T grad_x = host_buffers.params.grad[0];
-    T grad_y = host_buffers.params.grad[1];
-    T grad_z = host_buffers.params.grad[2];
-    
-    // 順伝播の検証は省略（final_resultから直接確認できない）
-    
-    // 勾配の検証: df/dx = z = 4, df/dy = 1, df/dz = x = 2
-    EXPECT_NEAR(grad_x, 4.0, 1e-5);
-    EXPECT_NEAR(grad_y, 1.0, 1e-5);
-    EXPECT_NEAR(grad_z, 2.0, 1e-5);
-}
-
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

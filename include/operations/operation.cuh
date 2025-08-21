@@ -2,6 +2,7 @@
 
 #include <cuda_runtime.h>
 #include <type_traits>
+#include <cstdint>
 #include "../concept/core_logic.cuh"
 #include "../concept/variable.cuh"
 #include "../concept/operation_node.cuh"
@@ -24,7 +25,7 @@ private:
     Logic logic_;
     Input& input_;
     output_type output_;  // Variableが自身でバッファを持つ
-    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
+    std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -73,11 +74,11 @@ public:
     }
     
     // 参照カウント管理メソッド
-    __device__ void increment_ref_count() const {
+    __device__ void increment_ref_count() {
         ref_count_++;
     }
     
-    __device__ bool decrement_ref_count_and_check() const {
+    __device__ bool decrement_ref_count_and_check() {
         return --ref_count_ == 0;
     }
     
@@ -86,16 +87,6 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
-        if constexpr (OperationNode<Input>) {
-            input_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input::size; ++i) {
-                input_.grad()[i] = value_type(0);
-            }
-        }
-        
         for (std::size_t i = 0; i < Input::size; i++) {
             const auto orig = input_[i];
 
@@ -199,7 +190,7 @@ private:
     Input1& input1_;
     Input2& input2_;
     output_type output_;
-    mutable std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
+    std::uint8_t ref_count_ = 0;  // DAG対応: 参照カウント
 
 public:
     // デフォルトコンストラクタを禁止
@@ -258,11 +249,11 @@ public:
     }
     
     // 参照カウント管理メソッド
-    __device__ void increment_ref_count() const {
+    __device__ void increment_ref_count() {
         ref_count_++;
     }
     
-    __device__ bool decrement_ref_count_and_check() const {
+    __device__ bool decrement_ref_count_and_check() {
         return --ref_count_ == 0;
     }
     
@@ -271,24 +262,6 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
-        if constexpr (OperationNode<Input1>) {
-            input1_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input1::size; ++i) {
-                input1_.grad()[i] = value_type(0);
-            }
-        }
-        if constexpr (OperationNode<Input2>) {
-            input2_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input2::size; ++i) {
-                input2_.grad()[i] = value_type(0);
-            }
-        }
-        
         // Input1 に対する数値微分
         for (std::size_t i = 0; i < Input1::size; i++) {
             const auto orig = input1_[i];
@@ -506,42 +479,16 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
-        if constexpr (OperationNode<Input1>) {
-            input1_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input1::size; ++i) {
-                input1_.grad()[i] = value_type(0);
-            }
-        }
-        if constexpr (OperationNode<Input2>) {
-            input2_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input2::size; ++i) {
-                input2_.grad()[i] = value_type(0);
-            }
-        }
-        if constexpr (OperationNode<Input3>) {
-            input3_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input3::size; ++i) {
-                input3_.grad()[i] = value_type(0);
-            }
-        }
-        
         // Input1 に対する数値微分
         for (std::size_t i = 0; i < Input1::size; i++) {
             const auto orig = input1_[i];
 
             input1_[i] = orig + delta;
-            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type plus_out = output_;
 
             input1_[i] = orig - delta;
-            logic_.forward(output_, input1_, input2_);  // 直接logic.forwardを呼ぶ
+            logic_.forward(output_, input1_, input2_, input3_);  // 直接logic.forwardを呼ぶ
             output_type minus_out = output_;
 
             input1_[i] = orig;
@@ -672,9 +619,7 @@ public:
             add_grad(i, value_type(1.0));
         }
         backward_numerical(delta);
-    }
-    
-    
+    }    
 };
 
 } // namespace xyz_autodiff

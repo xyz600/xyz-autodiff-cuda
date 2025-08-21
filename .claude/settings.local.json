@@ -57,7 +57,6 @@
       "Bash(true)",
       "Bash(./tests/test_norm_operations)",
       "Bash(./tests/test_sym_matrix2_inv:*)",
-<<<<<<< HEAD
       "Bash(./examples/optimization/test_linear_regression_gradient:*)",
       "Bash(./tests/test_linear_regression_network:*)",
       "Bash(./tests/test_variable_operators)",
@@ -69,9 +68,11 @@
       "Bash(/workspaces/xyz-autodiff-cuda/build/debug/tests/test_binary_variable_operators)",
       "Bash(./tests/test_binary_variable_operators:*)",
       "Bash(./test_universal_operators)",
-=======
->>>>>>> main
-      "Bash(./tests/test_broadcast:*)"
+      "Bash(./tests/test_broadcast:*)",
+      "Bash(./debug_duplicate_add)",
+      "Bash(./tests/test_norm_operations_gradient:*)",
+      "Bash(./tests/test_matmul_operations_gradient:*)",
+      "Bash(./tests/test_matrix_multiplication)"
     ],
     "deny": []
   }

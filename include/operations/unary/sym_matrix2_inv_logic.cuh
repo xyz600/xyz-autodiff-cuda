@@ -64,9 +64,9 @@ struct SymMatrix2InvLogic {
         T da_inv_db = T(2) * c * b * inv_det2;
         T da_inv_dc = inv_det - a * c * inv_det2;
         
-        T db_inv_da = T(2) * b * c * inv_det2;
-        T db_inv_db = -inv_det + T(2) * b * b * inv_det2;
-        T db_inv_dc = T(2) * b * a * inv_det2;
+        T db_inv_da = b * c * inv_det2;
+        T db_inv_db = -inv_det - T(2) * b * b * inv_det2;
+        T db_inv_dc = a * b * inv_det2;
         
         T dc_inv_da = inv_det - a * c * inv_det2;
         T dc_inv_db = T(2) * a * b * inv_det2;

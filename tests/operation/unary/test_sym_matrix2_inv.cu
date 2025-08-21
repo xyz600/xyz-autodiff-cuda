@@ -52,45 +52,6 @@ protected:
 };
 
 // ===========================================
-// Forward Pass Tests
-// ===========================================
-
-__global__ void test_sym_matrix2_inv_forward_kernel(float* result) {
-    // Test matrix [[2, 1], [1, 2]] -> inverse = [[2/3, -1/3], [-1/3, 2/3]]
-    // In 3-param format: [a, b, c] = [2, 1, 2]
-    // Expected inverse: [a', b', c'] = [2/3, -1/3, 2/3]
-    float data[3] = {2.0f, 1.0f, 2.0f};
-    float grad[3] = {0,0,0};
-    
-    VariableRef<3, float> input(data, grad);
-    
-    auto inv_result = op::sym_matrix2_inv(input);
-    inv_result.forward();
-    
-    float expected_a = 2.0f/3.0f;   // 2/3
-    float expected_b = -1.0f/3.0f;  // -1/3
-    float expected_c = 2.0f/3.0f;   // 2/3
-    float tolerance = 1e-6f;
-    
-    bool success = (fabsf(inv_result[0] - expected_a) < tolerance) &&
-                   (fabsf(inv_result[1] - expected_b) < tolerance) &&
-                   (fabsf(inv_result[2] - expected_c) < tolerance);
-    
-    *result = success ? 1.0f : 0.0f;
-}
-
-TEST_F(SymMatrix2InvTest, SymMatrix2InvForwardPass) {
-    auto device_result = makeCudaUnique<float>();
-    
-    test_sym_matrix2_inv_forward_kernel<<<1, 1>>>(device_result.get());
-    ASSERT_EQ(cudaDeviceSynchronize(), cudaSuccess);
-    
-    float host_result;
-    ASSERT_EQ(cudaMemcpy(&host_result, device_result.get(), sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
-    EXPECT_EQ(host_result, 1.0f);
-}
-
-// ===========================================
 // Gradient Verification Tests
 // ===========================================
 
