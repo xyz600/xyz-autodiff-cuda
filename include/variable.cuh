@@ -173,7 +173,7 @@ public:
     __device__ void zero_grad() noexcept {
         #pragma unroll
         for (std::size_t i = 0; i < N; ++i) {
-            grad_[i] = T{};
+            grad_[i] = T(0);
         }
     }
     

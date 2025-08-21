@@ -141,9 +141,7 @@ struct SubtractSquareOnlyNetwork {
     }
 };
 
-// Complex interaction network
-// Tests parameter interactions and non-linear combinations
-struct ComplexInteractionNetwork {
+struct DuplicateAddNetwork {
     template <GradientTag tag>
     __device__ void operator()(
         OptimizationParameters* value,
@@ -255,7 +253,7 @@ TEST_F(LinearRegressionNetworkGradientTest, SubtractSquareOperation) {
     );
 }
 
-TEST_F(LinearRegressionNetworkGradientTest, ComplexInteractionNetwork) {
+TEST_F(LinearRegressionNetworkGradientTest, DuplicateAddNetwork) {
     OptimizationParameters initial_params = {};
     
     initial_params.a = 0.5;
@@ -266,9 +264,9 @@ TEST_F(LinearRegressionNetworkGradientTest, ComplexInteractionNetwork) {
     initial_params.x2 = 0.5;
     initial_params.y_target = 1.5;
     
-    ComplexInteractionNetwork network;
-    NetworkGradientTester<OptimizationParameters, ComplexInteractionNetwork>::test_network(
-        "ComplexInteractionNetwork",
+    DuplicateAddNetwork network;
+    NetworkGradientTester<OptimizationParameters, DuplicateAddNetwork>::test_network(
+        "DuplicateAddNetwork",
         network,
         initial_params,
         50,       // num_tests
