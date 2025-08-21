@@ -68,7 +68,8 @@
       "Bash(/workspaces/xyz-autodiff-cuda/build/debug/tests/test_binary_variable_operators)",
       "Bash(./tests/test_binary_variable_operators:*)",
       "Bash(./test_universal_operators)",
-      "Bash(./tests/test_broadcast:*)"
+      "Bash(./tests/test_broadcast:*)",
+      "Bash(./debug_duplicate_add)"
     ],
     "deny": []
   }

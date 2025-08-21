@@ -87,16 +87,6 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
-        if constexpr (OperationNode<Input>) {
-            input_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input::size; ++i) {
-                input_.grad()[i] = value_type(0);
-            }
-        }
-        
         for (std::size_t i = 0; i < Input::size; i++) {
             const auto orig = input_[i];
 
@@ -272,24 +262,6 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
-        if constexpr (OperationNode<Input1>) {
-            input1_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input1::size; ++i) {
-                input1_.grad()[i] = value_type(0);
-            }
-        }
-        if constexpr (OperationNode<Input2>) {
-            input2_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input2::size; ++i) {
-                input2_.grad()[i] = value_type(0);
-            }
-        }
-        
         // Input1 に対する数値微分
         for (std::size_t i = 0; i < Input1::size; i++) {
             const auto orig = input1_[i];
@@ -507,32 +479,6 @@ public:
         // forward の結果を退避
         output_type original_output = output_;
 
-        // 入力の勾配をクリア（OperationNodeの場合とVariableRefの場合の両方に対応）
-        if constexpr (OperationNode<Input1>) {
-            input1_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input1::size; ++i) {
-                input1_.grad()[i] = value_type(0);
-            }
-        }
-        if constexpr (OperationNode<Input2>) {
-            input2_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input2::size; ++i) {
-                input2_.grad()[i] = value_type(0);
-            }
-        }
-        if constexpr (OperationNode<Input3>) {
-            input3_.zero_grad();
-        } else {
-            // VariableRefなどの場合は直接勾配をクリア
-            for (std::size_t i = 0; i < Input3::size; ++i) {
-                input3_.grad()[i] = value_type(0);
-            }
-        }
-        
         // Input1 に対する数値微分
         for (std::size_t i = 0; i < Input1::size; i++) {
             const auto orig = input1_[i];
@@ -673,9 +619,7 @@ public:
             add_grad(i, value_type(1.0));
         }
         backward_numerical(delta);
-    }
-    
-    
+    }    
 };
 
 } // namespace xyz_autodiff

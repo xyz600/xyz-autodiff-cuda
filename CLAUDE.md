@@ -17,6 +17,12 @@ task build:debug
 task build:release
 ```
 
+### Manual C++20 Compilation (for concept support)
+When compiling individual files with C++20 concepts:
+```bash
+nvcc -std=c++20 -I./include your_file.cu -o output_name
+```
+
 ## Testing
 
 ### Run All Tests
