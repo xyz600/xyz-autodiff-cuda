@@ -7,7 +7,7 @@
 #include "../../../include/util/cuda_unique_ptr.cuh"
 
 // Include all Gaussian splatting operations
-#include "../operations/matrix_multiplication.cuh"
+#include "../../../include/operations/binary/matmul_logic.cuh"
 #include "../../../include/operations/unary/neg_logic.cuh"
 #include "../../../include/operations/unary/exp_logic.cuh"
 #include "../operations/mahalanobis_distance.cuh"

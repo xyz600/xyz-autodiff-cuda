@@ -181,13 +181,6 @@ set_target_properties(test_mahalanobis_distance PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-add_executable(test_matrix_multiplication ../examples/mini-gaussian-splatting/tests/test_matrix_multiplication.cu)
-target_link_libraries(test_matrix_multiplication xyz_autodiff gtest gtest_main)
-target_include_directories(test_matrix_multiplication PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/examples/mini-gaussian-splatting)
-set_target_properties(test_matrix_multiplication PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)
 
 # Linear Regression Network テスト
 add_executable(test_linear_regression_network operation/base/test_linear_regression_network.cu)
@@ -275,7 +268,6 @@ add_test(NAME BroadcastTest COMMAND test_broadcast)
 add_test(NAME CovarianceGenerationTest COMMAND test_covariance_generation)
 # Removed: ElementWiseExpTest and ElementWiseMultiplyTest (now covered by standard operations)
 add_test(NAME MahalanobisDistanceTest COMMAND test_mahalanobis_distance)
-add_test(NAME MatrixMultiplicationTest COMMAND test_matrix_multiplication)
 # Removed: NormAdditionTest (now covered by standard add operations in NormOperationsTest)
 # Removed: SymmetricMatrixOpsTest (now covered by standard operations)
 add_test(NAME LinearRegressionNetworkTest COMMAND test_linear_regression_network)
