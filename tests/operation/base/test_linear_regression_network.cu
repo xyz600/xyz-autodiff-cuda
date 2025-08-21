@@ -154,28 +154,25 @@ struct ComplexInteractionNetwork {
         VariableRef<1, double> b_var(&value->b, &diff->b);
         VariableRef<1, double> c_var(&value->c, &diff->c);
         VariableRef<1, double> d_var(&value->d, &diff->d);
-        
-        // Use exactly the same pattern as SimpleLinearRegressionNetwork
-        // Compute (x1 - a)^2 using sub and squared operations
-        auto x1_minus_a = a_var - value->x1;
-        auto x1_term = op::squared(x1_minus_a);
-        
-        // Compute (x2 - c)^2 using sub and squared operations  
-        auto x2_minus_c = c_var - value->x2;
-        auto x2_squared = op::squared(x2_minus_c);
-        
-        // Compute b * (x2 - c)^2
-        auto x2_term = b_var * x2_squared;
-        
-        // Compute (x1 - a)^2 + b * (x2 - c)^2
-        auto combined_terms = x1_term + x2_term;
-        
-        // Compute y_pred = (x1 - a)^2 + b * (x2 - c)^2 + d
-        auto y_pred = combined_terms + d_var;
-        
-        // Compute loss
-        auto y_diff = y_pred - value->y_target;
-        auto loss = op::squared(y_diff);
+
+        auto ab = a_var * b_var;
+
+        auto d2 = op::squared(d_var);
+        auto cd2 = c_var + d2;
+
+        auto ax = a_var - value->x1;
+        auto ax2 = op::squared(ax);
+        auto bax = b_var * ax2;
+
+        auto by = b_var - value->x2;
+        auto by2 = op::squared(by);
+
+        auto sum1 = ab + cd2;
+        auto sum2 = bax + by2;
+        auto sum = sum1 + sum2;
+
+        auto v = sum - value->y_target;
+        auto loss = op::squared(v);
         
         if constexpr (tag == GradientTag::Analytical) {
             loss.run();
