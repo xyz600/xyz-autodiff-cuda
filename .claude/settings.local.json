@@ -77,7 +77,15 @@
       "Bash(curl:*)",
       "Bash(./examples/mini-gaussian-splatting/gaussian_splatting_training:*)",
       "Bash(./examples/mini-gaussian-splatting/test_single_pixel:*)",
-      "Bash(./examples/mini-gaussian-splatting/test_simple_gaussian:*)"
+      "Bash(./examples/mini-gaussian-splatting/test_simple_gaussian:*)",
+      "Bash(./examples/mini-gaussian-splatting/test_fixed_kernel:*)",
+      "WebFetch(domain:massedcompute.com)",
+      "Bash(chmod:*)",
+      "Bash(./optimized_build_test.sh:*)",
+      "Bash(task ptx:kernel-only:*)",
+      "Bash(task ptx:register-benchmark:*)",
+      "Bash(./analyze_registers.sh:*)",
+      "Bash(task ptx)"
     ],
     "deny": [],
     "additionalDirectories": [

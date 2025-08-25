@@ -46,5 +46,16 @@ void launch_gaussian_splatting(
     int num_gaussians
 );
 
+// Fixed version with reduced memory pressure
+void launch_gaussian_splatting_fixed(
+    const GaussianParams* device_gaussians,
+    GaussianGrads* device_gradients,
+    const float* device_target_image, 
+    PixelOutput* device_output_image,
+    int image_width,
+    int image_height,
+    int num_gaussians
+);
+
 // Calculate total loss from pixel outputs
 float calculate_total_loss(const PixelOutput* device_output, int image_width, int image_height);
