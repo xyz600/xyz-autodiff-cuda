@@ -75,7 +75,9 @@
       "Bash(./tests/test_matrix_multiplication)",
       "Bash(pkg-config:*)",
       "Bash(curl:*)",
-      "Bash(./examples/mini-gaussian-splatting/gaussian_splatting_training:*)"
+      "Bash(./examples/mini-gaussian-splatting/gaussian_splatting_training:*)",
+      "Bash(./examples/mini-gaussian-splatting/test_single_pixel:*)",
+      "Bash(./examples/mini-gaussian-splatting/test_simple_gaussian:*)"
     ],
     "deny": [],
     "additionalDirectories": [

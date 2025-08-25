@@ -10,35 +10,16 @@ GaussianCollection::GaussianCollection() {
     host_grads.resize(NUM_GAUSSIANS);
     host_adam.resize(NUM_GAUSSIANS);
     
-    // Allocate device memory
-    cudaError_t err;
-    err = cudaMalloc(&device_params, NUM_GAUSSIANS * sizeof(GaussianParams));
-    if (err != cudaSuccess) {
-        std::cerr << "Failed to allocate device memory for params: " << cudaGetErrorString(err) << std::endl;
-    }
-    
-    err = cudaMalloc(&device_grads, NUM_GAUSSIANS * sizeof(GaussianGrads));
-    if (err != cudaSuccess) {
-        std::cerr << "Failed to allocate device memory for grads: " << cudaGetErrorString(err) << std::endl;
-    }
-    
-    err = cudaMalloc(&device_adam, NUM_GAUSSIANS * sizeof(AdamState));
-    if (err != cudaSuccess) {
-        std::cerr << "Failed to allocate device memory for adam: " << cudaGetErrorString(err) << std::endl;
-    }
+    // Allocate device memory using CUDA unique pointers
+    device_params = makeCudaUniqueArray<GaussianParams>(NUM_GAUSSIANS);
+    device_grads = makeCudaUniqueArray<GaussianGrads>(NUM_GAUSSIANS);
+    device_adam = makeCudaUniqueArray<AdamState>(NUM_GAUSSIANS);
     
     // Initialize Adam state to zero
     for (int i = 0; i < NUM_GAUSSIANS; i++) {
         AdamState& adam = host_adam[i];
         memset(&adam, 0, sizeof(AdamState));
     }
-}
-
-GaussianCollection::~GaussianCollection() {
-    // Free device memory
-    if (device_params) cudaFree(device_params);
-    if (device_grads) cudaFree(device_grads);
-    if (device_adam) cudaFree(device_adam);
 }
 
 void GaussianCollection::initialize_random(int image_width, int image_height, std::mt19937& rng) {
@@ -88,21 +69,21 @@ void GaussianCollection::initialize_random(int image_width, int image_height, st
 void GaussianCollection::upload_to_device() {
     cudaError_t err;
     
-    err = cudaMemcpy(device_params, host_params.data(), 
+    err = cudaMemcpy(device_params.get(), host_params.data(), 
                      NUM_GAUSSIANS * sizeof(GaussianParams), cudaMemcpyHostToDevice);
     if (err != cudaSuccess) {
         std::cerr << "Failed to upload Gaussian parameters: " << cudaGetErrorString(err) << std::endl;
         return;
     }
     
-    err = cudaMemcpy(device_grads, host_grads.data(),
+    err = cudaMemcpy(device_grads.get(), host_grads.data(),
                      NUM_GAUSSIANS * sizeof(GaussianGrads), cudaMemcpyHostToDevice);
     if (err != cudaSuccess) {
         std::cerr << "Failed to upload gradients: " << cudaGetErrorString(err) << std::endl;
         return;
     }
     
-    err = cudaMemcpy(device_adam, host_adam.data(),
+    err = cudaMemcpy(device_adam.get(), host_adam.data(),
                      NUM_GAUSSIANS * sizeof(AdamState), cudaMemcpyHostToDevice);
     if (err != cudaSuccess) {
         std::cerr << "Failed to upload Adam state: " << cudaGetErrorString(err) << std::endl;
@@ -113,21 +94,21 @@ void GaussianCollection::upload_to_device() {
 void GaussianCollection::download_from_device() {
     cudaError_t err;
     
-    err = cudaMemcpy(host_params.data(), device_params,
+    err = cudaMemcpy(host_params.data(), device_params.get(),
                      NUM_GAUSSIANS * sizeof(GaussianParams), cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         std::cerr << "Failed to download Gaussian parameters: " << cudaGetErrorString(err) << std::endl;
         return;
     }
     
-    err = cudaMemcpy(host_grads.data(), device_grads,
+    err = cudaMemcpy(host_grads.data(), device_grads.get(),
                      NUM_GAUSSIANS * sizeof(GaussianGrads), cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         std::cerr << "Failed to download gradients: " << cudaGetErrorString(err) << std::endl;
         return;
     }
     
-    err = cudaMemcpy(host_adam.data(), device_adam,
+    err = cudaMemcpy(host_adam.data(), device_adam.get(),
                      NUM_GAUSSIANS * sizeof(AdamState), cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         std::cerr << "Failed to download Adam state: " << cudaGetErrorString(err) << std::endl;

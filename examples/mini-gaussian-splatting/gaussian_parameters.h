@@ -3,6 +3,10 @@
 #include <vector>
 #include <random>
 #include <cuda_runtime.h>
+#include "../../include/util/cuda_unique_ptr.cuh"
+
+namespace xyz_autodiff {}
+using namespace xyz_autodiff;
 
 // Single Gaussian parameter structure
 struct GaussianParams {
@@ -46,13 +50,12 @@ public:
     std::vector<GaussianGrads> host_grads;
     std::vector<AdamState> host_adam;
     
-    // Device data (raw pointers)
-    GaussianParams* device_params;
-    GaussianGrads* device_grads;
-    AdamState* device_adam;
+    // Device data (using CUDA unique pointers)
+    cuda_unique_ptr<GaussianParams[]> device_params;
+    cuda_unique_ptr<GaussianGrads[]> device_grads;
+    cuda_unique_ptr<AdamState[]> device_adam;
     
     GaussianCollection();
-    ~GaussianCollection();
     
     // Initialize Gaussians with random parameters
     void initialize_random(int image_width, int image_height, std::mt19937& rng);

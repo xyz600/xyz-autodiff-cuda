@@ -30,70 +30,36 @@ __global__ void gaussian_splatting_kernel(
     // Query point (current pixel position)
     float query_point[2] = {static_cast<float>(pixel_x), static_cast<float>(pixel_y)};
     
-    // Iterate through all Gaussians and accumulate contribution
+    // Calculate total contribution from all Gaussians first (for loss computation)
     for (int g = 0; g < num_gaussians; g++) {
         const GaussianParams& gauss = gaussians[g];
         
-        // Create Variable references for this Gaussian's parameters
-        // Using separate buffers for values and gradients
-        VariableRef<2, float> center(
-            const_cast<float*>(gauss.center), 
-            gradients[g].center
-        );
-        VariableRef<2, float> scale(
-            const_cast<float*>(gauss.scale),
-            gradients[g].scale
-        );
-        VariableRef<1, float> rotation(
-            const_cast<float*>(gauss.rotation),
-            gradients[g].rotation
-        );
-        VariableRef<3, float> color(
-            const_cast<float*>(gauss.color),
-            gradients[g].color
-        );
-        VariableRef<1, float> opacity(
-            const_cast<float*>(gauss.opacity),
-            gradients[g].opacity
-        );
-        VariableRef<2, float> query_pt(query_point, nullptr); // No gradient needed for query point
+        // Create Variable references for this Gaussian's parameters (no gradients yet)
+        VariableRef<2, float> center(const_cast<float*>(gauss.center), nullptr);
+        VariableRef<2, float> scale(const_cast<float*>(gauss.scale), nullptr);
+        VariableRef<1, float> rotation(const_cast<float*>(gauss.rotation), nullptr);
+        VariableRef<3, float> color(const_cast<float*>(gauss.color), nullptr);
+        VariableRef<1, float> opacity(const_cast<float*>(gauss.opacity), nullptr);
+        VariableRef<2, float> query_pt(query_point, nullptr);
         
-        // Step 1: Generate covariance matrix from scale and rotation
+        // Build computation graph
         auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
-        
-        // Step 2: Compute inverse covariance matrix  
         auto inv_covariance = op::sym_matrix2_inv(covariance);
-        
-        // Step 3: Compute Mahalanobis distance
         auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_pt, center, inv_covariance);
-        
-        // Step 4: Compute Gaussian value: exp(-0.5 * distance^2)
         auto scaled_distance = mahalanobis_dist_sq * 0.5f;
         auto neg_scaled = op::neg(scaled_distance);
         auto gaussian_value = op::exp(neg_scaled);
-        
-        // Step 5: Apply opacity to Gaussian value
         auto weighted_gauss = gaussian_value * opacity;
-        
-        // Step 6: Multiply by color (broadcast Gaussian value to 3D)
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
-        // Run the computation graph
+        // Run forward pass only
         weighted_color.run();
         
         // Accumulate color contribution
-        float gauss_alpha = weighted_gauss[0];
-        float remaining_alpha = 1.0f - pixel_out.alpha;
-        float contribution_alpha = gauss_alpha * remaining_alpha;
-        
-        pixel_out.color[0] += weighted_color[0] * remaining_alpha;
-        pixel_out.color[1] += weighted_color[1] * remaining_alpha;
-        pixel_out.color[2] += weighted_color[2] * remaining_alpha;
-        pixel_out.alpha += contribution_alpha;
-        
-        // Early termination if pixel is nearly opaque
-        if (pixel_out.alpha > 0.99f) break;
+        pixel_out.color[0] += weighted_color[0];
+        pixel_out.color[1] += weighted_color[1];
+        pixel_out.color[2] += weighted_color[2];
     }
     
     // Calculate loss contribution (L2 loss with target image)
@@ -104,35 +70,26 @@ __global__ void gaussian_splatting_kernel(
     
     pixel_out.loss = 0.5f * (loss_r * loss_r + loss_g * loss_g + loss_b * loss_b);
     
-    // Compute gradients by backpropagating the loss
-    // This is a simplified gradient calculation - in practice, you'd want to 
-    // accumulate gradients properly through the alpha blending
+    // Compute gradients for each Gaussian (using local gradient buffers to avoid race conditions)
     for (int g = 0; g < num_gaussians; g++) {
         const GaussianParams& gauss = gaussians[g];
         
-        // Re-create the computation for this Gaussian to compute gradients
-        VariableRef<2, float> center(
-            const_cast<float*>(gauss.center), 
-            gradients[g].center
-        );
-        VariableRef<2, float> scale(
-            const_cast<float*>(gauss.scale),
-            gradients[g].scale
-        );
-        VariableRef<1, float> rotation(
-            const_cast<float*>(gauss.rotation),
-            gradients[g].rotation
-        );
-        VariableRef<3, float> color(
-            const_cast<float*>(gauss.color),
-            gradients[g].color
-        );
-        VariableRef<1, float> opacity(
-            const_cast<float*>(gauss.opacity),
-            gradients[g].opacity
-        );
+        // Use local gradient buffers to avoid race conditions
+        float local_center_grad[2] = {0.0f, 0.0f};
+        float local_scale_grad[2] = {0.0f, 0.0f};
+        float local_rotation_grad[1] = {0.0f};
+        float local_color_grad[3] = {0.0f, 0.0f, 0.0f};
+        float local_opacity_grad[1] = {0.0f};
+        
+        // Create Variable references with local gradient buffers
+        VariableRef<2, float> center(const_cast<float*>(gauss.center), local_center_grad);
+        VariableRef<2, float> scale(const_cast<float*>(gauss.scale), local_scale_grad);
+        VariableRef<1, float> rotation(const_cast<float*>(gauss.rotation), local_rotation_grad);
+        VariableRef<3, float> color(const_cast<float*>(gauss.color), local_color_grad);
+        VariableRef<1, float> opacity(const_cast<float*>(gauss.opacity), local_opacity_grad);
         VariableRef<2, float> query_pt(query_point, nullptr);
         
+        // Build computation graph  
         auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
         auto inv_covariance = op::sym_matrix2_inv(covariance);
         auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_pt, center, inv_covariance);
@@ -143,16 +100,25 @@ __global__ void gaussian_splatting_kernel(
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
-        // Clear gradients for this computation
+        // Clear gradients and set loss gradients
         weighted_color.zero_grad();
-        
-        // Set gradient signal based on loss
         weighted_color.add_grad(0, loss_r);
         weighted_color.add_grad(1, loss_g);
         weighted_color.add_grad(2, loss_b);
         
         // Run backward pass
         weighted_color.backward();
+        
+        // Accumulate gradients using atomic operations to avoid race conditions
+        atomicAdd(&gradients[g].center[0], local_center_grad[0]);
+        atomicAdd(&gradients[g].center[1], local_center_grad[1]);
+        atomicAdd(&gradients[g].scale[0], local_scale_grad[0]);
+        atomicAdd(&gradients[g].scale[1], local_scale_grad[1]);
+        atomicAdd(&gradients[g].rotation[0], local_rotation_grad[0]);
+        atomicAdd(&gradients[g].color[0], local_color_grad[0]);
+        atomicAdd(&gradients[g].color[1], local_color_grad[1]);
+        atomicAdd(&gradients[g].color[2], local_color_grad[2]);
+        atomicAdd(&gradients[g].opacity[0], local_opacity_grad[0]);
     }
 }
 

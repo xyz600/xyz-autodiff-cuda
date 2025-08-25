@@ -137,8 +137,8 @@ public:
             
             // Run forward and backward pass
             launch_gaussian_splatting(
-                gaussians.device_params,
-                gaussians.device_grads,
+                gaussians.device_params.get(),
+                gaussians.device_grads.get(),
                 device_target_image,
                 device_output_image,
                 target_image.width,
