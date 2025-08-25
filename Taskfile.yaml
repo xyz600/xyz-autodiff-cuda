@@ -39,14 +39,8 @@ tasks:
         
         # Define optimization configurations
         declare -a configs=(
-          "none:-arch=sm_89 --ptxas-options=-v"
-          "O1:-O1 -arch=sm_89 --ptxas-options=-v"
-          "O2:-O2 -arch=sm_89 --ptxas-options=-v"
           "O3:-O3 -arch=sm_89 --ptxas-options=-v"
           "fast:-O3 -use_fast_math -arch=sm_89 --ptxas-options=-v"
-          "reg32:-O3 -use_fast_math -maxrregcount=32 -arch=sm_89 --ptxas-options=-v"
-          "reg24:-O3 -use_fast_math -maxrregcount=24 -arch=sm_89 --ptxas-options=-v"
-          "aggressive:-O3 -use_fast_math -maxrregcount=24 -ftz=true -prec-div=false -prec-sqrt=false -arch=sm_89 --ptxas-options=-v"
         )
         
         echo "Compiling kernel with different optimization levels..."
@@ -70,7 +64,7 @@ tasks:
         printf "%-12s | %-7s | %-5s | %-5s | %-4s | %-8s | %-8s\n" "Config" "Float32" "Int32" "Int64" "Pred" "LocalMem" "FileSize"
         printf "%-12s-+-%-7s-+-%-5s-+-%-5s-+-%-4s-+-%-8s-+-%-8s\n" "------------" "-------" "-----" "-----" "----" "--------" "--------"
         
-        for config in none O1 O2 O3 fast reg32 reg24 aggressive; do
+        for config in O3 fast; do
           file="kernel_$config.ptx"
           if [ -f "$file" ]; then
             f32=$(grep -o '%f<[0-9]*>' "$file" | grep -o '[0-9]*' | sort -n | tail -1 || echo '0')
@@ -93,7 +87,7 @@ tasks:
         printf "%-12s | %-5s | %-4s | %-4s | %-4s | %-6s | %-4s\n" "Config" "Lines" "FMA" "MUL" "ADD" "APPROX" "TRAP"
         printf "%-12s-+-%-5s-+-%-4s-+-%-4s-+-%-4s-+-%-6s-+-%-4s\n" "------------" "-----" "----" "----" "----" "------" "----"
         
-        for config in none O1 O2 O3 fast reg32 reg24 aggressive; do
+        for config in O3 fast; do
           file="kernel_$config.ptx"
           if [ -f "$file" ]; then
             lines=$(wc -l < "$file")
@@ -117,7 +111,7 @@ tasks:
         # Find the most optimized version (lowest register count)
         best_f32=999
         best_config=""
-        for config in none O1 O2 O3 fast reg32 reg24 aggressive; do
+        for config in O3 fast; do
           file="kernel_$config.ptx"
           if [ -f "$file" ]; then
             f32=$(grep -o '%f<[0-9]*>' "$file" | grep -o '[0-9]*' | sort -n | tail -1 || echo '999')
