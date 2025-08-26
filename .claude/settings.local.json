@@ -85,7 +85,13 @@
       "Bash(task ptx:kernel-only:*)",
       "Bash(task ptx:register-benchmark:*)",
       "Bash(./analyze_registers.sh:*)",
-      "Bash(task ptx)"
+      "Bash(task ptx)",
+      "Bash(./tests/test_sum_operations_gradient:*)",
+      "Bash(./tests/test_const_array_operations:*)",
+      "Bash(./debug_operators)",
+      "Bash(./tests/test_const_array_concepts:*)",
+      "Bash(./tests/test_add_constant_operations_gradient:*)",
+      "Bash(./tests/test_sub_constant_operations_gradient:*)"
     ],
     "deny": [],
     "additionalDirectories": [

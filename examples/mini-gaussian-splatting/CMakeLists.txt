@@ -83,18 +83,18 @@ set_target_properties(test_simple_gaussian PROPERTIES
 # )
 
 # Hybrid Training (CPU gradients + GPU forward)
-add_executable(hybrid_gaussian_training
-    hybrid_gaussian_training.cu
-    gaussian_parameters.cpp
-    image_utils.cpp
-)
-target_link_libraries(hybrid_gaussian_training xyz_autodiff)
-target_include_directories(hybrid_gaussian_training PRIVATE 
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/external
-)
-set_target_properties(hybrid_gaussian_training PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)
+# add_executable(hybrid_gaussian_training
+#     hybrid_gaussian_training.cu
+#     gaussian_parameters.cpp
+#     image_utils.cpp
+# )
+# target_link_libraries(hybrid_gaussian_training xyz_autodiff)
+# target_include_directories(hybrid_gaussian_training PRIVATE 
+#     ${CMAKE_SOURCE_DIR}/include
+#     ${CMAKE_CURRENT_SOURCE_DIR}
+#     ${CMAKE_CURRENT_SOURCE_DIR}/external
+# )
+# set_target_properties(hybrid_gaussian_training PROPERTIES
+#     CUDA_SEPARABLE_COMPILATION ON
+#     CUDA_ARCHITECTURES "89"
+# )

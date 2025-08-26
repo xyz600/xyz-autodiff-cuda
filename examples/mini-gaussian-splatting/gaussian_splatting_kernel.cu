@@ -53,9 +53,13 @@ __global__ void gaussian_splatting_kernel(
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
-        // Run forward pass only
-        weighted_color.run();
         
+
+        // Run forward pass only
+        weighted_color.forward();
+
+        
+
         // Accumulate color contribution
         pixel_out.color[0] += weighted_color[0];
         pixel_out.color[1] += weighted_color[1];
@@ -100,6 +104,7 @@ __global__ void gaussian_splatting_kernel(
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
+        
         // Clear gradients and set loss gradients
         weighted_color.zero_grad();
         weighted_color.add_grad(0, loss_r);
@@ -108,17 +113,6 @@ __global__ void gaussian_splatting_kernel(
         
         // Run backward pass
         weighted_color.backward();
-        
-        // Accumulate gradients using atomic operations to avoid race conditions
-        atomicAdd(&gradients[g].center[0], local_center_grad[0]);
-        atomicAdd(&gradients[g].center[1], local_center_grad[1]);
-        atomicAdd(&gradients[g].scale[0], local_scale_grad[0]);
-        atomicAdd(&gradients[g].scale[1], local_scale_grad[1]);
-        atomicAdd(&gradients[g].rotation[0], local_rotation_grad[0]);
-        atomicAdd(&gradients[g].color[0], local_color_grad[0]);
-        atomicAdd(&gradients[g].color[1], local_color_grad[1]);
-        atomicAdd(&gradients[g].color[2], local_color_grad[2]);
-        atomicAdd(&gradients[g].opacity[0], local_opacity_grad[0]);
     }
 }
 

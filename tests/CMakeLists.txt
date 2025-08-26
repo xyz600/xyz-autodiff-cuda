@@ -328,11 +328,29 @@ set_target_properties(test_sum_operations_gradient PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
-# Constant Array Operations Tests (Simple)
-add_executable(test_const_array_operations_simple operation/unary/test_const_array_operations_simple.cu)
-target_link_libraries(test_const_array_operations_simple xyz_autodiff gtest gtest_main)
-target_include_directories(test_const_array_operations_simple PRIVATE ${CMAKE_SOURCE_DIR}/include)
-set_target_properties(test_const_array_operations_simple PROPERTIES
+# Constant Array Concepts Tests
+add_executable(test_const_array_concepts operation/unary/test_const_array_concepts.cu)
+target_link_libraries(test_const_array_concepts xyz_autodiff gtest gtest_main)
+target_include_directories(test_const_array_concepts PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_const_array_concepts PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Add Constant Operations Gradient Tests
+add_executable(test_add_constant_operations_gradient operation/unary/test_add_constant_operations_gradient.cu)
+target_link_libraries(test_add_constant_operations_gradient xyz_autodiff gtest gtest_main)
+target_include_directories(test_add_constant_operations_gradient PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_add_constant_operations_gradient PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
+# Sub Constant Operations Gradient Tests
+add_executable(test_sub_constant_operations_gradient operation/unary/test_sub_constant_operations_gradient.cu)
+target_link_libraries(test_sub_constant_operations_gradient xyz_autodiff gtest gtest_main)
+target_include_directories(test_sub_constant_operations_gradient PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_sub_constant_operations_gradient PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     CUDA_ARCHITECTURES "89"
 )
@@ -348,4 +366,6 @@ add_test(NAME MatrixOperationsGradientTest COMMAND test_matrix_operations_gradie
 add_test(NAME MiniGaussianSplattingGradientTest COMMAND test_mini_gaussian_splatting_gradient)
 add_test(NAME MatMulOperationsGradientTest COMMAND test_matmul_operations_gradient)
 add_test(NAME SumOperationsGradientTest COMMAND test_sum_operations_gradient)
-add_test(NAME ConstArrayOperationsSimpleTest COMMAND test_const_array_operations_simple)
+add_test(NAME ConstArrayConceptsTest COMMAND test_const_array_concepts)
+add_test(NAME AddConstantOperationsGradientTest COMMAND test_add_constant_operations_gradient)
+add_test(NAME SubConstantOperationsGradientTest COMMAND test_sub_constant_operations_gradient)
