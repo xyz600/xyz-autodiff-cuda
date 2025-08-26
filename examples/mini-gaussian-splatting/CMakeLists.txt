@@ -29,22 +29,6 @@ target_compile_options(gaussian_splatting_training PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:-prec-sqrt=false>
 )
 
-# Single Pixel Test
-add_executable(test_single_pixel 
-    test_single_pixel.cu
-    gaussian_parameters.cpp
-)
-target_link_libraries(test_single_pixel xyz_autodiff)
-target_include_directories(test_single_pixel PRIVATE 
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/external
-)
-set_target_properties(test_single_pixel PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)
-
 # Simple Gaussian Test
 add_executable(test_simple_gaussian
     test_simple_gaussian.cu
