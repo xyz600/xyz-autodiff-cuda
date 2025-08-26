@@ -70,4 +70,8 @@ public:
     // Apply Adam optimization step
     void adam_step(float learning_rate, float beta1 = 0.9f, float beta2 = 0.999f, 
                    float epsilon = 1e-8f, int iteration = 1);
+    
+    // Apply GPU Adam optimization step (replaces host-side adam_step)
+    void adam_step_gpu(float learning_rate, float beta1 = 0.9f, float beta2 = 0.999f, 
+                       float epsilon = 1e-8f, int iteration = 1);
 };

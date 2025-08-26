@@ -3,7 +3,7 @@
 # Gaussian Splatting Training Application
 add_executable(gaussian_splatting_training 
     gaussian_splatting_training.cu
-    gaussian_parameters.cpp
+    gaussian_parameters.cu
     image_utils.cpp
     gaussian_splatting_kernel.cu
 )
@@ -21,7 +21,7 @@ set_target_properties(gaussian_splatting_training PROPERTIES
 target_compile_options(gaussian_splatting_training PRIVATE 
     $<$<COMPILE_LANGUAGE:CUDA>:-O3>
     $<$<COMPILE_LANGUAGE:CUDA>:-use_fast_math>
-    $<$<COMPILE_LANGUAGE:CUDA>:-maxrregcount=32>
+    $<$<COMPILE_LANGUAGE:CUDA>:-maxrregcount=128>
     $<$<COMPILE_LANGUAGE:CUDA>:--ptxas-options=-v>
     $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
     $<$<COMPILE_LANGUAGE:CUDA>:-ftz=true>

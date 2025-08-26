@@ -91,7 +91,8 @@
       "Bash(./debug_operators)",
       "Bash(./tests/test_const_array_concepts:*)",
       "Bash(./tests/test_add_constant_operations_gradient:*)",
-      "Bash(./tests/test_sub_constant_operations_gradient:*)"
+      "Bash(./tests/test_sub_constant_operations_gradient:*)",
+      "Bash(./tests/test_binary_operations_gradient:*)"
     ],
     "deny": [],
     "additionalDirectories": [

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstring>
+#include <cuda_runtime.h>
 
 GaussianCollection::GaussianCollection() {
     // Allocate host memory
@@ -30,8 +31,8 @@ void GaussianCollection::initialize_random(int image_width, int image_height, st
     std::uniform_real_distribution<float> pos_y_dist(0.0f, static_cast<float>(image_height));
     std::uniform_real_distribution<float> rotation_dist(-3.14159f, 3.14159f);
     std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
-    std::uniform_real_distribution<float> opacity_dist(0.1f, 0.9f);
-    std::normal_distribution<float> scale_dist(std_dev, std_dev * 0.2f);  // Some variation around base scale
+    std::uniform_real_distribution<float> opacity_dist(0.1f, 0.3f);
+    std::normal_distribution<float> scale_dist(std_dev, std_dev * 0.1f);  // Some variation around base scale
     
     std::cout << "Initializing " << NUM_GAUSSIANS << " Gaussians..." << std::endl;
     std::cout << "Image size: " << image_width << "x" << image_height << std::endl;
@@ -167,5 +168,100 @@ void GaussianCollection::adam_step(float learning_rate, float beta1, float beta2
         adam.v_opacity[0] = beta2 * adam.v_opacity[0] + (1.0f - beta2) * grads.opacity[0] * grads.opacity[0];
         params.opacity[0] -= lr_corrected * adam.m_opacity[0] / (std::sqrt(adam.v_opacity[0]) + epsilon);
         params.opacity[0] = std::max(0.01f, std::min(1.0f, params.opacity[0]));
+    }
+}
+
+// CUDA kernel for Adam optimization step
+__global__ void adam_step_kernel(
+    GaussianParams* params,
+    GaussianGrads* grads,
+    AdamState* adam_states,
+    int num_gaussians,
+    float learning_rate,
+    float beta1,
+    float beta2,
+    float epsilon,
+    float beta1_t,
+    float beta2_t
+) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= num_gaussians) return;
+    
+    float lr_corrected = learning_rate * sqrtf(1.0f - beta2_t) / (1.0f - beta1_t);
+    
+    GaussianParams& param = params[idx];
+    GaussianGrads& grad = grads[idx];
+    AdamState& adam = adam_states[idx];
+    
+    // Update center
+    for (int j = 0; j < 2; j++) {
+        adam.m_center[j] = beta1 * adam.m_center[j] + (1.0f - beta1) * grad.center[j];
+        adam.v_center[j] = beta2 * adam.v_center[j] + (1.0f - beta2) * grad.center[j] * grad.center[j];
+        param.center[j] -= lr_corrected * adam.m_center[j] / (sqrtf(adam.v_center[j]) + epsilon);
+    }
+    
+    // Update scale (ensure positive)
+    for (int j = 0; j < 2; j++) {
+        adam.m_scale[j] = beta1 * adam.m_scale[j] + (1.0f - beta1) * grad.scale[j];
+        adam.v_scale[j] = beta2 * adam.v_scale[j] + (1.0f - beta2) * grad.scale[j] * grad.scale[j];
+        param.scale[j] -= lr_corrected * adam.m_scale[j] / (sqrtf(adam.v_scale[j]) + epsilon);
+        param.scale[j] = fmaxf(0.1f, param.scale[j]);  // Keep scale positive
+    }
+    
+    // Update rotation
+    adam.m_rotation[0] = beta1 * adam.m_rotation[0] + (1.0f - beta1) * grad.rotation[0];
+    adam.v_rotation[0] = beta2 * adam.v_rotation[0] + (1.0f - beta2) * grad.rotation[0] * grad.rotation[0];
+    param.rotation[0] -= lr_corrected * adam.m_rotation[0] / (sqrtf(adam.v_rotation[0]) + epsilon);
+    
+    // Update color (clamp to [0, 1])
+    for (int j = 0; j < 3; j++) {
+        adam.m_color[j] = beta1 * adam.m_color[j] + (1.0f - beta1) * grad.color[j];
+        adam.v_color[j] = beta2 * adam.v_color[j] + (1.0f - beta2) * grad.color[j] * grad.color[j];
+        param.color[j] -= lr_corrected * adam.m_color[j] / (sqrtf(adam.v_color[j]) + epsilon);
+        param.color[j] = fmaxf(0.0f, fminf(1.0f, param.color[j]));
+    }
+    
+    // Update opacity (clamp to [0.01, 1])
+    adam.m_opacity[0] = beta1 * adam.m_opacity[0] + (1.0f - beta1) * grad.opacity[0];
+    adam.v_opacity[0] = beta2 * adam.v_opacity[0] + (1.0f - beta2) * grad.opacity[0] * grad.opacity[0];
+    param.opacity[0] -= lr_corrected * adam.m_opacity[0] / (sqrtf(adam.v_opacity[0]) + epsilon);
+    param.opacity[0] = fmaxf(0.01f, fminf(1.0f, param.opacity[0]));
+}
+
+void GaussianCollection::adam_step_gpu(float learning_rate, float beta1, float beta2, 
+                                       float epsilon, int iteration) {
+    float beta1_t = powf(beta1, iteration);
+    float beta2_t = powf(beta2, iteration);
+    
+    // Calculate grid dimensions
+    int block_size = 256;
+    int grid_size = (NUM_GAUSSIANS + block_size - 1) / block_size;
+    
+    // Launch kernel
+    adam_step_kernel<<<grid_size, block_size>>>(
+        device_params.get(),
+        device_grads.get(),
+        device_adam.get(),
+        NUM_GAUSSIANS,
+        learning_rate,
+        beta1,
+        beta2,
+        epsilon,
+        beta1_t,
+        beta2_t
+    );
+    
+    // Check for kernel launch errors
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        std::cerr << "Adam kernel launch error: " << cudaGetErrorString(err) << std::endl;
+        return;
+    }
+    
+    // Wait for kernel completion
+    err = cudaDeviceSynchronize();
+    if (err != cudaSuccess) {
+        std::cerr << "Adam kernel execution error: " << cudaGetErrorString(err) << std::endl;
+        return;
     }
 }

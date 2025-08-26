@@ -28,7 +28,7 @@ __global__ void gaussian_splatting_kernel(
     pixel_out.loss = 0.0f;
     
     // Query point (current pixel position)
-    float query_point[2] = {static_cast<float>(pixel_x), static_cast<float>(pixel_y)};
+    const float query_point[2] = {static_cast<float>(pixel_x), static_cast<float>(pixel_y)};
     
     // Accumulate total color from all Gaussians
     Variable<3, float> total_color;
@@ -45,12 +45,11 @@ __global__ void gaussian_splatting_kernel(
         VariableRef<1, float> rotation(const_cast<float*>(gauss.rotation), nullptr);
         VariableRef<3, float> color(const_cast<float*>(gauss.color), nullptr);
         VariableRef<1, float> opacity(const_cast<float*>(gauss.opacity), nullptr);
-        VariableRef<2, float> query_pt(query_point, nullptr);
         
         // Build computation graph
         auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
         auto inv_covariance = op::sym_matrix2_inv(covariance);
-        auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_pt, center, inv_covariance);
+        auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point[0], query_point[1], center, inv_covariance);
         auto scaled_distance = mahalanobis_dist_sq * 0.5f;
         auto neg_scaled = op::neg(scaled_distance);
         auto gaussian_value = op::exp(neg_scaled);
@@ -91,12 +90,11 @@ __global__ void gaussian_splatting_kernel(
         VariableRef<1, float> rotation(const_cast<float*>(gauss.rotation), grads.rotation);
         VariableRef<3, float> color(const_cast<float*>(gauss.color), grads.color);
         VariableRef<1, float> opacity(const_cast<float*>(gauss.opacity), grads.opacity);
-        VariableRef<2, float> query_pt(query_point, query_point);
         
         // Build computation graph for this Gaussian
         auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
         auto inv_covariance = op::sym_matrix2_inv(covariance);
-        auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_pt, center, inv_covariance);
+        auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point[0], query_point[1], center, inv_covariance);
         auto scaled_distance = mahalanobis_dist_sq * 0.5f;
         auto neg_scaled = op::neg(scaled_distance);
         auto gaussian_value = op::exp(neg_scaled);
@@ -129,9 +127,6 @@ void launch_gaussian_splatting(
         (image_height + TILE_SIZE - 1) / TILE_SIZE
     );
     
-    std::cout << "Launching kernel with grid: (" << grid_size.x << ", " << grid_size.y 
-              << "), block: (" << block_size.x << ", " << block_size.y << ")" << std::endl;
-    
     // Launch kernel
     gaussian_splatting_kernel<<<grid_size, block_size>>>(
         device_gaussians,
@@ -156,76 +151,4 @@ void launch_gaussian_splatting(
         std::cerr << "Kernel execution error: " << cudaGetErrorString(err) << std::endl;
         return;
     }
-}
-
-__global__ void reduce_loss_kernel(const PixelOutput* output, float* total_loss, int num_pixels) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    __shared__ float shared_loss[256];
-    
-    if (idx < num_pixels) {
-        shared_loss[threadIdx.x] = output[idx].loss;
-    } else {
-        shared_loss[threadIdx.x] = 0.0f;
-    }
-    
-    __syncthreads();
-    
-    // Reduce within block
-    for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
-        if (threadIdx.x < stride) {
-            shared_loss[threadIdx.x] += shared_loss[threadIdx.x + stride];
-        }
-        __syncthreads();
-    }
-    
-    // Write block sum to global memory
-    if (threadIdx.x == 0) {
-        atomicAdd(total_loss, shared_loss[0]);
-    }
-}
-
-float calculate_total_loss(const PixelOutput* device_output, int image_width, int image_height) {
-    int num_pixels = image_width * image_height;
-    
-    // Allocate device memory for total loss
-    float* device_total_loss;
-    cudaError_t err = cudaMalloc(&device_total_loss, sizeof(float));
-    if (err != cudaSuccess) {
-        std::cerr << "Failed to allocate loss memory: " << cudaGetErrorString(err) << std::endl;
-        return 0.0f;
-    }
-    
-    // Initialize to zero
-    err = cudaMemset(device_total_loss, 0, sizeof(float));
-    if (err != cudaSuccess) {
-        std::cerr << "Failed to initialize loss memory: " << cudaGetErrorString(err) << std::endl;
-        cudaFree(device_total_loss);
-        return 0.0f;
-    }
-    
-    // Launch reduction kernel
-    dim3 block_size(256);
-    dim3 grid_size((num_pixels + block_size.x - 1) / block_size.x);
-    
-    reduce_loss_kernel<<<grid_size, block_size>>>(device_output, device_total_loss, num_pixels);
-    
-    err = cudaDeviceSynchronize();
-    if (err != cudaSuccess) {
-        std::cerr << "Loss reduction kernel error: " << cudaGetErrorString(err) << std::endl;
-        cudaFree(device_total_loss);
-        return 0.0f;
-    }
-    
-    // Copy result to host
-    float host_total_loss;
-    err = cudaMemcpy(&host_total_loss, device_total_loss, sizeof(float), cudaMemcpyDeviceToHost);
-    if (err != cudaSuccess) {
-        std::cerr << "Failed to copy loss to host: " << cudaGetErrorString(err) << std::endl;
-        host_total_loss = 0.0f;
-    }
-    
-    cudaFree(device_total_loss);
-    
-    return host_total_loss;
 }
