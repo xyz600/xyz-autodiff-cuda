@@ -328,6 +328,15 @@ set_target_properties(test_sum_operations_gradient PROPERTIES
     CUDA_ARCHITECTURES "89"
 )
 
+# Constant Array Operations Tests (Simple)
+add_executable(test_const_array_operations_simple operation/unary/test_const_array_operations_simple.cu)
+target_link_libraries(test_const_array_operations_simple xyz_autodiff gtest gtest_main)
+target_include_directories(test_const_array_operations_simple PRIVATE ${CMAKE_SOURCE_DIR}/include)
+set_target_properties(test_const_array_operations_simple PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES "89"
+)
+
 # NEW GRADIENT VERIFICATION TESTS
 add_test(NAME BinaryOperationsGradientTest COMMAND test_binary_operations_gradient)
 add_test(NAME BasicUnaryOperationsGradientTest COMMAND test_basic_unary_operations_gradient)
@@ -339,3 +348,4 @@ add_test(NAME MatrixOperationsGradientTest COMMAND test_matrix_operations_gradie
 add_test(NAME MiniGaussianSplattingGradientTest COMMAND test_mini_gaussian_splatting_gradient)
 add_test(NAME MatMulOperationsGradientTest COMMAND test_matmul_operations_gradient)
 add_test(NAME SumOperationsGradientTest COMMAND test_sum_operations_gradient)
+add_test(NAME ConstArrayOperationsSimpleTest COMMAND test_const_array_operations_simple)
