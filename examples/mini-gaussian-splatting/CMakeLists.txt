@@ -28,21 +28,3 @@ target_compile_options(gaussian_splatting_training PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:-prec-div=false>
     $<$<COMPILE_LANGUAGE:CUDA>:-prec-sqrt=false>
 )
-
-# Simple Gaussian Test
-add_executable(test_simple_gaussian
-    test_simple_gaussian.cu
-    gaussian_parameters.cpp
-    image_utils.cpp
-    simple_gaussian_kernel.cu
-)
-target_link_libraries(test_simple_gaussian xyz_autodiff)
-target_include_directories(test_simple_gaussian PRIVATE 
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/external
-)
-set_target_properties(test_simple_gaussian PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "89"
-)

@@ -82,21 +82,16 @@ __global__ void gaussian_splatting_kernel(
     // Compute gradients for each Gaussian using L1 norm automatic differentiation
     for (int g = 0; g < num_gaussians; g++) {
         const GaussianParams& gauss = gaussians[g];
-        
-        // Use local gradient buffers to avoid race conditions
-        float local_center_grad[2] = {0.0f, 0.0f};
-        float local_scale_grad[2] = {0.0f, 0.0f};
-        float local_rotation_grad[1] = {0.0f};
-        float local_color_grad[3] = {0.0f, 0.0f, 0.0f};
-        float local_opacity_grad[1] = {0.0f};
+        GaussianGrads& grads = gradients[g];
         
         // Create Variable references with local gradient buffers
-        VariableRef<2, float> center(const_cast<float*>(gauss.center), local_center_grad);
-        VariableRef<2, float> scale(const_cast<float*>(gauss.scale), local_scale_grad);
-        VariableRef<1, float> rotation(const_cast<float*>(gauss.rotation), local_rotation_grad);
-        VariableRef<3, float> color(const_cast<float*>(gauss.color), local_color_grad);
-        VariableRef<1, float> opacity(const_cast<float*>(gauss.opacity), local_opacity_grad);
-        VariableRef<2, float> query_pt(query_point, nullptr);
+        // Create Variable references for this Gaussian's parameters (no gradients yet)
+        VariableRef<2, float> center(const_cast<float*>(gauss.center), grads.center);
+        VariableRef<2, float> scale(const_cast<float*>(gauss.scale), grads.scale);
+        VariableRef<1, float> rotation(const_cast<float*>(gauss.rotation), grads.rotation);
+        VariableRef<3, float> color(const_cast<float*>(gauss.color), grads.color);
+        VariableRef<1, float> opacity(const_cast<float*>(gauss.opacity), grads.opacity);
+        VariableRef<2, float> query_pt(query_point, query_point);
         
         // Build computation graph for this Gaussian
         auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
