@@ -1,4 +1,5 @@
 #include "gaussian_splatting_kernel.cuh"
+#include "operations/unary/sigmoid_logic.cuh"
 #include <iostream>
 
 __global__ void gaussian_splatting_kernel(
@@ -6,6 +7,7 @@ __global__ void gaussian_splatting_kernel(
     GaussianGrads* gradients, 
     const float* target_image,
     PixelOutput* output_image,
+    float* total_loss,
     int image_width,
     int image_height,
     int num_gaussians
@@ -47,13 +49,15 @@ __global__ void gaussian_splatting_kernel(
         VariableRef<1, float> opacity(const_cast<float*>(gauss.opacity), nullptr);
         
         // Build computation graph
-        auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
+        auto exp_scale = op::exp(scale);
+        auto covariance = op::scale_rotation_to_covariance_3param(exp_scale, rotation);
         auto inv_covariance = op::sym_matrix2_inv(covariance);
         auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point[0], query_point[1], center, inv_covariance);
         auto scaled_distance = mahalanobis_dist_sq * 0.5f;
         auto neg_scaled = op::neg(scaled_distance);
         auto gaussian_value = op::exp(neg_scaled);
-        auto weighted_gauss = gaussian_value * opacity;
+        auto sig_opacity = op::sigmoid(opacity);
+        auto weighted_gauss = gaussian_value * sig_opacity;
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
 
@@ -92,13 +96,15 @@ __global__ void gaussian_splatting_kernel(
         VariableRef<1, float> opacity(const_cast<float*>(gauss.opacity), grads.opacity);
         
         // Build computation graph for this Gaussian
-        auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
+        auto exp_scale = op::exp(scale);
+        auto covariance = op::scale_rotation_to_covariance_3param(exp_scale, rotation);
         auto inv_covariance = op::sym_matrix2_inv(covariance);
         auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point[0], query_point[1], center, inv_covariance);
         auto scaled_distance = mahalanobis_dist_sq * 0.5f;
         auto neg_scaled = op::neg(scaled_distance);
         auto gaussian_value = op::exp(neg_scaled);
-        auto weighted_gauss = gaussian_value * opacity;
+        auto sig_opacity = op::sigmoid(opacity);
+        auto weighted_gauss = gaussian_value * sig_opacity;
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
@@ -108,6 +114,9 @@ __global__ void gaussian_splatting_kernel(
         
         // Run complete forward and backward pass
         l1_loss.run();
+        
+        // Accumulate this Gaussian's L1 loss to the global total using atomic add
+        atomicAdd(total_loss, l1_loss[0]);
     }
 }
 
@@ -116,6 +125,7 @@ void launch_gaussian_splatting(
     GaussianGrads* device_gradients,
     const float* device_target_image, 
     PixelOutput* device_output_image,
+    float* device_total_loss,
     int image_width,
     int image_height,
     int num_gaussians
@@ -133,6 +143,7 @@ void launch_gaussian_splatting(
         device_gradients,
         device_target_image,
         device_output_image,
+        device_total_loss,
         image_width,
         image_height,
         num_gaussians

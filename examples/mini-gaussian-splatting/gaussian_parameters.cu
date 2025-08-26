@@ -205,7 +205,6 @@ __global__ void adam_step_kernel(
         adam.m_scale[j] = beta1 * adam.m_scale[j] + (1.0f - beta1) * grad.scale[j];
         adam.v_scale[j] = beta2 * adam.v_scale[j] + (1.0f - beta2) * grad.scale[j] * grad.scale[j];
         param.scale[j] -= lr_corrected * adam.m_scale[j] / (sqrtf(adam.v_scale[j]) + epsilon);
-        param.scale[j] = fmaxf(0.1f, param.scale[j]);  // Keep scale positive
     }
     
     // Update rotation
@@ -218,14 +217,12 @@ __global__ void adam_step_kernel(
         adam.m_color[j] = beta1 * adam.m_color[j] + (1.0f - beta1) * grad.color[j];
         adam.v_color[j] = beta2 * adam.v_color[j] + (1.0f - beta2) * grad.color[j] * grad.color[j];
         param.color[j] -= lr_corrected * adam.m_color[j] / (sqrtf(adam.v_color[j]) + epsilon);
-        param.color[j] = fmaxf(0.0f, fminf(1.0f, param.color[j]));
     }
     
     // Update opacity (clamp to [0.01, 1])
     adam.m_opacity[0] = beta1 * adam.m_opacity[0] + (1.0f - beta1) * grad.opacity[0];
     adam.v_opacity[0] = beta2 * adam.v_opacity[0] + (1.0f - beta2) * grad.opacity[0] * grad.opacity[0];
     param.opacity[0] -= lr_corrected * adam.m_opacity[0] / (sqrtf(adam.v_opacity[0]) + epsilon);
-    param.opacity[0] = fmaxf(0.01f, fminf(1.0f, param.opacity[0]));
 }
 
 void GaussianCollection::adam_step_gpu(float learning_rate, float beta1, float beta2, 

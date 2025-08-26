@@ -32,6 +32,7 @@ __global__ void gaussian_splatting_kernel(
     GaussianGrads* gradients,            // Output: Accumulated gradients [NUM_GAUSSIANS]
     const float* target_image,           // Input: Target image data [width * height * 3]
     PixelOutput* output_image,           // Output: Rendered image [width * height]
+    float* total_loss,                   // Output: Atomic accumulator for total L1 loss
     int image_width,
     int image_height,
     int num_gaussians
@@ -43,6 +44,7 @@ void launch_gaussian_splatting(
     GaussianGrads* device_gradients, 
     const float* device_target_image,
     PixelOutput* device_output_image,
+    float* device_total_loss,
     int image_width,
     int image_height,
     int num_gaussians

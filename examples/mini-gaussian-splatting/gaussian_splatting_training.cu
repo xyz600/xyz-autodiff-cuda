@@ -15,8 +15,9 @@ class GaussianSplattingTrainer {
 private:
     // Image data
     ImageData target_image;
-    float* device_target_image;
-    PixelOutput* device_output_image;
+    cuda_unique_ptr<float[]> device_target_image;
+    cuda_unique_ptr<PixelOutput[]> device_output_image;
+    cuda_unique_ptr<float> device_total_loss;
     
     // Gaussian collection
     GaussianCollection gaussians;
@@ -31,17 +32,14 @@ private:
     
 public:
     GaussianSplattingTrainer(float lr = 0.01f, int max_iter = 1000, int save_freq = 50)
-        : learning_rate(lr), max_iterations(max_iter), save_interval(save_freq), 
-          device_target_image(nullptr), device_output_image(nullptr)
+        : learning_rate(lr), max_iterations(max_iter), save_interval(save_freq)
     {
         // Initialize random seed
         rng.seed(std::chrono::steady_clock::now().time_since_epoch().count());
     }
     
     ~GaussianSplattingTrainer() {
-        // Clean up device memory
-        if (device_target_image) cudaFree(device_target_image);
-        if (device_output_image) cudaFree(device_output_image);
+        // cuda_unique_ptr handles automatic cleanup
     }
     
     bool load_target_image(const std::string& filename) {
@@ -55,17 +53,13 @@ public:
         std::cout << "Target image: " << target_image.width << "x" << target_image.height 
                   << " (" << target_image.channels << " channels)" << std::endl;
         
-        // Allocate device memory for target image
+        // Allocate device memory for target image using CUDA unique pointers
         int image_size = target_image.width * target_image.height * target_image.channels;
-        cudaError_t err = cudaMalloc(&device_target_image, image_size * sizeof(float));
-        if (err != cudaSuccess) {
-            std::cerr << "Failed to allocate target image memory: " << cudaGetErrorString(err) << std::endl;
-            return false;
-        }
+        device_target_image = makeCudaUniqueArray<float>(image_size);
         
         // Copy target image to device
-        err = cudaMemcpy(device_target_image, target_image.data.data(),
-                         image_size * sizeof(float), cudaMemcpyHostToDevice);
+        cudaError_t err = cudaMemcpy(device_target_image.get(), target_image.data.data(),
+                                    image_size * sizeof(float), cudaMemcpyHostToDevice);
         if (err != cudaSuccess) {
             std::cerr << "Failed to copy target image to device: " << cudaGetErrorString(err) << std::endl;
             return false;
@@ -73,11 +67,10 @@ public:
         
         // Allocate device memory for output image
         int pixel_count = target_image.width * target_image.height;
-        err = cudaMalloc(&device_output_image, pixel_count * sizeof(PixelOutput));
-        if (err != cudaSuccess) {
-            std::cerr << "Failed to allocate output image memory: " << cudaGetErrorString(err) << std::endl;
-            return false;
-        }
+        device_output_image = makeCudaUniqueArray<PixelOutput>(pixel_count);
+        
+        // Allocate device memory for total loss accumulator
+        device_total_loss = makeCudaUnique<float>();
         
         return true;
     }
@@ -94,7 +87,7 @@ public:
         int pixel_count = target_image.width * target_image.height;
         std::vector<PixelOutput> host_output(pixel_count);
         
-        cudaError_t err = cudaMemcpy(host_output.data(), device_output_image,
+        cudaError_t err = cudaMemcpy(host_output.data(), device_output_image.get(),
                                      pixel_count * sizeof(PixelOutput), cudaMemcpyDeviceToHost);
         if (err != cudaSuccess) {
             std::cerr << "Failed to download output image: " << cudaGetErrorString(err) << std::endl;
@@ -134,28 +127,32 @@ public:
         for (int iteration = 0; iteration < 1000; iteration++) {
             auto start_time = std::chrono::high_resolution_clock::now();
             
-            // Clear gradients
+            // Clear gradients and reset total loss
             gaussians.zero_gradients();
             gaussians.upload_to_device();
             
-            // Run forward and backward pass
+            // Zero the total loss accumulator
+            float zero_loss = 0.0f;
+            cudaMemcpy(device_total_loss.get(), &zero_loss, sizeof(float), cudaMemcpyHostToDevice);
+            
+            // Run forward and backward pass with atomic L1-norm accumulation
             launch_gaussian_splatting(
                 gaussians.device_params.get(),
                 gaussians.device_grads.get(),
-                device_target_image,
-                device_output_image,
+                device_target_image.get(),
+                device_output_image.get(),
+                device_total_loss.get(),
                 target_image.width,
                 target_image.height,
                 GaussianCollection::NUM_GAUSSIANS
             );
 
-            const auto total_loss = 1.0;
+            // Download total loss from device
+            float total_loss = 0.0f;
+            cudaMemcpy(&total_loss, device_total_loss.get(), sizeof(float), cudaMemcpyDeviceToHost);
 
-            // Download gradients
-            gaussians.download_from_device();
-            
-            // Apply Adam optimization
-            gaussians.adam_step(learning_rate, 0.9f, 0.999f, 1e-8f, iteration + 1);
+            // Apply GPU Adam optimization (no need to download gradients)
+            gaussians.adam_step_gpu(learning_rate, 0.9f, 0.999f, 1e-8f, iteration + 1);
             
             auto end_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);

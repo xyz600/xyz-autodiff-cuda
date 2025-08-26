@@ -41,6 +41,7 @@ tasks:
         declare -a configs=(
           "O3:-O3 -arch=sm_89 --ptxas-options=-v"
           "fast:-O3 -use_fast_math -arch=sm_89 --ptxas-options=-v"
+          "fast2:-O3 -use_fast_math -arch=sm_89 -maxrregcount=128 --ptxas-options=-v"
         )
         
         echo "Compiling kernel with different optimization levels..."
@@ -64,7 +65,7 @@ tasks:
         printf "%-12s | %-7s | %-5s | %-5s | %-4s | %-8s | %-8s\n" "Config" "Float32" "Int32" "Int64" "Pred" "LocalMem" "FileSize"
         printf "%-12s-+-%-7s-+-%-5s-+-%-5s-+-%-4s-+-%-8s-+-%-8s\n" "------------" "-------" "-----" "-----" "----" "--------" "--------"
         
-        for config in O3 fast; do
+        for config in O3 fast fast2; do
           file="kernel_$config.ptx"
           if [ -f "$file" ]; then
             f32=$(grep -o '%f<[0-9]*>' "$file" | grep -o '[0-9]*' | sort -n | tail -1 || echo '0')
@@ -87,7 +88,7 @@ tasks:
         printf "%-12s | %-5s | %-4s | %-4s | %-4s | %-6s | %-4s\n" "Config" "Lines" "FMA" "MUL" "ADD" "APPROX" "TRAP"
         printf "%-12s-+-%-5s-+-%-4s-+-%-4s-+-%-4s-+-%-6s-+-%-4s\n" "------------" "-----" "----" "----" "----" "------" "----"
         
-        for config in O3 fast; do
+        for config in O3 fast fast2; do
           file="kernel_$config.ptx"
           if [ -f "$file" ]; then
             lines=$(wc -l < "$file")
@@ -111,7 +112,7 @@ tasks:
         # Find the most optimized version (lowest register count)
         best_f32=999
         best_config=""
-        for config in O3 fast; do
+        for config in O3 fast fast2; do
           file="kernel_$config.ptx"
           if [ -f "$file" ]; then
             f32=$(grep -o '%f<[0-9]*>' "$file" | grep -o '[0-9]*' | sort -n | tail -1 || echo '999')
