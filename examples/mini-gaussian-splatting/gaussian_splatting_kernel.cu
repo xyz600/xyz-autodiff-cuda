@@ -30,7 +30,12 @@ __global__ void gaussian_splatting_kernel(
     // Query point (current pixel position)
     float query_point[2] = {static_cast<float>(pixel_x), static_cast<float>(pixel_y)};
     
-    // Calculate total contribution from all Gaussians first (for loss computation)
+    // Accumulate total color from all Gaussians
+    Variable<3, float> total_color;
+    total_color[0] = 0.0f;
+    total_color[1] = 0.0f;
+    total_color[2] = 0.0f;
+    
     for (int g = 0; g < num_gaussians; g++) {
         const GaussianParams& gauss = gaussians[g];
         
@@ -52,29 +57,29 @@ __global__ void gaussian_splatting_kernel(
         auto weighted_gauss = gaussian_value * opacity;
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
-        
-        
 
         // Run forward pass only
         weighted_color.forward();
 
-        
-
-        // Accumulate color contribution
-        pixel_out.color[0] += weighted_color[0];
-        pixel_out.color[1] += weighted_color[1];
-        pixel_out.color[2] += weighted_color[2];
+        // Accumulate to total color
+        total_color[0] += weighted_color[0];
+        total_color[1] += weighted_color[1];
+        total_color[2] += weighted_color[2];
     }
     
-    // Calculate loss contribution (L2 loss with target image)
+    // Set output pixel color for visualization
+    pixel_out.color[0] = total_color[0];
+    pixel_out.color[1] = total_color[1];
+    pixel_out.color[2] = total_color[2];
+    
+    // Create target image variable (constant)
     int target_idx = pixel_idx * 3;
-    float loss_r = pixel_out.color[0] - target_image[target_idx + 0];
-    float loss_g = pixel_out.color[1] - target_image[target_idx + 1];
-    float loss_b = pixel_out.color[2] - target_image[target_idx + 2];
+    Variable<3, float> target_color;
+    target_color[0] = target_image[target_idx + 0];
+    target_color[1] = target_image[target_idx + 1];
+    target_color[2] = target_image[target_idx + 2];
     
-    pixel_out.loss = 0.5f * (loss_r * loss_r + loss_g * loss_g + loss_b * loss_b);
-    
-    // Compute gradients for each Gaussian (using local gradient buffers to avoid race conditions)
+    // Compute gradients for each Gaussian using L1 norm automatic differentiation
     for (int g = 0; g < num_gaussians; g++) {
         const GaussianParams& gauss = gaussians[g];
         
@@ -93,7 +98,7 @@ __global__ void gaussian_splatting_kernel(
         VariableRef<1, float> opacity(const_cast<float*>(gauss.opacity), local_opacity_grad);
         VariableRef<2, float> query_pt(query_point, nullptr);
         
-        // Build computation graph  
+        // Build computation graph for this Gaussian
         auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
         auto inv_covariance = op::sym_matrix2_inv(covariance);
         auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_pt, center, inv_covariance);
@@ -104,15 +109,12 @@ __global__ void gaussian_splatting_kernel(
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
+        // Build full L1 loss computation graph for this Gaussian
+        auto color_diff = op::sub(weighted_color, target_color);
+        auto l1_loss = op::l1_norm(color_diff);
         
-        // Clear gradients and set loss gradients
-        weighted_color.zero_grad();
-        weighted_color.add_grad(0, loss_r);
-        weighted_color.add_grad(1, loss_g);
-        weighted_color.add_grad(2, loss_b);
-        
-        // Run backward pass
-        weighted_color.backward();
+        // Run complete forward and backward pass
+        l1_loss.run();
     }
 }
 
