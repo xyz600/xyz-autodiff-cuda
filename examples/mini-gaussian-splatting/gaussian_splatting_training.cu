@@ -96,9 +96,9 @@ public:
         // Convert to ImageData format
         ImageData output_image(target_image.width, target_image.height, 3);
         for (int i = 0; i < pixel_count; i++) {
-            output_image.data[i * 3 + 0] = host_output[i].color[0];
-            output_image.data[i * 3 + 1] = host_output[i].color[1];
-            output_image.data[i * 3 + 2] = host_output[i].color[2];
+            output_image.data[i * 3 + 0] = host_output[i][0];
+            output_image.data[i * 3 + 1] = host_output[i][1];
+            output_image.data[i * 3 + 2] = host_output[i][2];
         }
         
         // Save as JPEG

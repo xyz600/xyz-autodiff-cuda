@@ -13,18 +13,14 @@
 #include "operations/mahalanobis_distance.cuh"
 #include "../../include/operations/unary/sym_matrix2_inv_logic.cuh"
 #include "gaussian_parameters.h"
+#include "const_array.cuh"
 
 using namespace xyz_autodiff;
 
 // Tile size for CUDA blocks
 constexpr int TILE_SIZE = 16;
 
-// Structure to hold rendering output for one pixel
-struct PixelOutput {
-    float color[3];  // RGB
-    float alpha;     // Alpha (accumulated opacity)
-    float loss;      // Loss contribution from this pixel
-};
+using PixelOutput = ConstArray<float, 3>;
 
 // CUDA kernel for Gaussian splatting rendering and gradient computation
 __global__ void gaussian_splatting_kernel(

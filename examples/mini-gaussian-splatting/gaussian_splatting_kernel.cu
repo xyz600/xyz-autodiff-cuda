@@ -1,5 +1,7 @@
 #include "gaussian_splatting_kernel.cuh"
 #include "operations/unary/sigmoid_logic.cuh"
+#include "operations/unary/const_array_sub_logic.cuh"
+#include "operations/operation.cuh"
 #include <iostream>
 
 __global__ void gaussian_splatting_kernel(
@@ -22,22 +24,11 @@ __global__ void gaussian_splatting_kernel(
     int pixel_idx = pixel_y * image_width + pixel_x;
     
     // Initialize output pixel
-    PixelOutput& pixel_out = output_image[pixel_idx];
-    pixel_out.color[0] = 0.0f;
-    pixel_out.color[1] = 0.0f;
-    pixel_out.color[2] = 0.0f;
-    pixel_out.alpha = 0.0f;
-    pixel_out.loss = 0.0f;
+    PixelOutput pixel_out {};
     
     // Query point (current pixel position)
     const float query_point[2] = {static_cast<float>(pixel_x), static_cast<float>(pixel_y)};
-    
-    // Accumulate total color from all Gaussians
-    Variable<3, float> total_color;
-    total_color[0] = 0.0f;
-    total_color[1] = 0.0f;
-    total_color[2] = 0.0f;
-    
+        
     for (int g = 0; g < num_gaussians; g++) {
         const GaussianParams& gauss = gaussians[g];
         
@@ -68,19 +59,15 @@ __global__ void gaussian_splatting_kernel(
         weighted_color.forward();
 
         // Accumulate to total color
-        total_color[0] += weighted_color[0];
-        total_color[1] += weighted_color[1];
-        total_color[2] += weighted_color[2];
+        pixel_out[0] += weighted_color[0];
+        pixel_out[1] += weighted_color[1];
+        pixel_out[2] += weighted_color[2];
     }
     
-    // Set output pixel color for visualization
-    pixel_out.color[0] = total_color[0];
-    pixel_out.color[1] = total_color[1];
-    pixel_out.color[2] = total_color[2];
-    
     // Create target image variable (constant)
+    // fix: re-order global memory allignment ?
     int target_idx = pixel_idx * 3;
-    Variable<3, float> target_color;
+    float target_color[3];
     target_color[0] = target_image[target_idx + 0];
     target_color[1] = target_image[target_idx + 1];
     target_color[2] = target_image[target_idx + 2];
@@ -114,8 +101,13 @@ __global__ void gaussian_splatting_kernel(
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
+        PixelOutput rest_sum;
+        rest_sum[0] = target_color[0] - pixel_out[0];
+        rest_sum[1] = target_color[1] - pixel_out[1];
+        rest_sum[2] = target_color[2] - pixel_out[2];
+
         // Build full L1 loss computation graph for this Gaussian
-        auto color_diff = op::sub(weighted_color, target_color);
+        auto color_diff = weighted_color - rest_sum;
         auto l1_loss = op::l1_norm(color_diff);
         
         // Run complete forward and backward pass
