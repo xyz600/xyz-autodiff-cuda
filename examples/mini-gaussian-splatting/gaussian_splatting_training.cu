@@ -124,12 +124,11 @@ public:
         // Save initial target image
         save_image_jpeg("output/target.jpg", target_image);
         
-        for (int iteration = 0; iteration < 1000; iteration++) {
+        for (int iteration = 0; iteration < max_iterations; iteration++) {
             auto start_time = std::chrono::high_resolution_clock::now();
             
-            // Clear gradients and reset total loss
-            gaussians.zero_gradients();
-            gaussians.upload_to_device();
+            // Clear gradients on device (no need to upload parameters again)
+            gaussians.zero_gradients_gpu();
             
             // Zero the total loss accumulator
             float zero_loss = 0.0f;
@@ -157,10 +156,11 @@ public:
             auto end_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
             
+            const auto average_loss = total_loss / (target_image.height * target_image.width * 3);
             // Print progress
             if (iteration % 10 == 0) {
                 std::cout << "Iteration " << std::setw(4) << iteration 
-                          << " | Loss: " << std::scientific << std::setprecision(6) << total_loss
+                          << " | average Loss: " << std::scientific << std::setprecision(6) << average_loss
                           << " | Time: " << duration.count() << "ms" << std::endl;
             }
             
@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
     cudaSetDevice(0);
     
     // Create trainer
-    GaussianSplattingTrainer trainer(0.01f, 500, 25);  // lr=0.01, max_iter=500, save every 25 iterations
+    GaussianSplattingTrainer trainer(0.01f, 5000, 200);  // lr=0.01, max_iter=500, save every 25 iterations
     
     // Load target image
     std::string image_file = "data/target.png";

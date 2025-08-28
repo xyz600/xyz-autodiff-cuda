@@ -53,6 +53,9 @@ __global__ void gaussian_splatting_kernel(
         auto covariance = op::scale_rotation_to_covariance_3param(exp_scale, rotation);
         auto inv_covariance = op::sym_matrix2_inv(covariance);
         auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point[0], query_point[1], center, inv_covariance);
+        if (mahalanobis_dist_sq[0] + mahalanobis_dist_sq[1] > 4.0) {
+            continue;
+        }
         auto scaled_distance = mahalanobis_dist_sq * 0.5f;
         auto neg_scaled = op::neg(scaled_distance);
         auto gaussian_value = op::exp(neg_scaled);
@@ -100,6 +103,9 @@ __global__ void gaussian_splatting_kernel(
         auto covariance = op::scale_rotation_to_covariance_3param(exp_scale, rotation);
         auto inv_covariance = op::sym_matrix2_inv(covariance);
         auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point[0], query_point[1], center, inv_covariance);
+        if (mahalanobis_dist_sq[0] + mahalanobis_dist_sq[1] > 4.0) {
+            continue;
+        }
         auto scaled_distance = mahalanobis_dist_sq * 0.5f;
         auto neg_scaled = op::neg(scaled_distance);
         auto gaussian_value = op::exp(neg_scaled);
@@ -153,13 +159,6 @@ void launch_gaussian_splatting(
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         std::cerr << "Kernel launch error: " << cudaGetErrorString(err) << std::endl;
-        return;
-    }
-    
-    // Wait for kernel completion
-    err = cudaDeviceSynchronize();
-    if (err != cudaSuccess) {
-        std::cerr << "Kernel execution error: " << cudaGetErrorString(err) << std::endl;
         return;
     }
 }

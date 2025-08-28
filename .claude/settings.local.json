@@ -93,7 +93,9 @@
       "Bash(./tests/test_add_constant_operations_gradient:*)",
       "Bash(./tests/test_sub_constant_operations_gradient:*)",
       "Bash(./tests/test_binary_operations_gradient:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(./debug_gradients)",
+      "Bash(./build/debug/debug_gradients)"
     ],
     "deny": [],
     "additionalDirectories": [

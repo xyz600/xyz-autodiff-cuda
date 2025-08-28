@@ -25,18 +25,15 @@ GaussianCollection::GaussianCollection() {
 
 void GaussianCollection::initialize_random(int image_width, int image_height, std::mt19937& rng) {
     int max_size = std::max(image_width, image_height);
-    float std_dev = static_cast<float>(max_size) / 30.0f;
     
     std::uniform_real_distribution<float> pos_x_dist(0.0f, static_cast<float>(image_width));
     std::uniform_real_distribution<float> pos_y_dist(0.0f, static_cast<float>(image_height));
-    std::uniform_real_distribution<float> rotation_dist(-3.14159f, 3.14159f);
-    std::uniform_real_distribution<float> color_dist(0.0f, 1.0f);
-    std::uniform_real_distribution<float> opacity_dist(0.1f, 0.3f);
-    std::normal_distribution<float> scale_dist(std_dev, std_dev * 0.1f);  // Some variation around base scale
+    std::uniform_real_distribution<float> color_dist(0.1f, 0.2f);
+    std::uniform_real_distribution<float> opacity_dist(0.05f, 0.1f);
+    std::uniform_real_distribution<float> scale_dist(0.0f, 2.0f);  // Some variation around base scale
     
     std::cout << "Initializing " << NUM_GAUSSIANS << " Gaussians..." << std::endl;
     std::cout << "Image size: " << image_width << "x" << image_height << std::endl;
-    std::cout << "Base standard deviation: " << std_dev << std::endl;
     
     for (int i = 0; i < NUM_GAUSSIANS; i++) {
         GaussianParams& params = host_params[i];
@@ -50,7 +47,7 @@ void GaussianCollection::initialize_random(int image_width, int image_height, st
         params.scale[1] = std::max(1.0f, scale_dist(rng));
         
         // Random rotation
-        params.rotation[0] = rotation_dist(rng);
+        params.rotation[0] = 0.0f;
         
         // Random color
         params.color[0] = color_dist(rng);
@@ -200,7 +197,7 @@ __global__ void adam_step_kernel(
         param.center[j] -= lr_corrected * adam.m_center[j] / (sqrtf(adam.v_center[j]) + epsilon);
     }
     
-    // Update scale (ensure positive)
+    // Update scale
     for (int j = 0; j < 2; j++) {
         adam.m_scale[j] = beta1 * adam.m_scale[j] + (1.0f - beta1) * grad.scale[j];
         adam.v_scale[j] = beta2 * adam.v_scale[j] + (1.0f - beta2) * grad.scale[j] * grad.scale[j];
@@ -223,6 +220,39 @@ __global__ void adam_step_kernel(
     adam.m_opacity[0] = beta1 * adam.m_opacity[0] + (1.0f - beta1) * grad.opacity[0];
     adam.v_opacity[0] = beta2 * adam.v_opacity[0] + (1.0f - beta2) * grad.opacity[0] * grad.opacity[0];
     param.opacity[0] -= lr_corrected * adam.m_opacity[0] / (sqrtf(adam.v_opacity[0]) + epsilon);
+}
+
+// CUDA kernel to zero gradients on device
+__global__ void zero_gradients_kernel(GaussianGrads* grads, int num_gaussians) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= num_gaussians) return;
+    
+    GaussianGrads& grad = grads[idx];
+    grad.center[0] = 0.0f;
+    grad.center[1] = 0.0f;
+    grad.scale[0] = 0.0f;
+    grad.scale[1] = 0.0f;
+    grad.rotation[0] = 0.0f;
+    grad.color[0] = 0.0f;
+    grad.color[1] = 0.0f;
+    grad.color[2] = 0.0f;
+    grad.opacity[0] = 0.0f;
+}
+
+void GaussianCollection::zero_gradients_gpu() {
+    // Calculate grid dimensions
+    int block_size = 256;
+    int grid_size = (NUM_GAUSSIANS + block_size - 1) / block_size;
+    
+    // Launch kernel to zero gradients on device
+    zero_gradients_kernel<<<grid_size, block_size>>>(device_grads.get(), NUM_GAUSSIANS);
+    
+    // Check for kernel launch errors
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        std::cerr << "Zero gradients kernel launch error: " << cudaGetErrorString(err) << std::endl;
+        return;
+    }
 }
 
 void GaussianCollection::adam_step_gpu(float learning_rate, float beta1, float beta2, 
@@ -252,13 +282,6 @@ void GaussianCollection::adam_step_gpu(float learning_rate, float beta1, float b
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         std::cerr << "Adam kernel launch error: " << cudaGetErrorString(err) << std::endl;
-        return;
-    }
-    
-    // Wait for kernel completion
-    err = cudaDeviceSynchronize();
-    if (err != cudaSuccess) {
-        std::cerr << "Adam kernel execution error: " << cudaGetErrorString(err) << std::endl;
         return;
     }
 }
