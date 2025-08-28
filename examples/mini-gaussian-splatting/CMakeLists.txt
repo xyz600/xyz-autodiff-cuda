@@ -6,6 +6,7 @@ add_executable(gaussian_splatting_training
     gaussian_parameters.cu
     image_utils.cpp
     gaussian_splatting_kernel.cu
+    training_config.cpp
 )
 target_link_libraries(gaussian_splatting_training xyz_autodiff)
 target_include_directories(gaussian_splatting_training PRIVATE 

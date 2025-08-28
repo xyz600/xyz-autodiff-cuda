@@ -95,7 +95,8 @@
       "Bash(./tests/test_binary_operations_gradient:*)",
       "Bash(timeout:*)",
       "Bash(./debug_gradients)",
-      "Bash(./build/debug/debug_gradients)"
+      "Bash(./build/debug/debug_gradients)",
+      "Bash(./build/debug/examples/mini-gaussian-splatting/gaussian_splatting_training:*)"
     ],
     "deny": [],
     "additionalDirectories": [

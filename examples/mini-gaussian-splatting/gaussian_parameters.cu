@@ -255,6 +255,69 @@ void GaussianCollection::zero_gradients_gpu() {
     }
 }
 
+// CUDA kernel for Adam optimization step with individual learning rates
+__global__ void adam_step_individual_kernel(
+    GaussianParams* params,
+    GaussianGrads* grads,
+    AdamState* adam_states,
+    int num_gaussians,
+    float lr_center,
+    float lr_scale,
+    float lr_rotation,
+    float lr_color,
+    float lr_opacity,
+    float beta1,
+    float beta2,
+    float epsilon,
+    float beta1_t,
+    float beta2_t
+) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= num_gaussians) return;
+    
+    GaussianParams& param = params[idx];
+    GaussianGrads& grad = grads[idx];
+    AdamState& adam = adam_states[idx];
+    
+    // Compute corrected learning rates
+    float lr_center_corrected = lr_center * sqrtf(1.0f - beta2_t) / (1.0f - beta1_t);
+    float lr_scale_corrected = lr_scale * sqrtf(1.0f - beta2_t) / (1.0f - beta1_t);
+    float lr_rotation_corrected = lr_rotation * sqrtf(1.0f - beta2_t) / (1.0f - beta1_t);
+    float lr_color_corrected = lr_color * sqrtf(1.0f - beta2_t) / (1.0f - beta1_t);
+    float lr_opacity_corrected = lr_opacity * sqrtf(1.0f - beta2_t) / (1.0f - beta1_t);
+    
+    // Update center
+    for (int j = 0; j < 2; j++) {
+        adam.m_center[j] = beta1 * adam.m_center[j] + (1.0f - beta1) * grad.center[j];
+        adam.v_center[j] = beta2 * adam.v_center[j] + (1.0f - beta2) * grad.center[j] * grad.center[j];
+        param.center[j] -= lr_center_corrected * adam.m_center[j] / (sqrtf(adam.v_center[j]) + epsilon);
+    }
+    
+    // Update scale
+    for (int j = 0; j < 2; j++) {
+        adam.m_scale[j] = beta1 * adam.m_scale[j] + (1.0f - beta1) * grad.scale[j];
+        adam.v_scale[j] = beta2 * adam.v_scale[j] + (1.0f - beta2) * grad.scale[j] * grad.scale[j];
+        param.scale[j] -= lr_scale_corrected * adam.m_scale[j] / (sqrtf(adam.v_scale[j]) + epsilon);
+    }
+    
+    // Update rotation
+    adam.m_rotation[0] = beta1 * adam.m_rotation[0] + (1.0f - beta1) * grad.rotation[0];
+    adam.v_rotation[0] = beta2 * adam.v_rotation[0] + (1.0f - beta2) * grad.rotation[0] * grad.rotation[0];
+    param.rotation[0] -= lr_rotation_corrected * adam.m_rotation[0] / (sqrtf(adam.v_rotation[0]) + epsilon);
+    
+    // Update color
+    for (int j = 0; j < 3; j++) {
+        adam.m_color[j] = beta1 * adam.m_color[j] + (1.0f - beta1) * grad.color[j];
+        adam.v_color[j] = beta2 * adam.v_color[j] + (1.0f - beta2) * grad.color[j] * grad.color[j];
+        param.color[j] -= lr_color_corrected * adam.m_color[j] / (sqrtf(adam.v_color[j]) + epsilon);
+    }
+    
+    // Update opacity
+    adam.m_opacity[0] = beta1 * adam.m_opacity[0] + (1.0f - beta1) * grad.opacity[0];
+    adam.v_opacity[0] = beta2 * adam.v_opacity[0] + (1.0f - beta2) * grad.opacity[0] * grad.opacity[0];
+    param.opacity[0] -= lr_opacity_corrected * adam.m_opacity[0] / (sqrtf(adam.v_opacity[0]) + epsilon);
+}
+
 void GaussianCollection::adam_step_gpu(float learning_rate, float beta1, float beta2, 
                                        float epsilon, int iteration) {
     float beta1_t = powf(beta1, iteration);
@@ -282,6 +345,42 @@ void GaussianCollection::adam_step_gpu(float learning_rate, float beta1, float b
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         std::cerr << "Adam kernel launch error: " << cudaGetErrorString(err) << std::endl;
+        return;
+    }
+}
+
+void GaussianCollection::adam_step_gpu_individual(float lr_center, float lr_scale, float lr_rotation,
+                                                  float lr_color, float lr_opacity,
+                                                  float beta1, float beta2, float epsilon, int iteration) {
+    float beta1_t = powf(beta1, iteration);
+    float beta2_t = powf(beta2, iteration);
+    
+    // Calculate grid dimensions
+    int block_size = 256;
+    int grid_size = (NUM_GAUSSIANS + block_size - 1) / block_size;
+    
+    // Launch kernel
+    adam_step_individual_kernel<<<grid_size, block_size>>>(
+        device_params.get(),
+        device_grads.get(),
+        device_adam.get(),
+        NUM_GAUSSIANS,
+        lr_center,
+        lr_scale,
+        lr_rotation,
+        lr_color,
+        lr_opacity,
+        beta1,
+        beta2,
+        epsilon,
+        beta1_t,
+        beta2_t
+    );
+    
+    // Check for kernel launch errors
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        std::cerr << "Adam individual kernel launch error: " << cudaGetErrorString(err) << std::endl;
         return;
     }
 }

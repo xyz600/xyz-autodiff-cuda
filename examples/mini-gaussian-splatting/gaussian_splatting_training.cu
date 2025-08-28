@@ -7,6 +7,7 @@
 #include "image_utils.h"
 #include "gaussian_parameters.h"
 #include "gaussian_splatting_kernel.cuh"
+#include "training_config.h"
 #include "../../include/util/cuda_unique_ptr.cuh"
 
 //using namespace xyz_autodiff;
@@ -22,17 +23,15 @@ private:
     // Gaussian collection
     GaussianCollection gaussians;
     
-    // Training parameters
-    float learning_rate;
-    int max_iterations;
-    int save_interval;
+    // Training configuration
+    TrainingConfig config;
     
     // Random number generator
     std::mt19937 rng;
     
 public:
-    GaussianSplattingTrainer(float lr = 0.01f, int max_iter = 1000, int save_freq = 50)
-        : learning_rate(lr), max_iterations(max_iter), save_interval(save_freq)
+    GaussianSplattingTrainer(const TrainingConfig& cfg)
+        : config(cfg)
     {
         // Initialize random seed
         rng.seed(std::chrono::steady_clock::now().time_since_epoch().count());
@@ -112,19 +111,20 @@ public:
         std::cout << "\\n=== Starting Gaussian Splatting Training ===" << std::endl;
         std::cout << "Target image: " << target_image.width << "x" << target_image.height << std::endl;
         std::cout << "Gaussians: " << GaussianCollection::NUM_GAUSSIANS << std::endl;
-        std::cout << "Learning rate: " << learning_rate << std::endl;
-        std::cout << "Max iterations: " << max_iterations << std::endl;
+        config.print();
         
-        // Create output directory
-        const auto status = system("mkdir -p output");
-        if (status != 0) {
-            std::cerr << "[warning]: failed to make directory";
+        // Create output directory if saving images
+        if (config.save_images) {
+            const auto status = system("mkdir -p output");
+            if (status != 0) {
+                std::cerr << "[warning]: failed to make directory";
+            }
+            
+            // Save initial target image
+            save_image_jpeg("output/target.jpg", target_image);
         }
         
-        // Save initial target image
-        save_image_jpeg("output/target.jpg", target_image);
-        
-        for (int iteration = 0; iteration < max_iterations; iteration++) {
+        for (int iteration = 0; iteration < config.max_iterations; iteration++) {
             auto start_time = std::chrono::high_resolution_clock::now();
             
             // Clear gradients on device (no need to upload parameters again)
@@ -150,8 +150,12 @@ public:
             float total_loss = 0.0f;
             cudaMemcpy(&total_loss, device_total_loss.get(), sizeof(float), cudaMemcpyDeviceToHost);
 
-            // Apply GPU Adam optimization (no need to download gradients)
-            gaussians.adam_step_gpu(learning_rate, 0.9f, 0.999f, 1e-8f, iteration + 1);
+            // Apply GPU Adam optimization with individual learning rates
+            gaussians.adam_step_gpu_individual(
+                config.lr_center, config.lr_scale, config.lr_rotation,
+                config.lr_color, config.lr_opacity,
+                config.beta1, config.beta2, config.epsilon, iteration + 1
+            );
             
             auto end_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
@@ -165,13 +169,15 @@ public:
             }
             
             // Save intermediate results
-            if (iteration % save_interval == 0) {
+            if (config.save_images && iteration % config.save_interval == 0) {
                 save_current_rendering(iteration);
             }
         }
         
         // Save final result
-        save_current_rendering(max_iterations);
+        if (config.save_images) {
+            save_current_rendering(config.max_iterations);
+        }
         
         std::cout << "Training completed!" << std::endl;
     }
@@ -180,6 +186,15 @@ public:
 int main(int argc, char** argv) {
     std::cout << "Gaussian Splatting Training with CUDA Automatic Differentiation" << std::endl;
     std::cout << "================================================================" << std::endl;
+    
+    // Parse command line arguments
+    TrainingConfig config;
+    try {
+        config = TrainingConfigParser::parse(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to parse arguments: " << e.what() << std::endl;
+        return -1;
+    }
     
     // Check CUDA availability
     int device_count;
@@ -194,16 +209,11 @@ int main(int argc, char** argv) {
     cudaSetDevice(0);
     
     // Create trainer
-    GaussianSplattingTrainer trainer(0.01f, 5000, 200);  // lr=0.01, max_iter=500, save every 25 iterations
+    GaussianSplattingTrainer trainer(config);
     
     // Load target image
-    std::string image_file = "data/target.png";
-    if (argc > 1) {
-        image_file = argv[1];
-    }
-    
-    if (!trainer.load_target_image(image_file)) {
-        std::cerr << "Failed to load target image" << std::endl;
+    if (!trainer.load_target_image(config.target_image_path)) {
+        std::cerr << "Failed to load target image: " << config.target_image_path << std::endl;
         return -1;
     }
     
