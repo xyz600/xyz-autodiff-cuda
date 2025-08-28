@@ -16,7 +16,7 @@ class GaussianSplattingTrainer {
 private:
     // Image data
     ImageData target_image;
-    cuda_unique_ptr<float[]> device_target_image;
+    cuda_unique_ptr<PixelOutput[]> device_target_image;
     cuda_unique_ptr<PixelOutput[]> device_output_image;
     cuda_unique_ptr<float> device_total_loss;
     
@@ -53,12 +53,12 @@ public:
                   << " (" << target_image.channels << " channels)" << std::endl;
         
         // Allocate device memory for target image using CUDA unique pointers
-        int image_size = target_image.width * target_image.height * target_image.channels;
-        device_target_image = makeCudaUniqueArray<float>(image_size);
+        int image_size = target_image.width * target_image.height;
+        device_target_image = makeCudaUniqueArray<PixelOutput>(image_size);
         
         // Copy target image to device
         cudaError_t err = cudaMemcpy(device_target_image.get(), target_image.data.data(),
-                                    image_size * sizeof(float), cudaMemcpyHostToDevice);
+                                    image_size * sizeof(PixelOutput), cudaMemcpyHostToDevice);
         if (err != cudaSuccess) {
             std::cerr << "Failed to copy target image to device: " << cudaGetErrorString(err) << std::endl;
             return false;

@@ -7,7 +7,7 @@
 __global__ void gaussian_splatting_kernel(
     const GaussianParams* gaussians,
     GaussianGrads* gradients, 
-    const float* target_image,
+    const PixelOutput* target_image,
     PixelOutput* output_image,
     float* total_loss,
     int image_width,
@@ -64,13 +64,10 @@ __global__ void gaussian_splatting_kernel(
         pixel_out[2] += weighted_color[2];
     }
     
-    // Create target image variable (constant)
-    // fix: re-order global memory allignment ?
-    int target_idx = pixel_idx * 3;
-    float target_color[3];
-    target_color[0] = target_image[target_idx + 0];
-    target_color[1] = target_image[target_idx + 1];
-    target_color[2] = target_image[target_idx + 2];
+    PixelOutput target_color{};
+    target_color[0] = target_image[pixel_idx][0];
+    target_color[1] = target_image[pixel_idx][1];
+    target_color[2] = target_image[pixel_idx][2];
     
     // Compute gradients for each Gaussian using L1 norm automatic differentiation
     for (int g = 0; g < num_gaussians; g++) {
@@ -101,10 +98,7 @@ __global__ void gaussian_splatting_kernel(
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
-        PixelOutput rest_sum;
-        rest_sum[0] = target_color[0] - pixel_out[0];
-        rest_sum[1] = target_color[1] - pixel_out[1];
-        rest_sum[2] = target_color[2] - pixel_out[2];
+        const auto rest_sum = target_color - pixel_out;
 
         // Build full L1 loss computation graph for this Gaussian
         auto color_diff = weighted_color - rest_sum;
@@ -121,7 +115,7 @@ __global__ void gaussian_splatting_kernel(
 void launch_gaussian_splatting(
     const GaussianParams* device_gaussians,
     GaussianGrads* device_gradients,
-    const float* device_target_image, 
+    const PixelOutput* device_target_image, 
     PixelOutput* device_output_image,
     float* device_total_loss,
     int image_width,

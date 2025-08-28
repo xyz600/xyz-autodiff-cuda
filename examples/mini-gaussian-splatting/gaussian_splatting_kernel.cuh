@@ -26,7 +26,7 @@ using PixelOutput = ConstArray<float, 3>;
 __global__ void gaussian_splatting_kernel(
     const GaussianParams* gaussians,     // Input: Gaussian parameters [NUM_GAUSSIANS]
     GaussianGrads* gradients,            // Output: Accumulated gradients [NUM_GAUSSIANS]
-    const float* target_image,           // Input: Target image data [width * height * 3]
+    const PixelOutput* target_image,     // Input: Target image data [width * height]
     PixelOutput* output_image,           // Output: Rendered image [width * height]
     float* total_loss,                   // Output: Atomic accumulator for total L1 loss
     int image_width,
@@ -38,24 +38,10 @@ __global__ void gaussian_splatting_kernel(
 void launch_gaussian_splatting(
     const GaussianParams* device_gaussians,
     GaussianGrads* device_gradients, 
-    const float* device_target_image,
+    const PixelOutput* device_target_image,
     PixelOutput* device_output_image,
     float* device_total_loss,
     int image_width,
     int image_height,
     int num_gaussians
 );
-
-// Fixed version with reduced memory pressure
-void launch_gaussian_splatting_fixed(
-    const GaussianParams* device_gaussians,
-    GaussianGrads* device_gradients,
-    const float* device_target_image, 
-    PixelOutput* device_output_image,
-    int image_width,
-    int image_height,
-    int num_gaussians
-);
-
-// Calculate total loss from pixel outputs
-float calculate_total_loss(const PixelOutput* device_output, int image_width, int image_height);
