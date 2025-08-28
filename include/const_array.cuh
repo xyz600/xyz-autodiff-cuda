@@ -28,6 +28,16 @@ struct ConstArray {
         return N;
     }
 
+    // Assignment operator
+    __device__ __host__ constexpr ConstArray& operator=(const ConstArray& other) {
+        if (this != &other) {
+            for (int i = 0; i < N; ++i) {
+                data[i] = other.data[i];
+            }
+        }
+        return *this;
+    }
+
     // Compound assignment operators
     __device__ __host__ constexpr ConstArray& operator+=(const ConstArray& other) {
         for (int i = 0; i < N; ++i) {

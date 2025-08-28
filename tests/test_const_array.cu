@@ -52,17 +52,24 @@ __global__ void test_const_array_operators_kernel(float* result) {
     ConstArray<float, 3> arr1(init_data1);
     ConstArray<float, 3> arr2(init_data2);
     
+    // Test assignment operator
+    ConstArray<float, 3> arr_copy;
+    arr_copy = arr1;  // Copy arr1 to arr_copy
+    result[0] = arr_copy[0];  // Should be 10.0f
+    result[1] = arr_copy[1];  // Should be 20.0f
+    result[2] = arr_copy[2];  // Should be 30.0f
+    
     // Test compound assignment
     arr1 += arr2;  // arr1 becomes [15, 35, 55]
-    result[0] = arr1[0];
-    result[1] = arr1[1];
-    result[2] = arr1[2];
+    result[3] = arr1[0];
+    result[4] = arr1[1];
+    result[5] = arr1[2];
     
     // Test binary subtraction
     auto arr3 = arr1 - arr2;  // [15, 35, 55] - [5, 15, 25] = [10, 20, 30]
-    result[3] = arr3[0];
-    result[4] = arr3[1];
-    result[5] = arr3[2];
+    result[6] = arr3[0];
+    result[7] = arr3[1];
+    result[8] = arr3[2];
 }
 
 TEST_F(ConstArrayTest, BasicOperations) {
@@ -145,7 +152,7 @@ TEST_F(ConstArrayTest, HostInitialization) {
 
 TEST_F(ConstArrayTest, ArithmeticOperators) {
     struct TestBuffers {
-        float result[6];
+        float result[9];
     };
     auto device_buffers = makeCudaUnique<TestBuffers>();
     
@@ -155,15 +162,20 @@ TEST_F(ConstArrayTest, ArithmeticOperators) {
     TestBuffers host_buffers;
     cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(TestBuffers), cudaMemcpyDeviceToHost);
     
+    // Test assignment results: arr_copy = arr1 (original [10, 20, 30])
+    EXPECT_FLOAT_EQ(host_buffers.result[0], 10.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[1], 20.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[2], 30.0f);
+    
     // Test compound assignment results: [10, 20, 30] += [5, 15, 25] = [15, 35, 55]
-    EXPECT_FLOAT_EQ(host_buffers.result[0], 15.0f);
-    EXPECT_FLOAT_EQ(host_buffers.result[1], 35.0f);
-    EXPECT_FLOAT_EQ(host_buffers.result[2], 55.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[3], 15.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[4], 35.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[5], 55.0f);
     
     // Test binary subtraction results: [15, 35, 55] - [5, 15, 25] = [10, 20, 30]
-    EXPECT_FLOAT_EQ(host_buffers.result[3], 10.0f);
-    EXPECT_FLOAT_EQ(host_buffers.result[4], 20.0f);
-    EXPECT_FLOAT_EQ(host_buffers.result[5], 30.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[6], 10.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[7], 20.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[8], 30.0f);
 }
 
 TEST_F(ConstArrayTest, HostArithmeticOperators) {
@@ -172,6 +184,13 @@ TEST_F(ConstArrayTest, HostArithmeticOperators) {
     
     ConstArray<float, 3> arr2;
     arr2[0] = 5.0f; arr2[1] = 15.0f; arr2[2] = 25.0f;
+    
+    // Test assignment operator
+    ConstArray<float, 3> arr_copy;
+    arr_copy = arr1;
+    EXPECT_FLOAT_EQ(arr_copy[0], 10.0f);
+    EXPECT_FLOAT_EQ(arr_copy[1], 20.0f);
+    EXPECT_FLOAT_EQ(arr_copy[2], 30.0f);
     
     // Test compound assignment
     arr1 += arr2;
