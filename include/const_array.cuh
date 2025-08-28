@@ -27,6 +27,72 @@ struct ConstArray {
     __device__ __host__ constexpr int size() const {
         return N;
     }
+
+    // Compound assignment operators
+    __device__ __host__ constexpr ConstArray& operator+=(const ConstArray& other) {
+        for (int i = 0; i < N; ++i) {
+            data[i] += other.data[i];
+        }
+        return *this;
+    }
+
+    __device__ __host__ constexpr ConstArray& operator-=(const ConstArray& other) {
+        for (int i = 0; i < N; ++i) {
+            data[i] -= other.data[i];
+        }
+        return *this;
+    }
+
+    __device__ __host__ constexpr ConstArray& operator*=(const ConstArray& other) {
+        for (int i = 0; i < N; ++i) {
+            data[i] *= other.data[i];
+        }
+        return *this;
+    }
+
+    __device__ __host__ constexpr ConstArray& operator/=(const ConstArray& other) {
+        for (int i = 0; i < N; ++i) {
+            data[i] /= other.data[i];
+        }
+        return *this;
+    }
+};
+
+// Binary arithmetic operators for ConstArray
+template <typename T, int N>
+__device__ __host__ constexpr ConstArray<T, N> operator+(const ConstArray<T, N>& lhs, const ConstArray<T, N>& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] + rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N>
+__device__ __host__ constexpr ConstArray<T, N> operator-(const ConstArray<T, N>& lhs, const ConstArray<T, N>& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] - rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N>
+__device__ __host__ constexpr ConstArray<T, N> operator*(const ConstArray<T, N>& lhs, const ConstArray<T, N>& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] * rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N>
+__device__ __host__ constexpr ConstArray<T, N> operator/(const ConstArray<T, N>& lhs, const ConstArray<T, N>& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] / rhs[i];
+    }
+    return result;
 };
 
 } // namespace xyz_autodiff
