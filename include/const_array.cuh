@@ -1,10 +1,13 @@
 #pragma once
 
+#include "concept/const_array.cuh"
+
 namespace xyz_autodiff {
 
 template <typename T, int N>
 struct ConstArray {
     using value_type = T;
+    static constexpr std::size_t size = N;
 
     T data[N];
 
@@ -24,10 +27,6 @@ struct ConstArray {
         return data[index];
     }
 
-    __device__ __host__ constexpr int size() const {
-        return N;
-    }
-
     // Assignment operator
     __device__ __host__ constexpr ConstArray& operator=(const ConstArray& other) {
         if (this != &other) {
@@ -38,7 +37,7 @@ struct ConstArray {
         return *this;
     }
 
-    // Compound assignment operators
+    // Compound assignment operators for same ConstArray type
     __device__ __host__ constexpr ConstArray& operator+=(const ConstArray& other) {
         for (int i = 0; i < N; ++i) {
             data[i] += other.data[i];
@@ -66,9 +65,46 @@ struct ConstArray {
         }
         return *this;
     }
+
+    // Compound assignment operators for ConstArrayLike types
+    template<ConstArrayLike Other>
+    requires ConstArrayCompatible<ConstArray, Other> && (Other::size == N)
+    __device__ __host__ constexpr ConstArray& operator+=(const Other& other) {
+        for (int i = 0; i < N; ++i) {
+            data[i] += other[i];
+        }
+        return *this;
+    }
+
+    template<ConstArrayLike Other>
+    requires ConstArrayCompatible<ConstArray, Other> && (Other::size == N)
+    __device__ __host__ constexpr ConstArray& operator-=(const Other& other) {
+        for (int i = 0; i < N; ++i) {
+            data[i] -= other[i];
+        }
+        return *this;
+    }
+
+    template<ConstArrayLike Other>
+    requires ConstArrayCompatible<ConstArray, Other> && (Other::size == N)
+    __device__ __host__ constexpr ConstArray& operator*=(const Other& other) {
+        for (int i = 0; i < N; ++i) {
+            data[i] *= other[i];
+        }
+        return *this;
+    }
+
+    template<ConstArrayLike Other>
+    requires ConstArrayCompatible<ConstArray, Other> && (Other::size == N)
+    __device__ __host__ constexpr ConstArray& operator/=(const Other& other) {
+        for (int i = 0; i < N; ++i) {
+            data[i] /= other[i];
+        }
+        return *this;
+    }
 };
 
-// Binary arithmetic operators for ConstArray
+// Binary arithmetic operators for ConstArray (same type)
 template <typename T, int N>
 __device__ __host__ constexpr ConstArray<T, N> operator+(const ConstArray<T, N>& lhs, const ConstArray<T, N>& rhs) {
     ConstArray<T, N> result;
@@ -98,6 +134,87 @@ __device__ __host__ constexpr ConstArray<T, N> operator*(const ConstArray<T, N>&
 
 template <typename T, int N>
 __device__ __host__ constexpr ConstArray<T, N> operator/(const ConstArray<T, N>& lhs, const ConstArray<T, N>& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] / rhs[i];
+    }
+    return result;
+}
+
+// Binary arithmetic operators for ConstArray with ConstArrayLike types
+template <typename T, int N, ConstArrayLike Other>
+requires ConstArrayCompatible<ConstArray<T, N>, Other> && (Other::size == N)
+__device__ __host__ constexpr ConstArray<T, N> operator+(const ConstArray<T, N>& lhs, const Other& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] + rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N, ConstArrayLike Other>
+requires ConstArrayCompatible<ConstArray<T, N>, Other> && (Other::size == N)
+__device__ __host__ constexpr ConstArray<T, N> operator+(const Other& lhs, const ConstArray<T, N>& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] + rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N, ConstArrayLike Other>
+requires ConstArrayCompatible<ConstArray<T, N>, Other> && (Other::size == N)
+__device__ __host__ constexpr ConstArray<T, N> operator-(const ConstArray<T, N>& lhs, const Other& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] - rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N, ConstArrayLike Other>
+requires ConstArrayCompatible<ConstArray<T, N>, Other> && (Other::size == N)
+__device__ __host__ constexpr ConstArray<T, N> operator-(const Other& lhs, const ConstArray<T, N>& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] - rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N, ConstArrayLike Other>
+requires ConstArrayCompatible<ConstArray<T, N>, Other> && (Other::size == N)
+__device__ __host__ constexpr ConstArray<T, N> operator*(const ConstArray<T, N>& lhs, const Other& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] * rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N, ConstArrayLike Other>
+requires ConstArrayCompatible<ConstArray<T, N>, Other> && (Other::size == N)
+__device__ __host__ constexpr ConstArray<T, N> operator*(const Other& lhs, const ConstArray<T, N>& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] * rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N, ConstArrayLike Other>
+requires ConstArrayCompatible<ConstArray<T, N>, Other> && (Other::size == N)
+__device__ __host__ constexpr ConstArray<T, N> operator/(const ConstArray<T, N>& lhs, const Other& rhs) {
+    ConstArray<T, N> result;
+    for (int i = 0; i < N; ++i) {
+        result[i] = lhs[i] / rhs[i];
+    }
+    return result;
+}
+
+template <typename T, int N, ConstArrayLike Other>
+requires ConstArrayCompatible<ConstArray<T, N>, Other> && (Other::size == N)
+__device__ __host__ constexpr ConstArray<T, N> operator/(const Other& lhs, const ConstArray<T, N>& rhs) {
     ConstArray<T, N> result;
     for (int i = 0; i < N; ++i) {
         result[i] = lhs[i] / rhs[i];
