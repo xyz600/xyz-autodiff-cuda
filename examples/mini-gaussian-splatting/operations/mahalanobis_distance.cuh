@@ -2,8 +2,8 @@
 
 #include <cuda_runtime.h>
 #include <cmath>
-#include "../../../include/concept/core_logic.cuh"
-#include "../../../include/operations/operation.cuh"
+#include <xyz_autodiff/concept/core_logic.cuh>
+#include <xyz_autodiff/operations/operation.cuh>
 
 namespace xyz_autodiff {
 namespace op {

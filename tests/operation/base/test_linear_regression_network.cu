@@ -1,16 +1,16 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
 #include <cmath>
-#include "../../../include/variable.cuh"
-#include "../../../include/concept/variable.cuh"
-#include "../../../include/concept/operation_node.cuh"
-#include "../../../include/operations/binary/mul_logic.cuh"
-#include "../../../include/operations/binary/add_logic.cuh"
-#include "../../../include/operations/binary/sub_logic.cuh"
-#include "../../../include/operations/unary/sub_constant_logic.cuh"
-#include "../../../include/operations/unary/squared_logic.cuh"
-#include "../../../include/operations/unary/mul_constant_logic.cuh"
-#include "../../../include/util/cuda_unique_ptr.cuh"
+#include <xyz_autodiff/variable.cuh>
+#include <xyz_autodiff/concept/variable.cuh>
+#include <xyz_autodiff/concept/operation_node.cuh>
+#include <xyz_autodiff/operations/binary/mul_logic.cuh>
+#include <xyz_autodiff/operations/binary/add_logic.cuh>
+#include <xyz_autodiff/operations/binary/sub_logic.cuh>
+#include <xyz_autodiff/operations/unary/sub_constant_logic.cuh>
+#include <xyz_autodiff/operations/unary/squared_logic.cuh>
+#include <xyz_autodiff/operations/unary/mul_constant_logic.cuh>
+#include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 
 // Include test utilities
 #include "../../utility/network_gradient_tester.cuh"

@@ -8,7 +8,7 @@
 #include "gaussian_parameters.h"
 #include "gaussian_splatting_kernel.cuh"
 #include "training_config.h"
-#include "../../include/util/cuda_unique_ptr.cuh"
+#include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 
 //using namespace xyz_autodiff;
 

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
-#include "../include/operations/math.cuh"
-#include "../include/util/cuda_unique_ptr.cuh"
+#include <xyz_autodiff/operations/math.cuh>
+#include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 
 using namespace xyz_autodiff;
 

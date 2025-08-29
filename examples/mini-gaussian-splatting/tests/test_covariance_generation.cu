@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
 #include <cmath>
-#include "../../../include/variable.cuh"
-#include "../../../include/concept/variable.cuh"
-#include "../../../include/concept/operation_node.cuh"
+#include <xyz_autodiff/variable.cuh>
+#include <xyz_autodiff/concept/variable.cuh>
+#include <xyz_autodiff/concept/operation_node.cuh>
 #include "../operations/covariance_generation.cuh"
-#include "../../../include/util/cuda_unique_ptr.cuh"
+#include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include "../../../tests/utility/binary_gradient_tester.cuh"
 #include "../../../tests/utility/unary_gradient_tester.cuh"
 

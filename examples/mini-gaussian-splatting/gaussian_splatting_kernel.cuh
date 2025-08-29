@@ -1,19 +1,19 @@
 #pragma once
 
 #include <cuda_runtime.h>
-#include "../../include/variable.cuh"
-#include "../../include/operations/binary/add_logic.cuh"
-#include "../../include/operations/binary/mul_logic.cuh"
-#include "../../include/operations/binary/sub_logic.cuh"
-#include "../../include/operations/unary/neg_logic.cuh"
-#include "../../include/operations/unary/exp_logic.cuh"
-#include "../../include/operations/unary/broadcast.cuh"
-#include "../../include/operations/unary/l1_norm_logic.cuh"
+#include <xyz_autodiff/variable.cuh>
+#include <xyz_autodiff/operations/binary/add_logic.cuh>
+#include <xyz_autodiff/operations/binary/mul_logic.cuh>
+#include <xyz_autodiff/operations/binary/sub_logic.cuh>
+#include <xyz_autodiff/operations/unary/neg_logic.cuh>
+#include <xyz_autodiff/operations/unary/exp_logic.cuh>
+#include <xyz_autodiff/operations/unary/broadcast.cuh>
+#include <xyz_autodiff/operations/unary/l1_norm_logic.cuh>
 #include "operations/covariance_generation.cuh"
 #include "operations/mahalanobis_distance.cuh"
-#include "../../include/operations/unary/sym_matrix2_inv_logic.cuh"
+#include <xyz_autodiff/operations/unary/sym_matrix2_inv_logic.cuh>
 #include "gaussian_parameters.h"
-#include "const_array.cuh"
+#include <xyz_autodiff/const_array.cuh>
 
 using namespace xyz_autodiff;
 

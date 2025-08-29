@@ -6,9 +6,9 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include "../../include/variable.cuh"
-#include "../../include/operations/operation.cuh"
-#include "../../include/util/cuda_unique_ptr.cuh"
+#include <xyz_autodiff/variable.cuh>
+#include <xyz_autodiff/operations/operation.cuh>
+#include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 
 namespace xyz_autodiff {
 namespace test {

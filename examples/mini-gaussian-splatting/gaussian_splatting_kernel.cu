@@ -1,7 +1,7 @@
 #include "gaussian_splatting_kernel.cuh"
-#include "operations/unary/sigmoid_logic.cuh"
-#include "operations/unary/const_array_sub_logic.cuh"
-#include "operations/operation.cuh"
+#include <xyz_autodiff/operations/unary/sigmoid_logic.cuh>
+#include <xyz_autodiff/operations/unary/const_array_sub_logic.cuh>
+#include <xyz_autodiff/operations/operation.cuh>
 #include <iostream>
 
 __global__ void gaussian_splatting_kernel(

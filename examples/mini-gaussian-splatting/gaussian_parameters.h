@@ -3,7 +3,7 @@
 #include <vector>
 #include <random>
 #include <cuda_runtime.h>
-#include "../../include/util/cuda_unique_ptr.cuh"
+#include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 
 namespace xyz_autodiff {}
 using namespace xyz_autodiff;

@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
 #include <vector>
-#include "../include/dense_matrix.cuh"
-#include "../include/util/cuda_unique_ptr.cuh"
-#include "concept/matrix.cuh"
-#include "concept/variable.cuh"
+#include <xyz_autodiff/dense_matrix.cuh>
+#include <xyz_autodiff/util/cuda_unique_ptr.cuh>
+#include <xyz_autodiff/concept/matrix.cuh>
+#include <xyz_autodiff/concept/variable.cuh>
 
 using namespace xyz_autodiff;
 

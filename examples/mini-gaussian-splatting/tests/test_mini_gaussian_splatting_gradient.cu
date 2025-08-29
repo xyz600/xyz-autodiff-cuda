@@ -3,22 +3,22 @@
 #include <cmath>
 #include <iostream>
 #include <random>
-#include "../../../include/variable.cuh"
-#include "../../../include/util/cuda_unique_ptr.cuh"
+#include <xyz_autodiff/variable.cuh>
+#include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 
 // Include all Gaussian splatting operations
-#include "../../../include/operations/binary/matmul_logic.cuh"
-#include "../../../include/operations/unary/neg_logic.cuh"
-#include "../../../include/operations/unary/exp_logic.cuh"
+#include <xyz_autodiff/operations/binary/matmul_logic.cuh>
+#include <xyz_autodiff/operations/unary/neg_logic.cuh>
+#include <xyz_autodiff/operations/unary/exp_logic.cuh>
 #include "../operations/mahalanobis_distance.cuh"
 #include "../operations/covariance_generation.cuh"
-#include "../../../include/operations/binary/mul_logic.cuh"
-#include "../../../include/operations/binary/add_logic.cuh"
-#include "../../../include/operations/unary/l1_norm_logic.cuh"
-#include "../../../include/operations/unary/l2_norm_logic.cuh"
-#include "../../../include/operations/unary/to_rotation_matrix_logic.cuh"
-#include "../../../include/operations/unary/broadcast.cuh"
-#include "../../../include/operations/unary/sym_matrix2_inv_logic.cuh"
+#include <xyz_autodiff/operations/binary/mul_logic.cuh>
+#include <xyz_autodiff/operations/binary/add_logic.cuh>
+#include <xyz_autodiff/operations/unary/l1_norm_logic.cuh>
+#include <xyz_autodiff/operations/unary/l2_norm_logic.cuh>
+#include <xyz_autodiff/operations/unary/to_rotation_matrix_logic.cuh>
+#include <xyz_autodiff/operations/unary/broadcast.cuh>
+#include <xyz_autodiff/operations/unary/sym_matrix2_inv_logic.cuh>
 
 using namespace xyz_autodiff;
 
