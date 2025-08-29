@@ -63,11 +63,14 @@ __global__ void gaussian_splatting_kernel(
         pixel_out[1] += weighted_color[1];
         pixel_out[2] += weighted_color[2];
     }
+    output_image[pixel_idx] = pixel_out;
     
-    PixelOutput target_color{};
-    target_color[0] = target_image[pixel_idx][0];
-    target_color[1] = target_image[pixel_idx][1];
-    target_color[2] = target_image[pixel_idx][2];
+    PixelOutput target_color = target_image[pixel_idx];
+
+    // Accumulate this Gaussian's L1 loss to the global total using atomic add
+    atomicAdd(total_loss, abs(pixel_out[0] - target_color[0]));
+    atomicAdd(total_loss, abs(pixel_out[1] - target_color[1]));
+    atomicAdd(total_loss, abs(pixel_out[2] - target_color[2]));
     
     // Compute gradients for each Gaussian using L1 norm automatic differentiation
     for (int g = 0; g < num_gaussians; g++) {
@@ -98,7 +101,10 @@ __global__ void gaussian_splatting_kernel(
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
-        const auto rest_sum = target_color - pixel_out;
+        auto rest_sum = target_color - pixel_out;
+        rest_sum[0] += weighted_color[0];
+        rest_sum[1] += weighted_color[1];
+        rest_sum[2] += weighted_color[2];
 
         // Build full L1 loss computation graph for this Gaussian
         auto color_diff = weighted_color - rest_sum;
@@ -106,9 +112,6 @@ __global__ void gaussian_splatting_kernel(
         
         // Run complete forward and backward pass
         l1_loss.run();
-        
-        // Accumulate this Gaussian's L1 loss to the global total using atomic add
-        atomicAdd(total_loss, l1_loss[0]);
     }
 }
 

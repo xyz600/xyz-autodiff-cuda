@@ -160,7 +160,7 @@ public:
             auto end_time = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
             
-            const auto average_loss = total_loss / (target_image.height * target_image.width * 3);
+            const auto average_loss = total_loss / (target_image.height * target_image.width);
             // Print progress
             if (iteration % 10 == 0) {
                 std::cout << "Iteration " << std::setw(4) << iteration 
