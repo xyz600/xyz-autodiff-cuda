@@ -41,3 +41,9 @@
 *.dwo
 
 build
+
+# Data files
+data/
+output/
+
+*.ptx

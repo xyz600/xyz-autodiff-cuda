@@ -306,6 +306,84 @@ public:
     }
 };
 
+// カスタムロジック用カーネル関数（Logic instanceをパラメータで受け取る）
+template <typename LogicType, std::size_t In1Dim, std::size_t In2Dim, std::size_t OutDim>
+__global__ void test_binary_gradient_kernel_custom(
+    BinaryGradientTestBuffers<double, In1Dim, In2Dim, OutDim>* buffers, 
+    LogicType logic,
+    double delta) {
+    
+    using T = double;
+    
+    // Variable作成
+    VariableRef<In1Dim, T> input1_var(buffers->input1_data, buffers->input1_grad);
+    VariableRef<In2Dim, T> input2_var(buffers->input2_data, buffers->input2_grad);
+    
+    // 解析的勾配計算
+    {
+        // 入力勾配をクリア
+        for (std::size_t i = 0; i < In1Dim; ++i) {
+            buffers->input1_grad[i] = T(0);
+        }
+        for (std::size_t i = 0; i < In2Dim; ++i) {
+            buffers->input2_grad[i] = T(0);
+        }
+        
+        auto op = BinaryOperation<OutDim, LogicType, VariableRef<In1Dim, T>, VariableRef<In2Dim, T>>(
+            logic, input1_var, input2_var);
+        
+        op.forward();
+        
+        // 上流勾配設定
+        op.zero_grad();
+        for (std::size_t i = 0; i < OutDim; ++i) {
+            op.add_grad(i, buffers->output_grad[i]);
+        }
+        
+        op.backward();
+        
+        // 結果保存
+        for (std::size_t i = 0; i < In1Dim; ++i) {
+            buffers->analytical_grad1[i] = input1_var.grad(i);
+        }
+        for (std::size_t i = 0; i < In2Dim; ++i) {
+            buffers->analytical_grad2[i] = input2_var.grad(i);
+        }
+    }
+    
+    // 数値的勾配計算
+    {
+        // 入力勾配をクリア
+        for (std::size_t i = 0; i < In1Dim; ++i) {
+            buffers->input1_grad[i] = T(0);
+        }
+        for (std::size_t i = 0; i < In2Dim; ++i) {
+            buffers->input2_grad[i] = T(0);
+        }
+        
+        auto op = BinaryOperation<OutDim, LogicType, VariableRef<In1Dim, T>, VariableRef<In2Dim, T>>(
+            logic, input1_var, input2_var);
+        
+        op.forward();
+        
+        // 上流勾配設定
+        op.zero_grad();
+        for (std::size_t i = 0; i < OutDim; ++i) {
+            op.add_grad(i, buffers->output_grad[i]);
+        }
+        
+        op.backward_numerical(delta);
+        
+        // 結果保存
+        for (std::size_t i = 0; i < In1Dim; ++i) {
+            buffers->numerical_grad1[i] = input1_var.grad(i);
+        }
+        for (std::size_t i = 0; i < In2Dim; ++i) {
+            buffers->numerical_grad2[i] = input2_var.grad(i);
+        }
+    }
+}
+
 // 便利なマクロ定義
 #define TEST_BINARY_GRADIENT(LogicType, Input1Dim, Input2Dim, OutputDim, TestName) \
     TEST(GradientTest, TestName) { \

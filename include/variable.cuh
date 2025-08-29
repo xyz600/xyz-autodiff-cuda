@@ -196,6 +196,8 @@ public:
 #include "operations/unary/sub_constant_logic.cuh"
 #include "operations/unary/mul_constant_logic.cuh"
 #include "operations/unary/div_constant_logic.cuh"
+#include "operations/unary/const_array_add_logic.cuh"
+#include "operations/unary/const_array_sub_logic.cuh"
 #include "operations/binary/add_logic.cuh"
 #include "operations/binary/sub_logic.cuh"
 #include "operations/binary/mul_logic.cuh"
@@ -251,6 +253,19 @@ template <DifferentiableVariableConcept Var1, DifferentiableVariableConcept Var2
 requires (Var1::size == Var2::size) && std::same_as<typename Var1::value_type, typename Var2::value_type>
 __device__ auto operator/(Var1& var1, Var2& var2) {
     return op::div(var1, var2);
+}
+
+// Const array operators: Variable + const array
+template <DifferentiableVariableConcept Var, typename ConstArray>
+requires op::ArrayLikeConcept<ConstArray>
+__device__ auto operator+(Var& var, const ConstArray& const_array) {
+    return op::const_add(var, const_array);
+}
+
+template <DifferentiableVariableConcept Var, typename ConstArray>
+requires op::ArrayLikeConcept<ConstArray>
+__device__ auto operator-(Var& var, const ConstArray& const_array) {
+    return op::const_sub(var, const_array);
 }
 
 } // namespace xyz_autodiff

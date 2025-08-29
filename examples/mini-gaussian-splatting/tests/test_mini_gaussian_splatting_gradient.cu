@@ -60,7 +60,9 @@ __global__ void mini_gaussian_splatting_gradient_kernel(
     VariableRef<1, double> rotation(params->gaussian_rotation, params->rotation_grad);
     VariableRef<3, double> color(params->gaussian_color, params->color_grad);
     VariableRef<1, double> opacity(params->gaussian_opacity, params->opacity_grad);
-    VariableRef<2, double> query_point(params->query_point, params->query_grad);
+    // query_point is now used as constant values
+    double query_x = params->query_point[0];
+    double query_y = params->query_point[1];
     
     // Step 1: Generate covariance matrix from scale and rotation
     auto covariance = op::scale_rotation_to_covariance_3param(scale, rotation);
@@ -68,8 +70,9 @@ __global__ void mini_gaussian_splatting_gradient_kernel(
     // Step 2: Compute inverse covariance matrix
     auto inv_covariance = op::sym_matrix2_inv(covariance);
     
-    // Step 3: Compute Mahalanobis distance
-    auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(query_point, center, inv_covariance);
+    // Step 3: Compute Mahalanobis distance (using constant query point values)
+    auto mahalanobis_dist_sq = op::mahalanobis_distance_with_center(
+        query_x, query_y, center, inv_covariance);
     
     // Step 4: Compute Gaussian value: exp(-0.5 * distance^2)
     auto scaled_distance = mahalanobis_dist_sq * 0.5;

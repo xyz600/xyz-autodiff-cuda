@@ -33,7 +33,12 @@ target_link_libraries(xyz_autodiff
         CUDA::cudart
 )
 
-# INTERFACEライブラリにはset_target_propertiesは不要
+# Add global CUDA compilation options for all targets
+target_compile_options(xyz_autodiff
+    INTERFACE
+        $<$<COMPILE_LANGUAGE:CUDA>:--ptxas-options=-v>
+        $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
+)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)

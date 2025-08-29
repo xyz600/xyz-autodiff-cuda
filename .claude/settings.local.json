@@ -72,8 +72,35 @@
       "Bash(./debug_duplicate_add)",
       "Bash(./tests/test_norm_operations_gradient:*)",
       "Bash(./tests/test_matmul_operations_gradient:*)",
-      "Bash(./tests/test_matrix_multiplication)"
+      "Bash(./tests/test_matrix_multiplication)",
+      "Bash(pkg-config:*)",
+      "Bash(curl:*)",
+      "Bash(./examples/mini-gaussian-splatting/gaussian_splatting_training:*)",
+      "Bash(./examples/mini-gaussian-splatting/test_single_pixel:*)",
+      "Bash(./examples/mini-gaussian-splatting/test_simple_gaussian:*)",
+      "Bash(./examples/mini-gaussian-splatting/test_fixed_kernel:*)",
+      "WebFetch(domain:massedcompute.com)",
+      "Bash(chmod:*)",
+      "Bash(./optimized_build_test.sh:*)",
+      "Bash(task ptx:kernel-only:*)",
+      "Bash(task ptx:register-benchmark:*)",
+      "Bash(./analyze_registers.sh:*)",
+      "Bash(task ptx)",
+      "Bash(./tests/test_sum_operations_gradient:*)",
+      "Bash(./tests/test_const_array_operations:*)",
+      "Bash(./debug_operators)",
+      "Bash(./tests/test_const_array_concepts:*)",
+      "Bash(./tests/test_add_constant_operations_gradient:*)",
+      "Bash(./tests/test_sub_constant_operations_gradient:*)",
+      "Bash(./tests/test_binary_operations_gradient:*)",
+      "Bash(timeout:*)",
+      "Bash(./debug_gradients)",
+      "Bash(./build/debug/debug_gradients)",
+      "Bash(./build/debug/examples/mini-gaussian-splatting/gaussian_splatting_training:*)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "/usr"
+    ]
   }
 }

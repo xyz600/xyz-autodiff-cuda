@@ -23,3 +23,132 @@ tasks:
     cmds:
       - task: build:debug
       - cd build/debug && ctest --output-on-failure -j16
+
+  ptx:
+    desc: "Generate PTX with various optimization levels and analyze register usage"
+    dir: examples/mini-gaussian-splatting
+    cmds:
+      - |
+        echo "=========================================="
+        echo "     CUDA PTX Generation & Analysis"
+        echo "=========================================="
+        echo ""
+        
+        # Clean previous files
+        rm -f *.ptx
+        
+        # Define optimization configurations
+        declare -a configs=(
+          "O3:-O3 -arch=sm_89 --ptxas-options=-v"
+          "fast:-O3 -use_fast_math -arch=sm_89 --ptxas-options=-v"
+          "fast2:-O3 -use_fast_math -arch=sm_89 -maxrregcount=128 --ptxas-options=-v"
+        )
+        
+        echo "Compiling kernel with different optimization levels..."
+        echo ""
+        
+        for config in "${configs[@]}"; do
+          name=${config%%:*}
+          flags=${config#*:}
+          echo "--- Building: $name ---"
+          nvcc -std=c++20 -ptx $flags \
+            -I../../include -I. -I./external \
+            gaussian_splatting_kernel.cu \
+            -o kernel_$name.ptx 2>&1 | grep -E "(Used|registers|bytes|spill|Function properties)" || echo "  Build completed"
+          echo ""
+        done
+      - |
+        echo "=========================================="
+        echo "        Register Usage Analysis"
+        echo "=========================================="
+        echo ""
+        printf "%-12s | %-7s | %-5s | %-5s | %-4s | %-8s | %-8s\n" "Config" "Float32" "Int32" "Int64" "Pred" "LocalMem" "FileSize"
+        printf "%-12s-+-%-7s-+-%-5s-+-%-5s-+-%-4s-+-%-8s-+-%-8s\n" "------------" "-------" "-----" "-----" "----" "--------" "--------"
+        
+        for config in O3 fast fast2; do
+          file="kernel_$config.ptx"
+          if [ -f "$file" ]; then
+            f32=$(grep -o '%f<[0-9]*>' "$file" | grep -o '[0-9]*' | sort -n | tail -1 || echo '0')
+            i32=$(grep -o '%r<[0-9]*>' "$file" | grep -o '[0-9]*' | sort -n | tail -1 || echo '0')
+            i64=$(grep -o '%rd<[0-9]*>' "$file" | grep -o '[0-9]*' | sort -n | tail -1 || echo '0')
+            pred=$(grep -o '%p<[0-9]*>' "$file" | grep -o '[0-9]*' | sort -n | tail -1 || echo '0')
+            local=$(grep '\.local.*\[' "$file" | grep -o '\[[0-9]*\]' | grep -o '[0-9]*' | head -1 || echo '0')
+            size=$(ls -lh "$file" | awk '{print $5}')
+            printf "%-12s | %-7s | %-5s | %-5s | %-4s | %-8s | %-8s\n" "$config" "$f32" "$i32" "$i64" "$pred" "$local" "$size"
+          else
+            printf "%-12s | %-7s | %-5s | %-5s | %-4s | %-8s | %-8s\n" "$config" "FAILED" "-" "-" "-" "-" "-"
+          fi
+        done
+      - |
+        echo ""
+        echo "=========================================="
+        echo "      Instruction Analysis"
+        echo "=========================================="
+        echo ""
+        printf "%-12s | %-5s | %-4s | %-4s | %-4s | %-6s | %-4s\n" "Config" "Lines" "FMA" "MUL" "ADD" "APPROX" "TRAP"
+        printf "%-12s-+-%-5s-+-%-4s-+-%-4s-+-%-4s-+-%-6s-+-%-4s\n" "------------" "-----" "----" "----" "----" "------" "----"
+        
+        for config in O3 fast fast2; do
+          file="kernel_$config.ptx"
+          if [ -f "$file" ]; then
+            lines=$(wc -l < "$file")
+            fma=$(grep -c "fma\." "$file" || echo '0')
+            mul=$(grep -c "mul\." "$file" || echo '0')
+            add=$(grep -c "add\." "$file" || echo '0')
+            approx=$(grep -c "\.approx" "$file" || echo '0')
+            trap=$(grep -c "trap" "$file" || echo '0')
+            printf "%-12s | %-5s | %-4s | %-4s | %-4s | %-6s | %-4s\n" "$config" "$lines" "$fma" "$mul" "$add" "$approx" "$trap"
+          else
+            printf "%-12s | %-5s | %-4s | %-4s | %-4s | %-6s | %-4s\n" "$config" "-" "-" "-" "-" "-" "-"
+          fi
+        done
+      - |
+        echo ""
+        echo "=========================================="
+        echo "         Optimization Summary"
+        echo "=========================================="
+        echo ""
+        
+        # Find the most optimized version (lowest register count)
+        best_f32=999
+        best_config=""
+        for config in O3 fast fast2; do
+          file="kernel_$config.ptx"
+          if [ -f "$file" ]; then
+            f32=$(grep -o '%f<[0-9]*>' "$file" | grep -o '[0-9]*' | sort -n | tail -1 || echo '999')
+            if [ "$f32" -lt "$best_f32" ]; then
+              best_f32=$f32
+              best_config=$config
+            fi
+          fi
+        done
+        
+        echo "Best optimized configuration: $best_config (Float32 registers: $best_f32)"
+        echo ""
+        echo "Key improvements from 'none' to '$best_config':"
+        
+        if [ -f "kernel_none.ptx" ] && [ -f "kernel_$best_config.ptx" ]; then
+          none_f32=$(grep -o '%f<[0-9]*>' "kernel_none.ptx" | grep -o '[0-9]*' | sort -n | tail -1 || echo '0')
+          best_f32=$(grep -o '%f<[0-9]*>' "kernel_$best_config.ptx" | grep -o '[0-9]*' | sort -n | tail -1 || echo '0')
+          reduction=$(echo "scale=1; 100 * (1 - $best_f32 / $none_f32)" | bc -l 2>/dev/null || echo "N/A")
+          echo "  Float32 register reduction: $none_f32 → $best_f32 ($reduction%)"
+          
+          none_local=$(grep '\.local.*\[' "kernel_none.ptx" | grep -o '\[[0-9]*\]' | grep -o '[0-9]*' | head -1 || echo '0')
+          best_local=$(grep '\.local.*\[' "kernel_$best_config.ptx" | grep -o '\[[0-9]*\]' | grep -o '[0-9]*' | head -1 || echo '0')
+          echo "  Local memory reduction: $none_local → $best_local bytes"
+          
+          none_approx=$(grep -c "\.approx" "kernel_none.ptx" || echo '0')
+          best_approx=$(grep -c "\.approx" "kernel_$best_config.ptx" || echo '0')
+          echo "  Approximation instructions added: $none_approx → $best_approx"
+        fi
+        
+        echo ""
+        echo "Generated PTX files: kernel_*.ptx"
+        echo "Use 'task ptx:clean' to remove generated files"
+
+  ptx:clean:
+    desc: "Clean generated PTX files"  
+    dir: examples/mini-gaussian-splatting
+    cmds:
+      - rm -f *.ptx
+      - echo "PTX files cleaned"

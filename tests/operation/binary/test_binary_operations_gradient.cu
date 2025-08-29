@@ -8,6 +8,7 @@
 #include "../../../include/operations/binary/sub_logic.cuh"
 #include "../../../include/operations/binary/mul_logic.cuh"
 #include "../../../include/operations/binary/div_logic.cuh"
+#include "../../../examples/mini-gaussian-splatting/operations/mahalanobis_distance.cuh"
 #include "../../../include/util/cuda_unique_ptr.cuh"
 #include "../../utility/binary_gradient_tester.cuh"
 
@@ -139,4 +140,90 @@ TEST_F(BinaryOperationsGradientTest, MulGradientVerification1D) {
         -2.0,    // input_min
         2.0      // input_max
     );
+}
+
+// Test the new MahalanobisDistanceWithCenterLogic with random tests
+TEST_F(BinaryOperationsGradientTest, MahalanobisDistanceWithCenterGradientVerification) {
+    // Custom test using template specialization for logic with constructor parameters
+    
+    const int num_tests = 30;
+    const double tolerance = 1e-5;
+    const double delta = 1e-6;
+    const double input_min = 0.1;
+    const double input_max = 3.0;
+    
+    std::random_device rd;
+    std::mt19937 gen(42);  // fixed seed for reproducibility
+    std::uniform_real_distribution<double> dist(input_min, input_max);
+    
+    int passed_tests = 0;
+    double max_error = 0.0;
+    std::string max_error_location;
+    
+    for (int test_idx = 0; test_idx < num_tests; ++test_idx) {
+        // Generate random query point for this test
+        double query_x = dist(gen);
+        double query_y = dist(gen);
+        
+        using Logic = op::MahalanobisDistanceWithCenterLogic<VariableRef<2, double>, VariableRef<3, double>>;
+        Logic logic(query_x, query_y);
+        
+        // Run gradient test with this specific logic instance
+        auto device_buffers = makeCudaUnique<test::BinaryGradientTestBuffers<double, 2, 3, 1>>();
+        
+        // Initialize random inputs
+        double center_data[2] = {dist(gen), dist(gen)};
+        double inv_cov_data[3] = {
+            dist(gen) + 1.0,  // ensure positive definite
+            dist(gen) * 0.5,  // small off-diagonal
+            dist(gen) + 1.0   // ensure positive definite
+        };
+        
+        cudaMemcpy(device_buffers.get()->input1_data, center_data, 2 * sizeof(double), cudaMemcpyHostToDevice);
+        cudaMemcpy(device_buffers.get()->input2_data, inv_cov_data, 3 * sizeof(double), cudaMemcpyHostToDevice);
+        
+        // Set output gradient
+        double output_grad = 1.0;
+        cudaMemcpy(device_buffers.get()->output_grad, &output_grad, sizeof(double), cudaMemcpyHostToDevice);
+        
+        // Run kernel with custom logic
+        test::test_binary_gradient_kernel_custom<Logic, 2, 3, 1><<<1, 1>>>(
+            device_buffers.get(), logic, delta);
+        cudaDeviceSynchronize();
+        
+        // Check results
+        test::BinaryGradientTestBuffers<double, 2, 3, 1> host_buffers;
+        cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(host_buffers), cudaMemcpyDeviceToHost);
+        
+        // Validate gradients
+        bool test_passed = true;
+        for (int i = 0; i < 2; ++i) {
+            double error = std::abs(host_buffers.analytical_grad1[i] - host_buffers.numerical_grad1[i]);
+            if (error > tolerance) {
+                test_passed = false;
+            }
+            max_error = std::max(max_error, error);
+        }
+        for (int i = 0; i < 3; ++i) {
+            double error = std::abs(host_buffers.analytical_grad2[i] - host_buffers.numerical_grad2[i]);
+            if (error > tolerance) {
+                test_passed = false;
+            }
+            max_error = std::max(max_error, error);
+        }
+        
+        if (test_passed) {
+            passed_tests++;
+        }
+    }
+    
+    std::cout << "=== GRADIENT TEST SUMMARY for MahalanobisDistanceWithCenter ===" << std::endl;
+    std::cout << "Number of tests: " << num_tests << std::endl;
+    std::cout << "Tolerance: " << tolerance << std::endl;
+    std::cout << "Delta: " << delta << std::endl;
+    std::cout << "Maximum error: " << max_error << std::endl;
+    std::cout << "Passed tests: " << passed_tests << "/" << num_tests << std::endl;
+    std::cout << "=========================================" << std::endl;
+    
+    EXPECT_EQ(passed_tests, num_tests) << "MahalanobisDistanceWithCenter gradient verification failed";
 }
