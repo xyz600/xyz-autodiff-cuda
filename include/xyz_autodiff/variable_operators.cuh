@@ -1,6 +1,6 @@
 #pragma once
 
-#include <xyz_autodiff/variable.cuh>
+#include <xyz_autodiff/concept/variable.cuh>
 #include <xyz_autodiff/operations/binary/add_logic.cuh>
 #include <xyz_autodiff/operations/binary/sub_logic.cuh>
 #include <xyz_autodiff/operations/binary/mul_logic.cuh>

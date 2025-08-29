@@ -1,5 +1,43 @@
 # Claude Development Notes
 
+## Include Rules (CRITICAL)
+
+### Mandatory Include Constraints
+1. **ALL #include statements MUST be at the file beginning (after #pragma once)**
+2. **NO #include statements anywhere else in the file**
+3. **If circular dependencies occur, split files instead of moving includes**
+4. **Use forward declarations when possible to reduce dependencies**
+5. **Include order: system headers → project headers → operation headers**
+
+### File Structure Guidelines
+- `variable.cuh`: Core Variable classes only, no operators
+- `variable_operators.cuh`: Operator overloads that use Variable concepts
+- Split large headers if they cause circular dependencies
+- Keep operation logic in separate `*_logic.cuh` files
+
+### Example Bad Practice (FORBIDDEN):
+```cpp
+class Variable {
+    // class definition
+};
+} // namespace
+
+// BAD: Include at end of file - NEVER DO THIS
+#include "some_header.cuh"  
+```
+
+### Example Good Practice:
+```cpp
+#pragma once
+// ALL includes at the top
+#include <system_headers>
+#include <project_headers>
+
+namespace xyz_autodiff {
+// class definitions
+}
+```
+
 ## Build Commands
 
 ### Clean Build

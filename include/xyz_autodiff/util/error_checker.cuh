@@ -1,6 +1,9 @@
+#pragma once
+
 #include <stdexcept>
 #include <sstream>
 #include <cuda_runtime_api.h>
+
 namespace cuda
 {
 	template<typename F, typename N>

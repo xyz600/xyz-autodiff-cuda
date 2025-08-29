@@ -190,19 +190,3 @@ public:
 };
 
 } // namespace xyz_autodiff
-
-// Operation includes at the end to avoid circular dependencies
-#include <xyz_autodiff/operations/binary/add_logic.cuh>
-#include <xyz_autodiff/operations/binary/sub_logic.cuh>
-#include <xyz_autodiff/operations/binary/mul_logic.cuh>
-#include <xyz_autodiff/operations/binary/div_logic.cuh>
-#include <xyz_autodiff/operations/unary/add_constant_logic.cuh>
-#include <xyz_autodiff/operations/unary/sub_constant_logic.cuh>
-#include <xyz_autodiff/operations/unary/mul_constant_logic.cuh>
-#include <xyz_autodiff/operations/unary/div_constant_logic.cuh>
-#include <xyz_autodiff/operations/unary/const_array_add_logic.cuh>
-#include <xyz_autodiff/operations/unary/const_array_sub_logic.cuh>
-#include <xyz_autodiff/operations/unary/const_array_concepts.cuh>
-
-// Include operator overloads after all operations are defined
-#include <xyz_autodiff/variable_operators.cuh>
