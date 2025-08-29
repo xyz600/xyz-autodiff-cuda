@@ -1,8 +1,74 @@
 #include <gtest/gtest.h>
 #include "../include/const_array.cuh"
+#include "../include/variable.cuh"
 #include "../include/util/cuda_unique_ptr.cuh"
 
 using namespace xyz_autodiff;
+
+// Test ConstArrayLike compatible structure (forward declare for static_assert)
+template<typename T, int N>
+struct SimpleArray {
+    using value_type = T;
+    static constexpr std::size_t size = N;
+    T values[N];
+    
+    __device__ __host__ constexpr SimpleArray() = default;
+    
+    __device__ __host__ constexpr SimpleArray(T val) {
+        for (int i = 0; i < N; ++i) {
+            values[i] = val;
+        }
+    }
+    
+    __device__ __host__ constexpr T& operator[](std::size_t index) {
+        return values[index];
+    }
+    
+    __device__ __host__ constexpr const T& operator[](std::size_t index) const {
+        return values[index];
+    }
+};
+
+// Static assert tests for concept compliance
+namespace concept_tests {
+    // Test that ConstArray satisfies ConstArrayLike
+    static_assert(ConstArrayLike<ConstArray<float, 3>>, "ConstArray should satisfy ConstArrayLike");
+    static_assert(ConstArrayLike<ConstArray<double, 5>>, "ConstArray should satisfy ConstArrayLike");
+    
+    // Test that SimpleArray satisfies ConstArrayLike  
+    static_assert(ConstArrayLike<SimpleArray<float, 3>>, "SimpleArray should satisfy ConstArrayLike");
+    static_assert(ConstArrayLike<SimpleArray<double, 5>>, "SimpleArray should satisfy ConstArrayLike");
+    
+    // Test that Variable and VariableRef satisfy ConstArrayLike
+    static_assert(ConstArrayLike<Variable<3, float>>, "Variable should satisfy ConstArrayLike");
+    static_assert(ConstArrayLike<Variable<5, double>>, "Variable should satisfy ConstArrayLike");
+    static_assert(ConstArrayLike<VariableRef<3, float>>, "VariableRef should satisfy ConstArrayLike");
+    static_assert(ConstArrayLike<VariableRef<5, double>>, "VariableRef should satisfy ConstArrayLike");
+    
+    // Test ConstArrayCompatible between different types with same value_type
+    static_assert(ConstArrayCompatible<ConstArray<float, 3>, SimpleArray<float, 3>>, 
+                  "ConstArray and SimpleArray with same type should be compatible");
+    static_assert(ConstArrayCompatible<ConstArray<float, 3>, Variable<3, float>>, 
+                  "ConstArray and Variable with same type should be compatible");
+    static_assert(ConstArrayCompatible<ConstArray<float, 3>, VariableRef<3, float>>, 
+                  "ConstArray and VariableRef with same type should be compatible");
+    static_assert(ConstArrayCompatible<Variable<3, float>, VariableRef<3, float>>, 
+                  "Variable and VariableRef with same type should be compatible");
+    
+    // Test ConstArraySameSize
+    static_assert(ConstArraySameSize<ConstArray<float, 3>, SimpleArray<float, 3>>, 
+                  "ConstArray and SimpleArray with same size should have same size");
+    static_assert(ConstArraySameSize<ConstArray<float, 3>, Variable<3, float>>, 
+                  "ConstArray and Variable with same size should have same size");
+    static_assert(ConstArraySameSize<ConstArray<float, 3>, VariableRef<3, float>>, 
+                  "ConstArray and VariableRef with same size should have same size");
+    
+    // Test that incompatible types are rejected
+    static_assert(!ConstArrayCompatible<ConstArray<float, 3>, ConstArray<double, 3>>, 
+                  "ConstArrays with different value_types should not be compatible");
+    static_assert(!ConstArraySameSize<ConstArray<float, 3>, ConstArray<float, 5>>, 
+                  "ConstArrays with different sizes should not have same size");
+}
 
 class ConstArrayTest : public ::testing::Test {
 protected:
@@ -24,7 +90,7 @@ __global__ void test_const_array_kernel(float* result) {
     result[0] = arr[0];
     result[1] = arr[1];
     result[2] = arr[2];
-    result[3] = static_cast<float>(arr.size());
+    result[3] = static_cast<float>(ConstArray<float, 3>::size);
 }
 
 __global__ void test_const_array_initialization_kernel(float* result) {
@@ -70,6 +136,31 @@ __global__ void test_const_array_operators_kernel(float* result) {
     result[6] = arr3[0];
     result[7] = arr3[1];
     result[8] = arr3[2];
+}
+
+__global__ void test_const_array_like_kernel(float* result) {
+    const float init_data[3] = {100.0f, 200.0f, 300.0f};
+    ConstArray<float, 3> arr1(init_data);
+    SimpleArray<float, 3> simple_arr(50.0f);  // All values set to 50.0f
+    
+    // Test ConstArray += ConstArrayLike
+    arr1 += simple_arr;  // [100, 200, 300] += [50, 50, 50] = [150, 250, 350]
+    result[0] = arr1[0];
+    result[1] = arr1[1];
+    result[2] = arr1[2];
+    
+    // Test ConstArray - ConstArrayLike
+    auto diff = arr1 - simple_arr;  // [150, 250, 350] - [50, 50, 50] = [100, 200, 300]
+    result[3] = diff[0];
+    result[4] = diff[1];
+    result[5] = diff[2];
+    
+    // Test ConstArrayLike + ConstArray
+    SimpleArray<float, 3> simple_arr2(10.0f);
+    auto sum = simple_arr2 + arr1;  // [10, 10, 10] + [150, 250, 350] = [160, 260, 360]
+    result[6] = sum[0];
+    result[7] = sum[1];
+    result[8] = sum[2];
 }
 
 TEST_F(ConstArrayTest, BasicOperations) {
@@ -135,7 +226,8 @@ TEST_F(ConstArrayTest, HostOperations) {
     EXPECT_EQ(arr[1], 20);
     EXPECT_EQ(arr[2], 30);
     EXPECT_EQ(arr[3], 40);
-    EXPECT_EQ(arr.size(), 4);
+    constexpr auto expected_size = ConstArray<int, 4>::size;
+    EXPECT_EQ(expected_size, 4);
 }
 
 TEST_F(ConstArrayTest, HostInitialization) {
@@ -147,7 +239,8 @@ TEST_F(ConstArrayTest, HostInitialization) {
     EXPECT_EQ(arr[2], 3);
     EXPECT_EQ(arr[3], 4);
     EXPECT_EQ(arr[4], 5);
-    EXPECT_EQ(arr.size(), 5);
+    constexpr auto expected_size_5 = ConstArray<int, 5>::size;
+    EXPECT_EQ(expected_size_5, 5);
 }
 
 TEST_F(ConstArrayTest, ArithmeticOperators) {
@@ -208,4 +301,57 @@ TEST_F(ConstArrayTest, HostArithmeticOperators) {
     EXPECT_FLOAT_EQ(sum[0], 20.0f);
     EXPECT_FLOAT_EQ(sum[1], 50.0f);
     EXPECT_FLOAT_EQ(sum[2], 80.0f);
+}
+
+TEST_F(ConstArrayTest, ConstArrayLikeOperators) {
+    struct TestBuffers {
+        float result[9];
+    };
+    auto device_buffers = makeCudaUnique<TestBuffers>();
+    
+    test_const_array_like_kernel<<<1, 1>>>(device_buffers->result);
+    cudaDeviceSynchronize();
+    
+    TestBuffers host_buffers;
+    cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(TestBuffers), cudaMemcpyDeviceToHost);
+    
+    // Test ConstArray += ConstArrayLike: [100, 200, 300] += [50, 50, 50] = [150, 250, 350]
+    EXPECT_FLOAT_EQ(host_buffers.result[0], 150.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[1], 250.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[2], 350.0f);
+    
+    // Test ConstArray - ConstArrayLike: [150, 250, 350] - [50, 50, 50] = [100, 200, 300]
+    EXPECT_FLOAT_EQ(host_buffers.result[3], 100.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[4], 200.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[5], 300.0f);
+    
+    // Test ConstArrayLike + ConstArray: [10, 10, 10] + [150, 250, 350] = [160, 260, 360]
+    EXPECT_FLOAT_EQ(host_buffers.result[6], 160.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[7], 260.0f);
+    EXPECT_FLOAT_EQ(host_buffers.result[8], 360.0f);
+}
+
+TEST_F(ConstArrayTest, HostConstArrayLikeOperators) {
+    ConstArray<float, 3> arr1;
+    arr1[0] = 100.0f; arr1[1] = 200.0f; arr1[2] = 300.0f;
+    
+    SimpleArray<float, 3> simple_arr(25.0f);
+    
+    // Test compound assignment with ConstArrayLike
+    arr1 += simple_arr;  // [100, 200, 300] += [25, 25, 25] = [125, 225, 325]
+    EXPECT_FLOAT_EQ(arr1[0], 125.0f);
+    EXPECT_FLOAT_EQ(arr1[1], 225.0f);
+    EXPECT_FLOAT_EQ(arr1[2], 325.0f);
+    
+    // Test binary operations between different ConstArrayLike types
+    auto diff = arr1 - simple_arr;  // [125, 225, 325] - [25, 25, 25] = [100, 200, 300]
+    EXPECT_FLOAT_EQ(diff[0], 100.0f);
+    EXPECT_FLOAT_EQ(diff[1], 200.0f);
+    EXPECT_FLOAT_EQ(diff[2], 300.0f);
+    
+    SimpleArray<float, 3> simple_arr2(5.0f);
+    auto sum = simple_arr2 + arr1;  // [5, 5, 5] + [125, 225, 325] = [130, 230, 330]
+    EXPECT_FLOAT_EQ(sum[0], 130.0f);
+    EXPECT_FLOAT_EQ(sum[1], 230.0f);
+    EXPECT_FLOAT_EQ(sum[2], 330.0f);
 }

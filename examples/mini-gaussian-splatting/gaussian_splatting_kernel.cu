@@ -57,11 +57,7 @@ __global__ void gaussian_splatting_kernel(
 
         // Run forward pass only
         weighted_color.forward();
-
-        // Accumulate to total color
-        pixel_out[0] += weighted_color[0];
-        pixel_out[1] += weighted_color[1];
-        pixel_out[2] += weighted_color[2];
+        pixel_out += weighted_color;
     }
     output_image[pixel_idx] = pixel_out;
     
@@ -101,10 +97,9 @@ __global__ void gaussian_splatting_kernel(
         auto gauss_broadcast = op::broadcast<3>(weighted_gauss);
         auto weighted_color = color * gauss_broadcast;
         
+        // extract contribution of weighted_color
         auto rest_sum = target_color - pixel_out;
-        rest_sum[0] += weighted_color[0];
-        rest_sum[1] += weighted_color[1];
-        rest_sum[2] += weighted_color[2];
+        rest_sum += weighted_color;
 
         // Build full L1 loss computation graph for this Gaussian
         auto color_diff = weighted_color - rest_sum;

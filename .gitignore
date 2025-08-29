@@ -47,3 +47,5 @@ data/
 output/
 
 *.ptx
+
+.claude
