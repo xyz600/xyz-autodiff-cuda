@@ -15,6 +15,7 @@ void TrainingConfig::print() const {
     std::cout << "Training parameters:" << std::endl;
     std::cout << "  Max iterations: " << max_iterations << std::endl;
     std::cout << "  Save interval:  " << save_interval << std::endl;
+    std::cout << "  Num gaussians:  " << num_gaussians << std::endl;
     std::cout << "Adam optimizer:" << std::endl;
     std::cout << "  Beta1:    " << beta1 << std::endl;
     std::cout << "  Beta2:    " << beta2 << std::endl;
@@ -53,6 +54,8 @@ TrainingConfig TrainingConfigParser::parse(int argc, char** argv) {
                 config.max_iterations = std::atoi(argv[++arg_index]);
             } else if (arg == "--save-interval" && arg_index + 1 < argc) {
                 config.save_interval = std::atoi(argv[++arg_index]);
+            } else if (arg == "--num-gaussians" && arg_index + 1 < argc) {
+                config.num_gaussians = std::atoi(argv[++arg_index]);
             } else if (arg == "--no-save-images") {
                 config.save_images = false;
             } else if (arg == "--beta1" && arg_index + 1 < argc) {
@@ -97,6 +100,7 @@ void TrainingConfigParser::print_usage(const char* program_name) {
     std::cout << "  --target PATH              Target image file path (required)" << std::endl;
     std::cout << "  --max-iterations N         Maximum training iterations (default: 500)" << std::endl;
     std::cout << "  --save-interval N          Save image every N iterations (default: 25)" << std::endl;
+    std::cout << "  --num-gaussians N          Number of Gaussians to use (default: 1000)" << std::endl;
     std::cout << "  --no-save-images           Disable saving intermediate images" << std::endl;
     std::cout << "  --beta1 VALUE              Adam optimizer beta1 parameter (default: 0.9)" << std::endl;
     std::cout << "  --beta2 VALUE              Adam optimizer beta2 parameter (default: 0.999)" << std::endl;
@@ -119,6 +123,10 @@ void TrainingConfigParser::validate_config(const TrainingConfig& config) {
     
     if (config.save_interval <= 0) {
         throw std::runtime_error("Save interval must be positive");
+    }
+    
+    if (config.num_gaussians <= 0) {
+        throw std::runtime_error("Number of Gaussians must be positive");
     }
     
     if (config.target_image_path.empty()) {

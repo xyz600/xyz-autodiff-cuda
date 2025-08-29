@@ -15,6 +15,7 @@ struct TrainingConfig {
     // Training parameters
     int max_iterations = 500;
     int save_interval = 25;
+    int num_gaussians = 1000;
     
     // Image parameters
     std::string target_image_path;

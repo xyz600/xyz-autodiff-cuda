@@ -1,23 +1,24 @@
 #include "gaussian_parameters.h"
+#include "training_config.h"
 #include <iostream>
 #include <cmath>
 #include <algorithm>
 #include <cstring>
 #include <cuda_runtime.h>
 
-GaussianCollection::GaussianCollection() {
+GaussianCollection::GaussianCollection(const TrainingConfig& config) : num_gaussians(config.num_gaussians) {
     // Allocate host memory
-    host_params.resize(NUM_GAUSSIANS);
-    host_grads.resize(NUM_GAUSSIANS);
-    host_adam.resize(NUM_GAUSSIANS);
+    host_params.resize(num_gaussians);
+    host_grads.resize(num_gaussians);
+    host_adam.resize(num_gaussians);
     
     // Allocate device memory using CUDA unique pointers
-    device_params = makeCudaUniqueArray<GaussianParams>(NUM_GAUSSIANS);
-    device_grads = makeCudaUniqueArray<GaussianGrads>(NUM_GAUSSIANS);
-    device_adam = makeCudaUniqueArray<AdamState>(NUM_GAUSSIANS);
+    device_params = makeCudaUniqueArray<GaussianParams>(num_gaussians);
+    device_grads = makeCudaUniqueArray<GaussianGrads>(num_gaussians);
+    device_adam = makeCudaUniqueArray<AdamState>(num_gaussians);
     
     // Initialize Adam state to zero
-    for (int i = 0; i < NUM_GAUSSIANS; i++) {
+    for (int i = 0; i < num_gaussians; i++) {
         AdamState& adam = host_adam[i];
         memset(&adam, 0, sizeof(AdamState));
     }
@@ -32,10 +33,10 @@ void GaussianCollection::initialize_random(int image_width, int image_height, st
     std::uniform_real_distribution<float> opacity_dist(0.05f, 0.1f);
     std::uniform_real_distribution<float> scale_dist(0.0f, 2.0f);  // Some variation around base scale
     
-    std::cout << "Initializing " << NUM_GAUSSIANS << " Gaussians..." << std::endl;
+    std::cout << "Initializing " << num_gaussians << " Gaussians..." << std::endl;
     std::cout << "Image size: " << image_width << "x" << image_height << std::endl;
     
-    for (int i = 0; i < NUM_GAUSSIANS; i++) {
+    for (int i = 0; i < num_gaussians; i++) {
         GaussianParams& params = host_params[i];
         
         // Random center position
@@ -68,21 +69,21 @@ void GaussianCollection::upload_to_device() {
     cudaError_t err;
     
     err = cudaMemcpy(device_params.get(), host_params.data(), 
-                     NUM_GAUSSIANS * sizeof(GaussianParams), cudaMemcpyHostToDevice);
+                     num_gaussians * sizeof(GaussianParams), cudaMemcpyHostToDevice);
     if (err != cudaSuccess) {
         std::cerr << "Failed to upload Gaussian parameters: " << cudaGetErrorString(err) << std::endl;
         return;
     }
     
     err = cudaMemcpy(device_grads.get(), host_grads.data(),
-                     NUM_GAUSSIANS * sizeof(GaussianGrads), cudaMemcpyHostToDevice);
+                     num_gaussians * sizeof(GaussianGrads), cudaMemcpyHostToDevice);
     if (err != cudaSuccess) {
         std::cerr << "Failed to upload gradients: " << cudaGetErrorString(err) << std::endl;
         return;
     }
     
     err = cudaMemcpy(device_adam.get(), host_adam.data(),
-                     NUM_GAUSSIANS * sizeof(AdamState), cudaMemcpyHostToDevice);
+                     num_gaussians * sizeof(AdamState), cudaMemcpyHostToDevice);
     if (err != cudaSuccess) {
         std::cerr << "Failed to upload Adam state: " << cudaGetErrorString(err) << std::endl;
         return;
@@ -93,21 +94,21 @@ void GaussianCollection::download_from_device() {
     cudaError_t err;
     
     err = cudaMemcpy(host_params.data(), device_params.get(),
-                     NUM_GAUSSIANS * sizeof(GaussianParams), cudaMemcpyDeviceToHost);
+                     num_gaussians * sizeof(GaussianParams), cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         std::cerr << "Failed to download Gaussian parameters: " << cudaGetErrorString(err) << std::endl;
         return;
     }
     
     err = cudaMemcpy(host_grads.data(), device_grads.get(),
-                     NUM_GAUSSIANS * sizeof(GaussianGrads), cudaMemcpyDeviceToHost);
+                     num_gaussians * sizeof(GaussianGrads), cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         std::cerr << "Failed to download gradients: " << cudaGetErrorString(err) << std::endl;
         return;
     }
     
     err = cudaMemcpy(host_adam.data(), device_adam.get(),
-                     NUM_GAUSSIANS * sizeof(AdamState), cudaMemcpyDeviceToHost);
+                     num_gaussians * sizeof(AdamState), cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         std::cerr << "Failed to download Adam state: " << cudaGetErrorString(err) << std::endl;
         return;
@@ -115,7 +116,7 @@ void GaussianCollection::download_from_device() {
 }
 
 void GaussianCollection::zero_gradients() {
-    for (int i = 0; i < NUM_GAUSSIANS; i++) {
+    for (int i = 0; i < num_gaussians; i++) {
         GaussianGrads& grad = host_grads[i];
         memset(&grad, 0, sizeof(GaussianGrads));
     }
@@ -127,7 +128,7 @@ void GaussianCollection::adam_step(float learning_rate, float beta1, float beta2
     float beta2_t = std::pow(beta2, iteration);
     float lr_corrected = learning_rate * std::sqrt(1.0f - beta2_t) / (1.0f - beta1_t);
     
-    for (int i = 0; i < NUM_GAUSSIANS; i++) {
+    for (int i = 0; i < num_gaussians; i++) {
         GaussianParams& params = host_params[i];
         GaussianGrads& grads = host_grads[i];
         AdamState& adam = host_adam[i];
@@ -242,10 +243,10 @@ __global__ void zero_gradients_kernel(GaussianGrads* grads, int num_gaussians) {
 void GaussianCollection::zero_gradients_gpu() {
     // Calculate grid dimensions
     int block_size = 256;
-    int grid_size = (NUM_GAUSSIANS + block_size - 1) / block_size;
+    int grid_size = (num_gaussians + block_size - 1) / block_size;
     
     // Launch kernel to zero gradients on device
-    zero_gradients_kernel<<<grid_size, block_size>>>(device_grads.get(), NUM_GAUSSIANS);
+    zero_gradients_kernel<<<grid_size, block_size>>>(device_grads.get(), num_gaussians);
     
     // Check for kernel launch errors
     cudaError_t err = cudaGetLastError();
@@ -325,14 +326,14 @@ void GaussianCollection::adam_step_gpu(float learning_rate, float beta1, float b
     
     // Calculate grid dimensions
     int block_size = 256;
-    int grid_size = (NUM_GAUSSIANS + block_size - 1) / block_size;
+    int grid_size = (num_gaussians + block_size - 1) / block_size;
     
     // Launch kernel
     adam_step_kernel<<<grid_size, block_size>>>(
         device_params.get(),
         device_grads.get(),
         device_adam.get(),
-        NUM_GAUSSIANS,
+        num_gaussians,
         learning_rate,
         beta1,
         beta2,
@@ -357,14 +358,14 @@ void GaussianCollection::adam_step_gpu_individual(float lr_center, float lr_scal
     
     // Calculate grid dimensions
     int block_size = 256;
-    int grid_size = (NUM_GAUSSIANS + block_size - 1) / block_size;
+    int grid_size = (num_gaussians + block_size - 1) / block_size;
     
     // Launch kernel
     adam_step_individual_kernel<<<grid_size, block_size>>>(
         device_params.get(),
         device_grads.get(),
         device_adam.get(),
-        NUM_GAUSSIANS,
+        num_gaussians,
         lr_center,
         lr_scale,
         lr_rotation,

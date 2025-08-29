@@ -20,18 +20,18 @@ private:
     cuda_unique_ptr<PixelOutput[]> device_output_image;
     cuda_unique_ptr<float> device_total_loss;
     
+    // Training configuration (must be initialized first)
+    TrainingConfig config;
+    
     // Gaussian collection
     GaussianCollection gaussians;
-    
-    // Training configuration
-    TrainingConfig config;
     
     // Random number generator
     std::mt19937 rng;
     
 public:
     GaussianSplattingTrainer(const TrainingConfig& cfg)
-        : config(cfg)
+        : config(cfg), gaussians(cfg)
     {
         // Initialize random seed
         rng.seed(std::chrono::steady_clock::now().time_since_epoch().count());
@@ -110,7 +110,7 @@ public:
     void train() {
         std::cout << "\\n=== Starting Gaussian Splatting Training ===" << std::endl;
         std::cout << "Target image: " << target_image.width << "x" << target_image.height << std::endl;
-        std::cout << "Gaussians: " << GaussianCollection::NUM_GAUSSIANS << std::endl;
+        std::cout << "Gaussians: " << gaussians.num_gaussians << std::endl;
         config.print();
         
         // Create output directory if saving images
@@ -143,7 +143,7 @@ public:
                 device_total_loss.get(),
                 target_image.width,
                 target_image.height,
-                GaussianCollection::NUM_GAUSSIANS
+                gaussians.num_gaussians
             );
 
             // Download total loss from device

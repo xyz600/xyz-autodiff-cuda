@@ -40,10 +40,13 @@ struct GaussianGrads {
     float opacity[1];
 };
 
+// Forward declaration
+struct TrainingConfig;
+
 // Container for all Gaussian parameters and optimization state
 class GaussianCollection {
 public:
-    static constexpr int NUM_GAUSSIANS = 1000;
+    int num_gaussians;
     
     // Host data
     std::vector<GaussianParams> host_params;
@@ -55,7 +58,10 @@ public:
     cuda_unique_ptr<GaussianGrads[]> device_grads;
     cuda_unique_ptr<AdamState[]> device_adam;
     
-    GaussianCollection();
+    GaussianCollection(const TrainingConfig& config);
+    
+    // Legacy constructor for backward compatibility  
+    GaussianCollection() : num_gaussians(1000) {}
     
     // Initialize Gaussians with random parameters
     void initialize_random(int image_width, int image_height, std::mt19937& rng);
