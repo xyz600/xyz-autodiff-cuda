@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <cuda_runtime.h>
-#include "../../utility/gradient_test_utility.cuh"
+#include <xyz_autodiff/testing.cuh>
 #include <xyz_autodiff/operations/unary/sigmoid_logic.cuh>
 #include <xyz_autodiff/operations/unary/exp_logic.cuh>
 #include <xyz_autodiff/operations/binary/add_logic.cuh>
@@ -8,7 +8,7 @@
 #include <xyz_autodiff/variable_operators.cuh>
 
 using namespace xyz_autodiff;
-using namespace xyz_autodiff::test;
+using namespace xyz_autodiff::testing;
 
 // SigmoidLogicのテスト (UnaryOperation)
 TEST_UNARY_GRADIENT(op::SigmoidLogic<3>, 3, 3, SigmoidLogic3D)
@@ -52,16 +52,16 @@ protected:
 TEST_F(GradientVerificationTest, ManualSigmoidTest) {
     // より詳細なテストロジックがここに書ける
     // 例: 特定の入力値での詳細なデバッグ
-    xyz_autodiff::test::UnaryGradientTester<op::SigmoidLogic<2>, 2, 2>::test("ManualSigmoidTest");
+    xyz_autodiff::testing::UnaryGradientTester<op::SigmoidLogic<2>, 2, 2>::test("ManualSigmoidTest");
 }
 
 TEST_F(GradientVerificationTest, ManualExpTest) {
-    xyz_autodiff::test::UnaryGradientTester<op::ExpLogic<2>, 2, 2>::test("ManualExpTest");
+    xyz_autodiff::testing::UnaryGradientTester<op::ExpLogic<2>, 2, 2>::test("ManualExpTest");
 }
 
 // エッジケーステスト
 TEST_F(GradientVerificationTest, EdgeCaseSingleDimension) {
-    xyz_autodiff::test::UnaryGradientTester<op::SigmoidLogic<1>, 1, 1>::test("EdgeCaseSingleDimension");
+    xyz_autodiff::testing::UnaryGradientTester<op::SigmoidLogic<1>, 1, 1>::test("EdgeCaseSingleDimension");
 }
 
 // BinaryOperationのテスト（element-wise operations）
