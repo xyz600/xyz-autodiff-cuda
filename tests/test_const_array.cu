@@ -2,6 +2,7 @@
 #include <xyz_autodiff/const_array.cuh>
 #include <xyz_autodiff/variable.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
+#include <xyz_autodiff/variable_operators.cuh>
 
 using namespace xyz_autodiff;
 

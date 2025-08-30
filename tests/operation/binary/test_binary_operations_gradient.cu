@@ -10,6 +10,7 @@
 #include <xyz_autodiff/operations/binary/div_logic.cuh>
 #include "../../../examples/mini-gaussian-splatting/operations/mahalanobis_distance.cuh"
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
+#include <xyz_autodiff/variable_operators.cuh>
 #include "../../utility/binary_gradient_tester.cuh"
 
 using namespace xyz_autodiff;

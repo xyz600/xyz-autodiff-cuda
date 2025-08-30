@@ -5,6 +5,7 @@
 #include <xyz_autodiff/operations/unary/exp_logic.cuh>
 #include <xyz_autodiff/operations/binary/add_logic.cuh>
 #include <xyz_autodiff/operations/binary/mul_logic.cuh>
+#include <xyz_autodiff/variable_operators.cuh>
 
 using namespace xyz_autodiff;
 using namespace xyz_autodiff::test;

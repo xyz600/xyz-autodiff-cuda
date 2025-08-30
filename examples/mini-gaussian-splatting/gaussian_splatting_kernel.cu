@@ -1,4 +1,5 @@
 #include "gaussian_splatting_kernel.cuh"
+#include <xyz_autodiff/variable_operators.cuh>
 #include <xyz_autodiff/operations/unary/sigmoid_logic.cuh>
 #include <xyz_autodiff/operations/unary/const_array_sub_logic.cuh>
 #include <xyz_autodiff/operations/operation.cuh>

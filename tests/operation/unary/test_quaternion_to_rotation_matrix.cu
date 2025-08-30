@@ -6,6 +6,7 @@
 #include <xyz_autodiff/concept/variable.cuh>
 #include <xyz_autodiff/concept/operation_node.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
+#include <xyz_autodiff/variable_operators.cuh>
 
 using namespace xyz_autodiff;
 

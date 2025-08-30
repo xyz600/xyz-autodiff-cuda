@@ -98,7 +98,11 @@
       "Bash(./build/debug/debug_gradients)",
       "Bash(./build/debug/examples/mini-gaussian-splatting/gaussian_splatting_training:*)",
       "Bash(./tests/test_const_array)",
-      "Bash(ninja:*)"
+      "Bash(ninja:*)",
+      "Bash(./test_variable)",
+      "Bash(./test_standalone)",
+      "Bash(../build/debug/tests/test_variable)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "additionalDirectories": [

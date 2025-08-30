@@ -6,6 +6,7 @@
 #include <xyz_autodiff/concept/operation_node.cuh>
 #include <xyz_autodiff/operations/binary/matmul_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
+#include <xyz_autodiff/variable_operators.cuh>
 #include "../../utility/binary_gradient_tester.cuh"
 
 using namespace xyz_autodiff;

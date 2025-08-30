@@ -11,6 +11,7 @@
 #include <xyz_autodiff/operations/unary/squared_logic.cuh>
 #include <xyz_autodiff/operations/unary/mul_constant_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
+#include <xyz_autodiff/variable_operators.cuh>
 
 // Include test utilities
 #include "../../utility/network_gradient_tester.cuh"
