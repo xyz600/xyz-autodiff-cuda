@@ -11,7 +11,7 @@
 #include "../../../examples/mini-gaussian-splatting/operations/mahalanobis_distance.cuh"
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/binary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/binary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -72,7 +72,7 @@ protected:
 
 TEST_F(BinaryOperationsGradientTest, AddGradientVerification) {
     using Logic = op::AddLogic<VariableRef<3, double>, VariableRef<3, double>>;
-    test::BinaryGradientTester<Logic, 3, 3, 3>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 3, 3, 3>::test_custom(
         "AddLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -84,7 +84,7 @@ TEST_F(BinaryOperationsGradientTest, AddGradientVerification) {
 
 TEST_F(BinaryOperationsGradientTest, SubGradientVerification) {
     using Logic = op::SubLogic<VariableRef<3, double>, VariableRef<3, double>>;
-    test::BinaryGradientTester<Logic, 3, 3, 3>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 3, 3, 3>::test_custom(
         "SubLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -96,7 +96,7 @@ TEST_F(BinaryOperationsGradientTest, SubGradientVerification) {
 
 TEST_F(BinaryOperationsGradientTest, MulGradientVerification) {
     using Logic = op::MulLogic<VariableRef<3, double>, VariableRef<3, double>>;
-    test::BinaryGradientTester<Logic, 3, 3, 3>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 3, 3, 3>::test_custom(
         "MulLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -108,7 +108,7 @@ TEST_F(BinaryOperationsGradientTest, MulGradientVerification) {
 
 TEST_F(BinaryOperationsGradientTest, DivGradientVerification) {
     using Logic = op::DivLogic<VariableRef<3, double>, VariableRef<3, double>>;
-    test::BinaryGradientTester<Logic, 3, 3, 3>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 3, 3, 3>::test_custom(
         "DivLogic", 
         50,      // num_tests
         1e-5,    // tolerance (minimum allowed for double precision)
@@ -121,7 +121,7 @@ TEST_F(BinaryOperationsGradientTest, DivGradientVerification) {
 // Test with different dimensions
 TEST_F(BinaryOperationsGradientTest, AddGradientVerification2D) {
     using Logic = op::AddLogic<VariableRef<2, double>, VariableRef<2, double>>;
-    test::BinaryGradientTester<Logic, 2, 2, 2>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 2, 2, 2>::test_custom(
         "AddLogic2D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -133,7 +133,7 @@ TEST_F(BinaryOperationsGradientTest, AddGradientVerification2D) {
 
 TEST_F(BinaryOperationsGradientTest, MulGradientVerification1D) {
     using Logic = op::MulLogic<VariableRef<1, double>, VariableRef<1, double>>;
-    test::BinaryGradientTester<Logic, 1, 1, 1>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 1, 1, 1>::test_custom(
         "MulLogic1D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -170,7 +170,7 @@ TEST_F(BinaryOperationsGradientTest, MahalanobisDistanceWithCenterGradientVerifi
         Logic logic(query_x, query_y);
         
         // Run gradient test with this specific logic instance
-        auto device_buffers = makeCudaUnique<test::BinaryGradientTestBuffers<double, 2, 3, 1>>();
+        auto device_buffers = makeCudaUnique<xyz_autodiff::testing::BinaryGradientTestBuffers<double, 2, 3, 1>>();
         
         // Initialize random inputs
         double center_data[2] = {dist(gen), dist(gen)};
@@ -188,12 +188,12 @@ TEST_F(BinaryOperationsGradientTest, MahalanobisDistanceWithCenterGradientVerifi
         cudaMemcpy(device_buffers.get()->output_grad, &output_grad, sizeof(double), cudaMemcpyHostToDevice);
         
         // Run kernel with custom logic
-        test::test_binary_gradient_kernel_custom<Logic, 2, 3, 1><<<1, 1>>>(
+        xyz_autodiff::testing::test_binary_gradient_kernel_custom<Logic, 2, 3, 1><<<1, 1>>>(
             device_buffers.get(), logic, delta);
         cudaDeviceSynchronize();
         
         // Check results
-        test::BinaryGradientTestBuffers<double, 2, 3, 1> host_buffers;
+        xyz_autodiff::testing::BinaryGradientTestBuffers<double, 2, 3, 1> host_buffers;
         cudaMemcpy(&host_buffers, device_buffers.get(), sizeof(host_buffers), cudaMemcpyDeviceToHost);
         
         // Validate gradients

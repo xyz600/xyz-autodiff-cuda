@@ -8,7 +8,7 @@
 #include <xyz_autodiff/operations/unary/broadcast.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -59,7 +59,7 @@ protected:
 
 TEST_F(SpecializedOperationsGradientTest, QuaternionToRotationMatrixGradientVerification) {
     using Logic = op::QuaternionToRotationMatrixLogic<4>;
-    test::UnaryGradientTester<Logic, 4, 9>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 4, 9>::test_custom(
         "QuaternionToRotationMatrixLogic", 
         30,      // num_tests (fewer due to complexity)
         1e-5,    // tolerance (minimum allowed for double precision)
@@ -75,7 +75,7 @@ TEST_F(SpecializedOperationsGradientTest, QuaternionToRotationMatrixNormalizedIn
     using Logic = op::QuaternionToRotationMatrixLogic<4>;
     
     // Test with pre-normalized quaternions (unit quaternions)
-    test::UnaryGradientTester<Logic, 4, 9>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 4, 9>::test_custom(
         "QuaternionToRotationMatrixLogicNormalized", 
         100,      // num_tests
         1e-5,    // tolerance (minimum allowed for double precision)

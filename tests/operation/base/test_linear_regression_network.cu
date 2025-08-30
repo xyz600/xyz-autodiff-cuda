@@ -14,10 +14,10 @@
 #include <xyz_autodiff/variable_operators.cuh>
 
 // Include test utilities
-#include "../../utility/network_gradient_tester.cuh"
+#include <xyz_autodiff/testing/network_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
-using namespace xyz_autodiff::optimization::test;
+using GradientTag = xyz_autodiff::testing::GradientTag;
 
 // ===========================================
 // Network Functions for Testing
@@ -39,7 +39,7 @@ struct OptimizationParameters {
 // Implements: loss = (y_pred - y_target)^2
 // where y_pred = (x1 - a)^2 + b*(x2 - c)^2 + d
 struct SimpleLinearRegressionNetwork {
-    template <GradientTag tag>
+    template <xyz_autodiff::testing::GradientTag tag>
     __device__ void operator()(
         OptimizationParameters* value,
         OptimizationParameters* diff,
@@ -73,9 +73,9 @@ struct SimpleLinearRegressionNetwork {
         auto loss = op::squared(y_diff);
         
         // Run gradient computation based on tag
-        if constexpr (tag == GradientTag::Analytical) {
+        if constexpr (tag == xyz_autodiff::testing::GradientTag::Analytical) {
             loss.run();
-        } else if constexpr (tag == GradientTag::Numerical) {
+        } else if constexpr (tag == xyz_autodiff::testing::GradientTag::Numerical) {
             loss.run_numerical(delta);
         }
     }
@@ -84,7 +84,7 @@ struct SimpleLinearRegressionNetwork {
 // Regularized Linear Regression Network
 // Adds L2 regularization to parameters
 struct RegularizedLinearRegressionNetwork {
-    template <GradientTag tag>
+    template <xyz_autodiff::testing::GradientTag tag>
     __device__ void operator()(
         OptimizationParameters* value,
         OptimizationParameters* diff,
@@ -113,9 +113,9 @@ struct RegularizedLinearRegressionNetwork {
         auto& total_loss = main_loss;
         
         // Run gradient computation
-        if constexpr (tag == GradientTag::Analytical) {
+        if constexpr (tag == xyz_autodiff::testing::GradientTag::Analytical) {
             total_loss.run();
-        } else if constexpr (tag == GradientTag::Numerical) {
+        } else if constexpr (tag == xyz_autodiff::testing::GradientTag::Numerical) {
             total_loss.run_numerical(delta);
         }
     }
@@ -123,7 +123,7 @@ struct RegularizedLinearRegressionNetwork {
 
 // Test only the sub and square operations combined
 struct SubtractSquareOnlyNetwork {
-    template <GradientTag tag>
+    template <xyz_autodiff::testing::GradientTag tag>
     __device__ void operator()(
         OptimizationParameters* value,
         OptimizationParameters* diff,
@@ -134,16 +134,16 @@ struct SubtractSquareOnlyNetwork {
         auto a_minus_x1 = op::sub_constant(a_var, value->x1);
         auto result = op::squared(a_minus_x1);
         
-        if constexpr (tag == GradientTag::Analytical) {
+        if constexpr (tag == xyz_autodiff::testing::GradientTag::Analytical) {
             result.run();
-        } else if constexpr (tag == GradientTag::Numerical) {
+        } else if constexpr (tag == xyz_autodiff::testing::GradientTag::Numerical) {
             result.run_numerical(delta);
         }
     }
 };
 
 struct DuplicateAddNetwork {
-    template <GradientTag tag>
+    template <xyz_autodiff::testing::GradientTag tag>
     __device__ void operator()(
         OptimizationParameters* value,
         OptimizationParameters* diff,
@@ -156,9 +156,9 @@ struct DuplicateAddNetwork {
         auto ab2 = a_var + b_var;
         auto ab_sum = ab + ab2;
         
-        if constexpr (tag == GradientTag::Analytical) {
+        if constexpr (tag == xyz_autodiff::testing::GradientTag::Analytical) {
             ab_sum.run();
-        } else if constexpr (tag == GradientTag::Numerical) {
+        } else if constexpr (tag == xyz_autodiff::testing::GradientTag::Numerical) {
             ab_sum.run_numerical(delta);
         }
     }
@@ -196,7 +196,7 @@ TEST_F(LinearRegressionNetworkGradientTest, SimpleLinearRegressionNetwork) {
     initial_params.y_target = 3.0;
     
     SimpleLinearRegressionNetwork network;
-    NetworkGradientTester<OptimizationParameters, SimpleLinearRegressionNetwork>::test_network(
+    xyz_autodiff::testing::NetworkGradientTester<OptimizationParameters, SimpleLinearRegressionNetwork>::test_network(
         "SimpleLinearRegressionNetwork",
         network,
         initial_params,
@@ -219,7 +219,7 @@ TEST_F(LinearRegressionNetworkGradientTest, RegularizedLinearRegressionNetwork) 
     initial_params.y_target = 2.5;
     
     RegularizedLinearRegressionNetwork network;
-    NetworkGradientTester<OptimizationParameters, RegularizedLinearRegressionNetwork>::test_network(
+    xyz_autodiff::testing::NetworkGradientTester<OptimizationParameters, RegularizedLinearRegressionNetwork>::test_network(
         "RegularizedLinearRegressionNetwork",
         network,
         initial_params,
@@ -243,7 +243,7 @@ TEST_F(LinearRegressionNetworkGradientTest, SubtractSquareOperation) {
     initial_params.y_target = 0.0;
     
     SubtractSquareOnlyNetwork network;
-    NetworkGradientTester<OptimizationParameters, SubtractSquareOnlyNetwork>::test_network(
+    xyz_autodiff::testing::NetworkGradientTester<OptimizationParameters, SubtractSquareOnlyNetwork>::test_network(
         "SubtractSquareOnlyNetwork",
         network,
         initial_params,
@@ -266,7 +266,7 @@ TEST_F(LinearRegressionNetworkGradientTest, DuplicateAddNetwork) {
     initial_params.y_target = 1.5;
     
     DuplicateAddNetwork network;
-    NetworkGradientTester<OptimizationParameters, DuplicateAddNetwork>::test_network(
+    xyz_autodiff::testing::NetworkGradientTester<OptimizationParameters, DuplicateAddNetwork>::test_network(
         "DuplicateAddNetwork",
         network,
         initial_params,
@@ -290,7 +290,7 @@ TEST_F(LinearRegressionNetworkGradientTest, StressTestWithLargeValues) {
     initial_params.y_target = 100.0;
     
     SimpleLinearRegressionNetwork network;
-    NetworkGradientTester<OptimizationParameters, SimpleLinearRegressionNetwork>::test_network(
+    xyz_autodiff::testing::NetworkGradientTester<OptimizationParameters, SimpleLinearRegressionNetwork>::test_network(
         "SimpleLinearRegressionNetwork_LargeValues",
         network,
         initial_params,
@@ -314,7 +314,7 @@ TEST_F(LinearRegressionNetworkGradientTest, EdgeCaseNearZero) {
     initial_params.y_target = 0.001;
     
     SimpleLinearRegressionNetwork network;
-    NetworkGradientTester<OptimizationParameters, SimpleLinearRegressionNetwork>::test_network(
+    xyz_autodiff::testing::NetworkGradientTester<OptimizationParameters, SimpleLinearRegressionNetwork>::test_network(
         "SimpleLinearRegressionNetwork_NearZero",
         network,
         initial_params,

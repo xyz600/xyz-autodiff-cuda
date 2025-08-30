@@ -6,7 +6,7 @@
 #include <xyz_autodiff/concept/operation_node.cuh>
 #include "../operations/mahalanobis_distance.cuh"
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
-#include "../../../tests/utility/binary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/binary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -59,7 +59,7 @@ protected:
 
 TEST_F(MahalanobisDistanceTest, GradientVerification) {
     using Logic = op::MahalanobisDistanceLogic<VariableRef<2, double>, VariableRef<3, double>>;
-    test::BinaryGradientTester<Logic, 2, 3, 1>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 2, 3, 1>::test_custom(
         "MahalanobisDistance", 
         30,      // num_tests (reduced for stability)
         1e-5,    // tolerance (relaxed for matrix inversion stability)

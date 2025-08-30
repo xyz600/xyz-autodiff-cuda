@@ -6,8 +6,8 @@
 #include <xyz_autodiff/concept/operation_node.cuh>
 #include "../operations/covariance_generation.cuh"
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
-#include "../../../tests/utility/binary_gradient_tester.cuh"
-#include "../../../tests/utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/binary_gradient_tester.cuh>
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -75,7 +75,7 @@ protected:
 
 TEST_F(CovarianceGenerationTest, CovarianceGenerationGradientVerification) {
     using Logic = op::CovarianceMatrixGenerationLogic<VariableRef<2, double>, VariableRef<1, double>>;
-    test::BinaryGradientTester<Logic, 2, 1, 4>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 2, 1, 4>::test_custom(
         "CovarianceGeneration", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -87,7 +87,7 @@ TEST_F(CovarianceGenerationTest, CovarianceGenerationGradientVerification) {
 
 TEST_F(CovarianceGenerationTest, MatrixToCovariance3ParamGradientVerification) {
     using Logic = op::MatrixToCovariance3ParamLogic<VariableRef<4, double>>;
-    test::UnaryGradientTester<Logic, 4, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 4, 3>::test_custom(
         "MatrixToCovariance3Param", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -99,7 +99,7 @@ TEST_F(CovarianceGenerationTest, MatrixToCovariance3ParamGradientVerification) {
 
 TEST_F(CovarianceGenerationTest, ScaleRotationToCovariance3ParamGradientVerification) {
     using Logic = op::ScaleRotationToCovariance3ParamLogic<VariableRef<2, double>, VariableRef<1, double>>;
-    test::BinaryGradientTester<Logic, 2, 1, 3>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 2, 1, 3>::test_custom(
         "ScaleRotationToCovariance3Param", 
         30,      // num_tests
         1e-5,    // tolerance

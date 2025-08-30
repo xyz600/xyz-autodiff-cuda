@@ -8,7 +8,7 @@
 #include <xyz_autodiff/operations/unary/neg_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -58,7 +58,7 @@ protected:
 
 TEST_F(BasicUnaryOperationsGradientTest, SquaredGradientVerification) {
     using Logic = op::SquaredLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SquaredLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -70,7 +70,7 @@ TEST_F(BasicUnaryOperationsGradientTest, SquaredGradientVerification) {
 
 TEST_F(BasicUnaryOperationsGradientTest, NegGradientVerification) {
     using Logic = op::NegLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "NegLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -83,7 +83,7 @@ TEST_F(BasicUnaryOperationsGradientTest, NegGradientVerification) {
 // Test with different dimensions
 TEST_F(BasicUnaryOperationsGradientTest, SquaredGradientVerification2D) {
     using Logic = op::SquaredLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 2>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 2>::test_custom(
         "SquaredLogic2D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -95,7 +95,7 @@ TEST_F(BasicUnaryOperationsGradientTest, SquaredGradientVerification2D) {
 
 TEST_F(BasicUnaryOperationsGradientTest, NegGradientVerification1D) {
     using Logic = op::NegLogic<1>;
-    test::UnaryGradientTester<Logic, 1, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 1, 1>::test_custom(
         "NegLogic1D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -108,7 +108,7 @@ TEST_F(BasicUnaryOperationsGradientTest, NegGradientVerification1D) {
 // Edge case tests
 TEST_F(BasicUnaryOperationsGradientTest, SquaredNearZero) {
     using Logic = op::SquaredLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SquaredLogicNearZero", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -120,7 +120,7 @@ TEST_F(BasicUnaryOperationsGradientTest, SquaredNearZero) {
 
 TEST_F(BasicUnaryOperationsGradientTest, SquaredLargeValues) {
     using Logic = op::SquaredLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 2>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 2>::test_custom(
         "SquaredLogicLargeValues", 
         20,      // num_tests
         1e-5,    // tolerance (minimum allowed for double precision)

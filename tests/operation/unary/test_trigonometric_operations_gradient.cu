@@ -8,7 +8,7 @@
 #include <xyz_autodiff/operations/unary/cos_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -57,7 +57,7 @@ protected:
 
 TEST_F(TrigonometricOperationsGradientTest, SinGradientVerification) {
     using Logic = op::SinLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SinLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -69,7 +69,7 @@ TEST_F(TrigonometricOperationsGradientTest, SinGradientVerification) {
 
 TEST_F(TrigonometricOperationsGradientTest, CosGradientVerification) {
     using Logic = op::CosLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "CosLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -82,7 +82,7 @@ TEST_F(TrigonometricOperationsGradientTest, CosGradientVerification) {
 // Test with different dimensions
 TEST_F(TrigonometricOperationsGradientTest, SinGradientVerification2D) {
     using Logic = op::SinLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 2>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 2>::test_custom(
         "SinLogic2D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -94,7 +94,7 @@ TEST_F(TrigonometricOperationsGradientTest, SinGradientVerification2D) {
 
 TEST_F(TrigonometricOperationsGradientTest, CosGradientVerification1D) {
     using Logic = op::CosLogic<1>;
-    test::UnaryGradientTester<Logic, 1, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 1, 1>::test_custom(
         "CosLogic1D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -107,7 +107,7 @@ TEST_F(TrigonometricOperationsGradientTest, CosGradientVerification1D) {
 // Test edge cases - near critical points
 TEST_F(TrigonometricOperationsGradientTest, SinNearZero) {
     using Logic = op::SinLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SinLogicNearZero", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -119,7 +119,7 @@ TEST_F(TrigonometricOperationsGradientTest, SinNearZero) {
 
 TEST_F(TrigonometricOperationsGradientTest, CosNearPiHalf) {
     using Logic = op::CosLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 2>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 2>::test_custom(
         "CosLogicNearPiHalf", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -132,7 +132,7 @@ TEST_F(TrigonometricOperationsGradientTest, CosNearPiHalf) {
 // Test larger range
 TEST_F(TrigonometricOperationsGradientTest, SinLargeRange) {
     using Logic = op::SinLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 2>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 2>::test_custom(
         "SinLogicLargeRange", 
         40,      // num_tests
         1e-5,    // tolerance
@@ -144,7 +144,7 @@ TEST_F(TrigonometricOperationsGradientTest, SinLargeRange) {
 
 TEST_F(TrigonometricOperationsGradientTest, CosLargeRange) {
     using Logic = op::CosLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 2>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 2>::test_custom(
         "CosLogicLargeRange", 
         40,      // num_tests
         1e-5,    // tolerance

@@ -7,7 +7,7 @@
 #include <xyz_autodiff/operations/unary/add_constant_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -119,7 +119,7 @@ struct AddConstantTestLogic {
 
 TEST_F(AddConstantOperationsGradientTest, AddConstantGradientVerification) {
     using Logic = AddConstantTestLogic<double>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "AddConstantLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -151,7 +151,7 @@ struct AddConstant5DLogic {
 };
 
 TEST_F(AddConstantOperationsGradientTest, AddConstantGradientVerification5D) {
-    test::UnaryGradientTester<AddConstant5DLogic, 5, 5>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<AddConstant5DLogic, 5, 5>::test_custom(
         "AddConstant5DLogic", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -163,7 +163,7 @@ TEST_F(AddConstantOperationsGradientTest, AddConstantGradientVerification5D) {
 
 TEST_F(AddConstantOperationsGradientTest, AddConstantNearZero) {
     using Logic = AddConstantTestLogic<double>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "AddConstantLogicNearZero", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -175,7 +175,7 @@ TEST_F(AddConstantOperationsGradientTest, AddConstantNearZero) {
 
 TEST_F(AddConstantOperationsGradientTest, AddConstantLargeValues) {
     using Logic = AddConstantTestLogic<double>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "AddConstantLogicLargeValues", 
         40,      // num_tests
         1e-5,    // tolerance

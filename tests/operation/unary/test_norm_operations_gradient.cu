@@ -8,7 +8,7 @@
 #include <xyz_autodiff/operations/unary/l2_norm_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -57,7 +57,7 @@ protected:
 
 TEST_F(NormOperationsGradientTest, L1NormGradientVerification) {
     using Logic = op::L1NormLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "L1NormLogic", 
         50,      // num_tests
         1e-5,    // tolerance (minimum allowed for double precision)
@@ -69,7 +69,7 @@ TEST_F(NormOperationsGradientTest, L1NormGradientVerification) {
 
 TEST_F(NormOperationsGradientTest, L2NormGradientVerification) {
     using Logic = op::L2NormLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "L2NormLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -82,7 +82,7 @@ TEST_F(NormOperationsGradientTest, L2NormGradientVerification) {
 // Test with different dimensions
 TEST_F(NormOperationsGradientTest, L1NormGradientVerification5D) {
     using Logic = op::L1NormLogic<5>;
-    test::UnaryGradientTester<Logic, 5, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 5, 1>::test_custom(
         "L1NormLogic5D", 
         30,      // num_tests
         1e-5,    // tolerance (minimum allowed for double precision)
@@ -94,7 +94,7 @@ TEST_F(NormOperationsGradientTest, L1NormGradientVerification5D) {
 
 TEST_F(NormOperationsGradientTest, L2NormGradientVerification2D) {
     using Logic = op::L2NormLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 1>::test_custom(
         "L2NormLogic2D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -107,7 +107,7 @@ TEST_F(NormOperationsGradientTest, L2NormGradientVerification2D) {
 // Edge case tests
 TEST_F(NormOperationsGradientTest, L1NormNearZero) {
     using Logic = op::L1NormLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "L1NormLogicNearZero", 
         30,      // num_tests
         1e-5,    // tolerance (minimum allowed for double precision)
@@ -119,7 +119,7 @@ TEST_F(NormOperationsGradientTest, L1NormNearZero) {
 
 TEST_F(NormOperationsGradientTest, L2NormMediumRange) {
     using Logic = op::L2NormLogic<4>;
-    test::UnaryGradientTester<Logic, 4, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 4, 1>::test_custom(
         "L2NormLogicMediumRange", 
         40,      // num_tests
         1e-5,    // tolerance
@@ -132,7 +132,7 @@ TEST_F(NormOperationsGradientTest, L2NormMediumRange) {
 // Test large dimensions
 TEST_F(NormOperationsGradientTest, L2NormLargeDimension) {
     using Logic = op::L2NormLogic<9>;
-    test::UnaryGradientTester<Logic, 9, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 9, 1>::test_custom(
         "L2NormLogic9D", 
         20,      // num_tests (fewer for high dimension)
         1e-5,    // tolerance

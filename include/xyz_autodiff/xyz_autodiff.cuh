@@ -46,5 +46,8 @@
 #include <xyz_autodiff/operations/unary/const_array_sub_logic.cuh>
 #include <xyz_autodiff/operations/unary/const_array_concepts.cuh>
 
+// Testing utilities for custom operations
+#include <xyz_autodiff/testing.cuh>
+
 // Operator overloads (must be last to see all operation definitions)
 #include <xyz_autodiff/variable_operators.cuh>

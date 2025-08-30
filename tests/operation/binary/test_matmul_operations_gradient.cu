@@ -7,7 +7,7 @@
 #include <xyz_autodiff/operations/binary/matmul_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/binary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/binary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -85,7 +85,7 @@ protected:
 // Test 2x2 matrix multiplication
 TEST_F(MatMulOperationsGradientTest, MatMul2x2GradientVerification) {
     using Logic = op::MatMulLogic<2, 2, 2, VariableRef<4, double>, VariableRef<4, double>>;
-    test::BinaryGradientTester<Logic, 4, 4, 4>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 4, 4, 4>::test_custom(
         "MatMul2x2Logic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -98,7 +98,7 @@ TEST_F(MatMulOperationsGradientTest, MatMul2x2GradientVerification) {
 // Test 3x3 matrix multiplication
 TEST_F(MatMulOperationsGradientTest, MatMul3x3GradientVerification) {
     using Logic = op::MatMulLogic<3, 3, 3, VariableRef<9, double>, VariableRef<9, double>>;
-    test::BinaryGradientTester<Logic, 9, 9, 9>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 9, 9, 9>::test_custom(
         "MatMul3x3Logic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -111,7 +111,7 @@ TEST_F(MatMulOperationsGradientTest, MatMul3x3GradientVerification) {
 // Test 4x4 matrix multiplication
 TEST_F(MatMulOperationsGradientTest, MatMul4x4GradientVerification) {
     using Logic = op::MatMulLogic<4, 4, 4, VariableRef<16, double>, VariableRef<16, double>>;
-    test::BinaryGradientTester<Logic, 16, 16, 16>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 16, 16, 16>::test_custom(
         "MatMul4x4Logic", 
         30,      // num_tests (fewer for larger matrices)
         1e-5,    // tolerance
@@ -124,7 +124,7 @@ TEST_F(MatMulOperationsGradientTest, MatMul4x4GradientVerification) {
 // Test 2x2 matrix-vector multiplication (2x2 * 2x1 = 2x1)
 TEST_F(MatMulOperationsGradientTest, MatVec2x2GradientVerification) {
     using Logic = op::MatMulLogic<2, 2, 1, VariableRef<4, double>, VariableRef<2, double>>;
-    test::BinaryGradientTester<Logic, 4, 2, 2>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 4, 2, 2>::test_custom(
         "MatVec2x2Logic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -137,7 +137,7 @@ TEST_F(MatMulOperationsGradientTest, MatVec2x2GradientVerification) {
 // Test 2x2 vector-matrix multiplication (1x2 * 2x2 = 1x2)
 TEST_F(MatMulOperationsGradientTest, VecMat2x2GradientVerification) {
     using Logic = op::MatMulLogic<1, 2, 2, VariableRef<2, double>, VariableRef<4, double>>;
-    test::BinaryGradientTester<Logic, 2, 4, 2>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 2, 4, 2>::test_custom(
         "VecMat2x2Logic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -150,7 +150,7 @@ TEST_F(MatMulOperationsGradientTest, VecMat2x2GradientVerification) {
 // Test non-square matrix multiplication (2x3 * 3x4 = 2x4)
 TEST_F(MatMulOperationsGradientTest, MatMul2x3_3x4GradientVerification) {
     using Logic = op::MatMulLogic<2, 3, 4, VariableRef<6, double>, VariableRef<12, double>>;
-    test::BinaryGradientTester<Logic, 6, 12, 8>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 6, 12, 8>::test_custom(
         "MatMul2x3_3x4Logic", 
         40,      // num_tests
         1e-5,    // tolerance
@@ -163,7 +163,7 @@ TEST_F(MatMulOperationsGradientTest, MatMul2x3_3x4GradientVerification) {
 // Test 3x1 matrix-vector multiplication (3x1 * 1x1 = 3x1)
 TEST_F(MatMulOperationsGradientTest, MatVec3x1GradientVerification) {
     using Logic = op::MatMulLogic<3, 1, 1, VariableRef<3, double>, VariableRef<1, double>>;
-    test::BinaryGradientTester<Logic, 3, 1, 3>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 3, 1, 3>::test_custom(
         "MatVec3x1Logic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -176,7 +176,7 @@ TEST_F(MatMulOperationsGradientTest, MatVec3x1GradientVerification) {
 // Test 1x3 vector-matrix multiplication (1x3 * 3x2 = 1x2)
 TEST_F(MatMulOperationsGradientTest, VecMat1x3_3x2GradientVerification) {
     using Logic = op::MatMulLogic<1, 3, 2, VariableRef<3, double>, VariableRef<6, double>>;
-    test::BinaryGradientTester<Logic, 3, 6, 2>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 3, 6, 2>::test_custom(
         "VecMat1x3_3x2Logic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -189,7 +189,7 @@ TEST_F(MatMulOperationsGradientTest, VecMat1x3_3x2GradientVerification) {
 // Test edge case: 1x1 matrix multiplication (scalar multiplication)
 TEST_F(MatMulOperationsGradientTest, MatMul1x1GradientVerification) {
     using Logic = op::MatMulLogic<1, 1, 1, VariableRef<1, double>, VariableRef<1, double>>;
-    test::BinaryGradientTester<Logic, 1, 1, 1>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 1, 1, 1>::test_custom(
         "MatMul1x1Logic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -202,7 +202,7 @@ TEST_F(MatMulOperationsGradientTest, MatMul1x1GradientVerification) {
 // Test rectangular matrix: 4x2 * 2x3 = 4x3
 TEST_F(MatMulOperationsGradientTest, MatMul4x2_2x3GradientVerification) {
     using Logic = op::MatMulLogic<4, 2, 3, VariableRef<8, double>, VariableRef<6, double>>;
-    test::BinaryGradientTester<Logic, 8, 6, 12>::test_custom(
+    xyz_autodiff::testing::BinaryGradientTester<Logic, 8, 6, 12>::test_custom(
         "MatMul4x2_2x3Logic", 
         30,      // num_tests (fewer for larger output)
         1e-5,    // tolerance

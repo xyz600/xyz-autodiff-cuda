@@ -8,7 +8,7 @@
 #include <xyz_autodiff/operations/unary/l2_norm_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -67,7 +67,7 @@ protected:
 
 TEST_F(NormOperationsTest, L1NormGradientVerification) {
     using Logic = op::L1NormLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "L1Norm", 
         50,      // num_tests
         1e-5,    // tolerance (L1 norm has non-smooth gradients at zero)
@@ -83,7 +83,7 @@ TEST_F(NormOperationsTest, L1NormGradientVerification) {
 
 TEST_F(NormOperationsTest, L2NormGradientVerification) {
     using Logic = op::L2NormLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "L2Norm", 
         50,      // num_tests
         1e-5,    // tolerance

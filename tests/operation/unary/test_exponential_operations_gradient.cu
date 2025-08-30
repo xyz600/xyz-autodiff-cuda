@@ -8,7 +8,7 @@
 #include <xyz_autodiff/operations/unary/sigmoid_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -57,7 +57,7 @@ protected:
 
 TEST_F(ExponentialOperationsGradientTest, ExpGradientVerification) {
     using Logic = op::ExpLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "ExpLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -69,7 +69,7 @@ TEST_F(ExponentialOperationsGradientTest, ExpGradientVerification) {
 
 TEST_F(ExponentialOperationsGradientTest, SigmoidGradientVerification) {
     using Logic = op::SigmoidLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SigmoidLogic", 
         50,      // num_tests
         1e-5,    // tolerance
@@ -82,7 +82,7 @@ TEST_F(ExponentialOperationsGradientTest, SigmoidGradientVerification) {
 // Test with different dimensions
 TEST_F(ExponentialOperationsGradientTest, ExpGradientVerification2D) {
     using Logic = op::ExpLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 2>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 2>::test_custom(
         "ExpLogic2D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -94,7 +94,7 @@ TEST_F(ExponentialOperationsGradientTest, ExpGradientVerification2D) {
 
 TEST_F(ExponentialOperationsGradientTest, SigmoidGradientVerification1D) {
     using Logic = op::SigmoidLogic<1>;
-    test::UnaryGradientTester<Logic, 1, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 1, 1>::test_custom(
         "SigmoidLogic1D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -107,7 +107,7 @@ TEST_F(ExponentialOperationsGradientTest, SigmoidGradientVerification1D) {
 // Edge case tests
 TEST_F(ExponentialOperationsGradientTest, ExpNearZero) {
     using Logic = op::ExpLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "ExpLogicNearZero", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -119,7 +119,7 @@ TEST_F(ExponentialOperationsGradientTest, ExpNearZero) {
 
 TEST_F(ExponentialOperationsGradientTest, SigmoidSteepTransition) {
     using Logic = op::SigmoidLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 2>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 2>::test_custom(
         "SigmoidLogicSteepTransition", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -132,7 +132,7 @@ TEST_F(ExponentialOperationsGradientTest, SigmoidSteepTransition) {
 // Test small values where exp might underflow
 TEST_F(ExponentialOperationsGradientTest, ExpSmallValues) {
     using Logic = op::ExpLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 2>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 2>::test_custom(
         "ExpLogicSmallValues", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -145,7 +145,7 @@ TEST_F(ExponentialOperationsGradientTest, ExpSmallValues) {
 // Test sigmoid in saturation regions
 TEST_F(ExponentialOperationsGradientTest, SigmoidSaturation) {
     using Logic = op::SigmoidLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SigmoidLogicSaturation", 
         40,      // num_tests
         1e-5,    // tolerance

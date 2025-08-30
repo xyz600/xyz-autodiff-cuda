@@ -7,7 +7,7 @@
 #include <xyz_autodiff/operations/unary/sym_matrix2_inv_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -58,7 +58,7 @@ protected:
 
 TEST_F(SymMatrix2InvTest, SymMatrix2InvGradientVerification) {
     using Logic = op::SymMatrix2InvLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SymmetricMatrix2x2Inverse", 
         30,      // num_tests (reduced for stability)
         1e-5,    // tolerance (based on error analysis: >= 39.1856)

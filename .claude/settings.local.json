@@ -102,7 +102,8 @@
       "Bash(./test_variable)",
       "Bash(./test_standalone)",
       "Bash(../build/debug/tests/test_variable)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(/workspaces/xyz-autodiff-cuda/build/debug/tests/test_binary_operations_gradient --gtest_filter=\"*AddGradientVerification\" --gtest_brief=1)"
     ],
     "deny": [],
     "additionalDirectories": [

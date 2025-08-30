@@ -7,7 +7,7 @@
 #include <xyz_autodiff/operations/unary/sum_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -51,7 +51,7 @@ protected:
 
 TEST_F(SumOperationsGradientTest, SumGradientVerification) {
     using Logic = op::SumLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "SumLogic", 
         50,      // num_tests
         1e-5,    // tolerance (minimum allowed for double precision)
@@ -64,7 +64,7 @@ TEST_F(SumOperationsGradientTest, SumGradientVerification) {
 // Test with different dimensions
 TEST_F(SumOperationsGradientTest, SumGradientVerification5D) {
     using Logic = op::SumLogic<5>;
-    test::UnaryGradientTester<Logic, 5, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 5, 1>::test_custom(
         "SumLogic5D", 
         30,      // num_tests
         1e-5,    // tolerance (minimum allowed for double precision)
@@ -76,7 +76,7 @@ TEST_F(SumOperationsGradientTest, SumGradientVerification5D) {
 
 TEST_F(SumOperationsGradientTest, SumGradientVerification2D) {
     using Logic = op::SumLogic<2>;
-    test::UnaryGradientTester<Logic, 2, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 2, 1>::test_custom(
         "SumLogic2D", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -89,7 +89,7 @@ TEST_F(SumOperationsGradientTest, SumGradientVerification2D) {
 // Edge case tests
 TEST_F(SumOperationsGradientTest, SumNearZero) {
     using Logic = op::SumLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 1>::test_custom(
         "SumLogicNearZero", 
         30,      // num_tests
         1e-5,    // tolerance (minimum allowed for double precision)
@@ -101,7 +101,7 @@ TEST_F(SumOperationsGradientTest, SumNearZero) {
 
 TEST_F(SumOperationsGradientTest, SumLargeRange) {
     using Logic = op::SumLogic<4>;
-    test::UnaryGradientTester<Logic, 4, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 4, 1>::test_custom(
         "SumLogicLargeRange", 
         40,      // num_tests
         1e-5,    // tolerance
@@ -114,7 +114,7 @@ TEST_F(SumOperationsGradientTest, SumLargeRange) {
 // Test large dimensions
 TEST_F(SumOperationsGradientTest, SumLargeDimension) {
     using Logic = op::SumLogic<9>;
-    test::UnaryGradientTester<Logic, 9, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 9, 1>::test_custom(
         "SumLogic9D", 
         20,      // num_tests (fewer for high dimension)
         1e-5,    // tolerance
@@ -127,7 +127,7 @@ TEST_F(SumOperationsGradientTest, SumLargeDimension) {
 // Test single dimension
 TEST_F(SumOperationsGradientTest, SumGradientVerification1D) {
     using Logic = op::SumLogic<1>;
-    test::UnaryGradientTester<Logic, 1, 1>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 1, 1>::test_custom(
         "SumLogic1D", 
         20,      // num_tests
         1e-5,    // tolerance

@@ -7,7 +7,7 @@
 #include <xyz_autodiff/operations/unary/sym_matrix2_inv_logic.cuh>
 #include <xyz_autodiff/util/cuda_unique_ptr.cuh>
 #include <xyz_autodiff/variable_operators.cuh>
-#include "../../utility/unary_gradient_tester.cuh"
+#include <xyz_autodiff/testing/unary_gradient_tester.cuh>
 
 using namespace xyz_autodiff;
 
@@ -51,7 +51,7 @@ protected:
 
 TEST_F(MatrixOperationsGradientTest, SymMatrix2InvGradientVerification) {
     using Logic = op::SymMatrix2InvLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SymMatrix2InvLogic", 
         30,      // num_tests (fewer due to complexity)
         1e-5,    // tolerance (minimum allowed for double precision)
@@ -64,7 +64,7 @@ TEST_F(MatrixOperationsGradientTest, SymMatrix2InvGradientVerification) {
 // Test with well-conditioned matrices
 TEST_F(MatrixOperationsGradientTest, SymMatrix2InvWellConditioned) {
     using Logic = op::SymMatrix2InvLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SymMatrix2InvLogicWellConditioned", 
         40,      // num_tests
         1e-5,    // tolerance
@@ -77,7 +77,7 @@ TEST_F(MatrixOperationsGradientTest, SymMatrix2InvWellConditioned) {
 // Test with identity-like matrices (near-diagonal dominant)
 TEST_F(MatrixOperationsGradientTest, SymMatrix2InvNearIdentity) {
     using Logic = op::SymMatrix2InvLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SymMatrix2InvLogicNearIdentity", 
         30,      // num_tests
         1e-5,    // tolerance
@@ -90,7 +90,7 @@ TEST_F(MatrixOperationsGradientTest, SymMatrix2InvNearIdentity) {
 // Test with moderately conditioned matrices
 TEST_F(MatrixOperationsGradientTest, SymMatrix2InvModerateCondition) {
     using Logic = op::SymMatrix2InvLogic<3>;
-    test::UnaryGradientTester<Logic, 3, 3>::test_custom(
+    xyz_autodiff::testing::UnaryGradientTester<Logic, 3, 3>::test_custom(
         "SymMatrix2InvLogicModerateCondition", 
         25,      // num_tests
         1e-5,    // tolerance
